@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/tutory-dashboard-v23.html" }
+  ]
+}
