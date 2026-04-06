@@ -527,6 +527,63 @@ async function supaInsert(table, body){
   <div class="crow c2" style="margin-bottom:14px;">
   </div>
   </div>
+  <!-- ── SEÇÕES DE QUALIFICAÇÃO MENTORIA ── -->
+  <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:18px;">
+
+    <!-- SEÇÃO 1: QUALIFICADOS -->
+    <div class="card" style="border-left:3px solid #22C55E;">
+      <div class="ch">
+        <div>
+          <div class="ct">✅ Leads Qualificados — <span id="mn-s1-count">0 leads</span></div>
+          <div class="cs">Leads aprovados no Aeroporto</div>
+        </div>
+        <button onclick="exportarMnSecao('Qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+      </div>
+      <div class="cb np">
+        <table class="dt">
+          <thead><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
+          <tbody id="mn-s1-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: PRÉ-QUALIFICADOS -->
+    <div class="card" style="border-left:3px solid #EAB308;">
+      <div class="ch">
+        <div>
+          <div class="ct">⭐ Leads Pré-Qualificados — <span id="mn-s2-count">0 leads</span></div>
+          <div class="cs">Leads em avaliação no Aeroporto</div>
+        </div>
+        <button onclick="exportarMnSecao('Pré-qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+      </div>
+      <div class="cb np">
+        <table class="dt">
+          <thead><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
+          <tbody id="mn-s2-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: DESQUALIFICADOS -->
+    <div class="card" style="border-left:3px solid #EF4444;">
+      <div class="ch">
+        <div>
+          <div class="ct">🚫 Desqualificados — <span id="mn-s3-count">0 leads</span></div>
+          <div class="cs">Leads reprovados no Aeroporto</div>
+        </div>
+        <button onclick="exportarMnSecao('Desqualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+      </div>
+      <div class="cb np">
+        <table class="dt">
+          <thead><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
+          <tbody id="mn-s3-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <!-- ── FIM SEÇÕES ── -->
+
   <div class="card">
     <div class="ch">
       <div><div class="ct">Aeroporto de Leads</div><div class="cs">Caindo em tempo real 24hrs ✈️</div></div>
@@ -1072,6 +1129,8 @@ async function salvarClassifLead(id, classificacao, selectEl){
         if(badge) badge.outerHTML = classifBadge(classificacao);
       }
     }
+    // Atualiza seções de qualificação
+    if(window._mnLeads){ const _r=window._mnLeads.find(r=>r.id===id); if(_r) _r.classificacao_manual=classificacao; renderMnSecoes(window._mnLeads); }
     // Atualiza contadores e gráfico
     const {ini,fim}=getDates('mentoria');
     supaFetch('leads_mentoria',`select=classificacao_manual&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`).then(leads=>{
@@ -1089,6 +1148,41 @@ async function salvarClassifLead(id, classificacao, selectEl){
       mkD('c-g-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hot,warm,dqp,cold],['#22C55E','#EAB308','#F97316','#EF4444']);
     });
   }catch(e){console.error('Erro ao salvar classificação:',e); alert('Erro ao salvar: '+e.message);}
+}
+function renderMnSecoes(leads){
+  const _row = r => `<tr>
+    <td><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td>${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td>${canalChip(r.canal)}</td>
+    <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
+    <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
+  </tr>`;
+  const _empty = msg => `<tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
+  const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
+  const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
+  const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
+  const s1c=$('mn-s1-count'); if(s1c) s1c.textContent=s1.length+(s1.length===1?' lead':' leads');
+  const s2c=$('mn-s2-count'); if(s2c) s2c.textContent=s2.length+(s2.length===1?' lead':' leads');
+  const s3c=$('mn-s3-count'); if(s3c) s3c.textContent=s3.length+(s3.length===1?' lead':' leads');
+  const s1tb=$('mn-s1-leads'); if(s1tb) s1tb.innerHTML=s1.length?s1.map(_row).join(''):_empty('Nenhum lead qualificado ainda');
+  const s2tb=$('mn-s2-leads'); if(s2tb) s2tb.innerHTML=s2.length?s2.map(_row).join(''):_empty('Nenhum lead pré-qualificado ainda');
+  const s3tb=$('mn-s3-leads'); if(s3tb) s3tb.innerHTML=s3.length?s3.map(_row).join(''):_empty('Nenhum lead desqualificado ainda');
+}
+function exportarMnSecao(classificacao){
+  const {ini,fim}=getDates('mentoria');
+  supaFetch('leads_mentoria',`select=*&classificacao_manual=eq.${encodeURIComponent(classificacao)}&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59&order=created_at.desc`).then(leads=>{
+    if(!leads||!leads.length){alert('Nenhum lead nesta seção para exportar.');return;}
+    const cols=['contact_name','contact_instagram','canal','cargo','faturamento','created_at'];
+    const header=cols.join(',');
+    const rows=leads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(','));
+    const csv='﻿'+header+'\n'+rows.join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const slug=classificacao.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    a.href=url;a.download=`mentoria-${slug}.csv`;a.click();
+    URL.revokeObjectURL(url);
+  });
 }
 function canalChip(c){if(c==='Landing Page')return'<span class="chip clp">🌐 LP</span>';if(c==='Typebot')return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi')return'<span class="chip crp">💬 Respondi</span>';if(c==='Site'||c==='Site Oficial')return'<span class="chip cst">🌐 Site</span>';if(c==='Orgânico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
 function stBand(el,ok,okT,wT){if(!el)return;const sdot=`<span style="width:6px;height:6px;border-radius:50%;background:${ok?'var(--gn)':'#FF8C55'};display:inline-block;"></span>`;el.className='pb-st '+(ok?'ok':'warn');el.innerHTML=sdot+' '+(ok?okT:wT);}
@@ -1166,6 +1260,7 @@ async function renderMentoria(){
       supaFetch('diagnosticos','select=*&plataforma=eq.mentoria&order=created_at.desc&limit=1'),
       supaFetch('receita_mentoria',`select=valor&data=gte.${ini}&data=lte.${fim}`)
     ]);
+    window._mnLeads = leads;
     const totL=leads.length;
     const hotL=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
     const warmL=leads.filter(r=>r.classificacao_manual==='Pré-qualificado').length;
@@ -1271,6 +1366,7 @@ async function renderMentoria(){
         </td>
       </tr>`;}).join('');}
     }
+    renderMnSecoes(leads);
   }catch(e){console.error('renderMentoria:',e);}
 }
 
