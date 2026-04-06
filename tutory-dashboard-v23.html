@@ -541,8 +541,8 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
-          <tbody id="mn-s1-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <tbody id="mn-s1-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -558,8 +558,8 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
-          <tbody id="mn-s2-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <tbody id="mn-s2-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -575,8 +575,8 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th></tr></thead>
-          <tbody id="mn-s3-leads"><tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <tbody id="mn-s3-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -591,8 +591,8 @@ async function supaInsert(table, body){
     </div>
     <div class="cb np">
       <table class="dt">
-        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>Classificação Manual</th></tr></thead>
-        <tbody id="mn-leads"><tr class="er"><td colspan="7">Carregando leads...</td></tr></tbody>
+        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
+        <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1150,14 +1150,17 @@ async function salvarClassifLead(id, classificacao, selectEl){
   }catch(e){console.error('Erro ao salvar classificação:',e); alert('Erro ao salvar: '+e.message);}
 }
 function renderMnSecoes(leads){
+  const _wa = p => { if(!p) return '—'; const n=p.replace(/\D/g,''); const num=n.startsWith('55')?n:'55'+n; return `<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`; };
   const _row = r => `<tr>
     <td><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
     <td>${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.contact_instagram}</a>`:'—'}</td>
     <td>${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
     <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
+    <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
+    <td style="font-size:11px">${_wa(r.contact_phone)}</td>
   </tr>`;
-  const _empty = msg => `<tr class="er"><td colspan="5" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
+  const _empty = msg => `<tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
   const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
   const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
@@ -1172,7 +1175,7 @@ function exportarMnSecao(classificacao){
   const {ini,fim}=getDates('mentoria');
   supaFetch('leads_mentoria',`select=*&classificacao_manual=eq.${encodeURIComponent(classificacao)}&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59&order=created_at.desc`).then(leads=>{
     if(!leads||!leads.length){alert('Nenhum lead nesta seção para exportar.');return;}
-    const cols=['contact_name','contact_instagram','canal','cargo','faturamento','created_at'];
+    const cols=['contact_name','contact_instagram','contact_email','contact_phone','canal','cargo','faturamento','created_at'];
     const header=cols.join(',');
     const rows=leads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(','));
     const csv='﻿'+header+'\n'+rows.join('\n');
@@ -1352,6 +1355,8 @@ async function renderMentoria(){
         <td>${canalChip(r.canal)}</td>
         <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
+        <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
+        <td style="font-size:11px">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
         <td>
           <div style="display:flex;flex-direction:column;gap:4px;min-width:160px;">
             ${classifBadge(r.classificacao_manual)}
