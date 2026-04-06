@@ -2674,7 +2674,7 @@ function agruparPorCriativo(anuncios){
     conj:r.conjuntos.size,
     cpl:r.leads>0?r.gasto/r.leads:0,
     ctr:r.imp>0?r.clk/r.imp*100:0
-  })).sort((a,b)=>(a.cpl||9999)-(b.cpl||9999));
+  })).sort((a,b)=>(b.leads||0)-(a.leads||0));
 }
 
 function crCard(r, rank){
@@ -2755,7 +2755,7 @@ async function renderCriativos(){
     const crMn=agruparPorCriativo(anMn||[]);
     const crHb=agruparPorCriativo(anHb||[]);
     const crEx=agruparPorCriativo(anEx||[]);
-    const crAll=[...crMn,...crHb,...crEx].sort((a,b)=>(a.cpl||9999)-(b.cpl||9999));
+    const crAll=[...crMn,...crHb,...crEx].sort((a,b)=>(b.leads||0)-(a.leads||0));
 
     window._crAll=crAll;
 
