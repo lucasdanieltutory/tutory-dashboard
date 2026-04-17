@@ -94,6 +94,10 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 .pb:hover,.pb.on{background:var(--s1);border-color:var(--mn-b);color:var(--txt);}
 .psep{color:var(--brd2);}
 .pbar-r{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
+.mn-subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.mn-stab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--brd2);background:transparent;color:var(--sub);transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif;}
+.mn-stab:hover,.mn-stab.on{background:rgba(79,142,247,.12);border-color:var(--mn-b);color:var(--mn);}
+.mn-subtab{}
 .di{background:var(--s2);border:1px solid var(--brd2);color:var(--txt);border-radius:7px;padding:4px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;}
 .ph{margin-bottom:20px;}
 .ph-ey{font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;opacity:.7;}
@@ -487,6 +491,34 @@ async function supaInsert(table, body){
     <div class="pbar-r" id="rmn">—</div>
   </div>
 
+  <!-- ── SUB-ABAS MENTORIA ── -->
+  <div class="mn-subnav">
+    <button class="mn-stab on" onclick="switchMnTab('visao',this)">📊 Visão Geral</button>
+    <button class="mn-stab" onclick="switchMnTab('meta',this)">📘 Meta Ads</button>
+    <button class="mn-stab" onclick="switchMnTab('google',this)">🔍 Google Ads</button>
+    <button class="mn-stab" onclick="switchMnTab('linkedin',this)">💼 LinkedIn Ads</button>
+    <button class="mn-stab" onclick="switchMnTab('tiktok',this)">🎵 TikTok Ads</button>
+  </div>
+
+  <!-- ── VISÃO GERAL ── -->
+  <div id="mn-sub-visao" class="mn-subtab">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Aeroporto de Leads</div><div class="cs">Todos os canais · em tempo real 24hrs ✈️</div></div>
+        <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-all-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
+      </div>
+      <div class="cb np">
+        <table class="dt">
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
+          <tbody id="mn-all-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── META ADS ── -->
+  <div id="mn-sub-meta" class="mn-subtab" style="display:none">
+
   <div class="kgrid">
     <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="mn-inv">—</div><div class="ks">Meta Ads · real</div></div>
     <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL Real</div><div class="kv" id="mn-cpl">—</div><div class="ks">Invest. ÷ Leads reais</div></div>
@@ -525,7 +557,6 @@ async function supaInsert(table, body){
   <div class="crow c2" style="margin-bottom:14px;">
   </div>
   <div class="crow c2" style="margin-bottom:14px;">
-  </div>
   </div>
   <!-- ── SEÇÕES DE QUALIFICAÇÃO MENTORIA ── -->
   <div style="max-width:1360px;margin:0 auto;padding:0 26px 18px;display:flex;flex-direction:column;gap:14px;">
@@ -591,9 +622,38 @@ async function supaInsert(table, body){
     </div>
     <div class="cb np">
       <table class="dt">
-        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
+        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
         <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
       </table>
+    </div>
+  </div>
+
+  </div><!-- /mn-sub-meta -->
+
+  <!-- ── GOOGLE ADS ── -->
+  <div id="mn-sub-google" class="mn-subtab" style="display:none">
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:36px;margin-bottom:14px;">🔍</div>
+      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">Google Ads — Em breve</div>
+      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do Google e os dados aparecerão aqui automaticamente.</div>
+    </div>
+  </div>
+
+  <!-- ── LINKEDIN ADS ── -->
+  <div id="mn-sub-linkedin" class="mn-subtab" style="display:none">
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:36px;margin-bottom:14px;">💼</div>
+      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">LinkedIn Ads — Em breve</div>
+      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do LinkedIn e os dados aparecerão aqui automaticamente.</div>
+    </div>
+  </div>
+
+  <!-- ── TIKTOK ADS ── -->
+  <div id="mn-sub-tiktok" class="mn-subtab" style="display:none">
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:36px;margin-bottom:14px;">🎵</div>
+      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">TikTok Ads — Em breve</div>
+      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do TikTok e os dados aparecerão aqui automaticamente.</div>
     </div>
   </div>
 
@@ -1188,6 +1248,21 @@ function exportarMnSecao(classificacao){
   });
 }
 function canalChip(c){if(c==='Landing Page')return'<span class="chip clp">🌐 LP</span>';if(c==='Typebot')return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi')return'<span class="chip crp">💬 Respondi</span>';if(c==='Site'||c==='Site Oficial')return'<span class="chip cst">🌐 Site</span>';if(c==='Orgânico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
+function platChip(p){
+  if(!p||p==='meta')return'<span style="background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
+  if(p==='google')return'<span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🔍 Google</span>';
+  if(p==='linkedin')return'<span style="background:rgba(0,119,181,.12);border:1px solid rgba(0,119,181,.3);color:#0077B5;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">💼 LinkedIn</span>';
+  if(p==='tiktok')return'<span style="background:rgba(255,0,80,.12);border:1px solid rgba(255,0,80,.3);color:#FF0050;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🎵 TikTok</span>';
+  if(p==='organico'||p==='orgânico')return'<span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34D399;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌱 Orgânico</span>';
+  return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">'+p+'</span>';
+}
+function switchMnTab(tab,el){
+  document.querySelectorAll('.mn-subtab').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.mn-stab').forEach(b=>b.classList.remove('on'));
+  const t=document.getElementById('mn-sub-'+tab);
+  if(t)t.style.display='';
+  if(el)el.classList.add('on');
+}
 function stBand(el,ok,okT,wT){if(!el)return;const sdot=`<span style="width:6px;height:6px;border-radius:50%;background:${ok?'var(--gn)':'#FF8C55'};display:inline-block;"></span>`;el.className='pb-st '+(ok?'ok':'warn');el.innerHTML=sdot+' '+(ok?okT:wT);}
 function setRef(id){const e=$(id);if(e)e.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
@@ -1344,14 +1419,11 @@ async function renderMentoria(){
       if($('mn-dtxt'))$('mn-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
     // leads table
-    const lb=$('mn-leads');
-    if(lb){
-      if(leads.length===0){lb.innerHTML='<tr class="er"><td colspan="9">Nenhum lead registrado ainda. Configure o webhook na Clint.</td></tr>';}
-      else{lb.innerHTML=leads.map(r=>{
-        return`<tr>
+    const _leadRow = r => `<tr>
         <td class="mo">${fmtDate(r.created_at)}</td>
         <td><strong>${r.contact_name||'—'}</strong></td>
         <td>${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;'>${r.contact_instagram}</a>`:'—'}</td>
+        <td>${platChip(r.plataforma_ad||'meta')}</td>
         <td>${canalChip(r.canal)}</td>
         <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
@@ -1369,8 +1441,18 @@ async function renderMentoria(){
             </select>
           </div>
         </td>
-      </tr>`;}).join('');}
+      </tr>`;
+    const lb=$('mn-leads');
+    if(lb){
+      if(leads.length===0){lb.innerHTML='<tr class="er"><td colspan="10">Nenhum lead registrado ainda. Configure o webhook na Clint.</td></tr>';}
+      else{lb.innerHTML=leads.map(_leadRow).join('');}
     }
+    const alb=$('mn-all-leads');
+    if(alb){
+      if(leads.length===0){alb.innerHTML='<tr class="er"><td colspan="10">Nenhum lead registrado ainda.</td></tr>';}
+      else{alb.innerHTML=leads.map(_leadRow).join('');}
+    }
+    if($('mn-all-lcount'))$('mn-all-lcount').textContent=totL+' leads';
     renderMnSecoes(leads);
   }catch(e){console.error('renderMentoria:',e);}
 }
