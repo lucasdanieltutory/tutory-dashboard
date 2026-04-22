@@ -502,13 +502,34 @@ async function supaInsert(table, body){
 
   <!-- ── VISÃO GERAL ── -->
   <div id="mn-sub-visao" class="mn-subtab">
+    <!-- KPIs Gerais -->
+    <div class="kgrid" style="margin-bottom:14px;">
+      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Invest. Total</div><div class="kv" id="vg-inv-total">—</div><div class="ks">Todos os canais</div></div>
+      <div class="kpi mn"><div class="ki">👤</div><div class="kl">Total Leads</div><div class="kv" id="vg-leads-total">—</div><div class="ks">Todos os canais</div></div>
+      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="vg-hot-total">—</div><div class="ks">Todos os canais</div></div>
+      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL Geral</div><div class="kv" id="vg-cpl-total">—</div><div class="ks">Invest. ÷ Leads totais</div></div>
+    </div>
+    <!-- Leads por Plataforma -->
+    <div class="cbar" style="margin-bottom:14px;">
+      <div class="cbadge"><div class="cbi">📘</div><div><div class="cbl">Meta Ads</div><div class="cbv" id="vg-meta-leads">—</div></div></div>
+      <div class="cbadge"><div class="cbi">🔍</div><div><div class="cbl">Google Ads</div><div class="cbv" id="vg-google-leads">0</div></div></div>
+      <div class="cbadge"><div class="cbi">💼</div><div><div class="cbl">LinkedIn Ads</div><div class="cbv" id="vg-linkedin-leads">0</div></div></div>
+      <div class="cbadge"><div class="cbi">🎵</div><div><div class="cbl">TikTok Ads</div><div class="cbv" id="vg-tiktok-leads">0</div></div></div>
+      <div class="cbadge"><div class="cbi">🌱</div><div><div class="cbl">Orgânico</div><div class="cbv" id="vg-org-leads">—</div></div></div>
+    </div>
+    <!-- Qualificados por Plataforma -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch"><div><div class="ct">✅ Qualificados por Plataforma</div><div class="cs">Qual plataforma traz mais leads qualificados</div></div></div>
+      <div class="cb" id="vg-qual-plat"><div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Aguardando leads...</div></div>
+    </div>
+    <!-- Aeroporto de Leads -->
     <div class="card">
       <div class="ch">
         <div><div class="ct">Aeroporto de Leads</div><div class="cs">Todos os canais · em tempo real 24hrs ✈️</div></div>
         <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-all-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
       </div>
-      <div class="cb np">
-        <table class="dt">
+      <div class="cb np" style="overflow-x:auto;">
+        <table class="dt" style="min-width:1100px;">
           <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
           <tbody id="mn-all-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
         </table>
@@ -572,7 +593,7 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
           <tbody id="mn-s1-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
         </table>
       </div>
@@ -589,7 +610,7 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
           <tbody id="mn-s2-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
         </table>
       </div>
@@ -606,7 +627,7 @@ async function supaInsert(table, body){
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th></tr></thead>
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
           <tbody id="mn-s3-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
         </table>
       </div>
@@ -617,11 +638,11 @@ async function supaInsert(table, body){
 
   <div class="card">
     <div class="ch">
-      <div><div class="ct">Aeroporto de Leads</div><div class="cs">Caindo em tempo real 24hrs ✈️</div></div>
+      <div><div class="ct">Aeroporto de Leads — Meta Ads</div><div class="cs">Caindo em tempo real 24hrs ✈️</div></div>
       <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
     </div>
-    <div class="cb np">
-      <table class="dt">
+    <div class="cb np" style="overflow-x:auto;">
+      <table class="dt" style="min-width:1100px;">
         <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
         <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
       </table>
@@ -1214,13 +1235,23 @@ function renderMnSecoes(leads){
   const _row = r => `<tr>
     <td><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
     <td>${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td>${platChip(r.plataforma_ad||'meta')}</td>
     <td>${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
     <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
     <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
     <td style="font-size:11px">${_wa(r.contact_phone)}</td>
+    <td>
+      <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:130px;">
+        <option value="">— Classificar</option>
+        <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
+        <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
+        <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
+        <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
+      </select>
+    </td>
   </tr>`;
-  const _empty = msg => `<tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
+  const _empty = msg => `<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
   const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
   const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
@@ -1453,6 +1484,37 @@ async function renderMentoria(){
       else{alb.innerHTML=leads.map(_leadRow).join('');}
     }
     if($('mn-all-lcount'))$('mn-all-lcount').textContent=totL+' leads';
+    // Visão Geral KPIs
+    if($('vg-inv-total'))$('vg-inv-total').textContent=fmt.brlK(invest);
+    if($('vg-leads-total'))$('vg-leads-total').textContent=fmt.num(totL);
+    if($('vg-hot-total'))$('vg-hot-total').textContent=hotL;
+    if($('vg-cpl-total'))$('vg-cpl-total').textContent=cpl>0?'R$'+cpl.toFixed(2).replace('.',','):'—';
+    if($('vg-meta-leads'))$('vg-meta-leads').textContent=leads.filter(r=>!r.plataforma_ad||r.plataforma_ad==='meta').length;
+    if($('vg-google-leads'))$('vg-google-leads').textContent=leads.filter(r=>r.plataforma_ad==='google').length;
+    if($('vg-linkedin-leads'))$('vg-linkedin-leads').textContent=leads.filter(r=>r.plataforma_ad==='linkedin').length;
+    if($('vg-tiktok-leads'))$('vg-tiktok-leads').textContent=leads.filter(r=>r.plataforma_ad==='tiktok').length;
+    if($('vg-org-leads'))$('vg-org-leads').textContent=leads.filter(r=>r.plataforma_ad==='organico'||r.canal==='Orgânico').length;
+    // Qualificados por Plataforma
+    const vgQualEl=$('vg-qual-plat');
+    if(vgQualEl){
+      const plats=[{key:'meta',label:'📘 Meta',color:'#6AAAFF'},{key:'google',label:'🔍 Google',color:'#EA4335'},{key:'linkedin',label:'💼 LinkedIn',color:'#0077B5'},{key:'tiktok',label:'🎵 TikTok',color:'#FF0050'},{key:'org',label:'🌱 Orgânico',color:'#34D399'}];
+      const platData=plats.map(p=>{
+        const pLeads=p.key==='org'?leads.filter(r=>r.plataforma_ad==='organico'||r.canal==='Orgânico'):leads.filter(r=>(r.plataforma_ad||'meta')===p.key);
+        const pTot=pLeads.length;
+        const pHot=pLeads.filter(r=>r.classificacao_manual==='Qualificado').length;
+        const pct=pTot>0?Math.round(pHot/pTot*100):0;
+        return{...p,tot:pTot,hot:pHot,pct};
+      }).filter(p=>p.tot>0);
+      const maxHot=Math.max(...platData.map(p=>p.hot),1);
+      vgQualEl.innerHTML=platData.length?platData.map(p=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--brd);">
+          <span style="min-width:110px;font-size:12px;font-weight:600;color:${p.color};">${p.label}</span>
+          <div style="flex:1;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="height:100%;background:${p.color};width:${maxHot>0?Math.round(p.hot/maxHot*100):0}%;border-radius:4px;transition:width .4s;"></div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:80px;text-align:right;">${p.hot} qualificados <span style="color:var(--sub);font-weight:400;">(${p.pct}%)</span></span>
+        </div>`).join(''):'<div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Aguardando dados...</div>';
+    }
     renderMnSecoes(leads);
   }catch(e){console.error('renderMentoria:',e);}
 }
@@ -2778,20 +2840,20 @@ function crCard(r, rank){
       <div class="cr-name" title="${r.base}">${r.base}</div>
       <div class="cr-metrics">
         <div class="cr-metric">
-          <div class="cr-metric-l">CPL</div>
-          <div class="cr-metric-v" style="color:${cplCor}">${r.cpl>0?'R$'+r.cpl.toFixed(0):'—'}</div>
+          <div class="cr-metric-l">Leads</div>
+          <div class="cr-metric-v" style="color:var(--gn);font-size:16px;font-weight:800;">${r.leads||'—'}</div>
         </div>
         <div class="cr-metric">
-          <div class="cr-metric-l">CTR</div>
-          <div class="cr-metric-v" style="color:${ctrCor}">${r.ctr.toFixed(1)}%</div>
+          <div class="cr-metric-l">CPL</div>
+          <div class="cr-metric-v" style="color:${cplCor}">${r.cpl>0?'R$'+r.cpl.toFixed(0):'—'}</div>
         </div>
         <div class="cr-metric">
           <div class="cr-metric-l">Invest</div>
           <div class="cr-metric-v">${r.gasto>=1000?'R$'+(r.gasto/1000).toFixed(1)+'K':'R$'+r.gasto.toFixed(0)}</div>
         </div>
         <div class="cr-metric">
-          <div class="cr-metric-l">Leads</div>
-          <div class="cr-metric-v" style="color:var(--gn)">${r.leads||'—'}</div>
+          <div class="cr-metric-l">CTR</div>
+          <div class="cr-metric-v" style="color:${ctrCor}">${r.ctr.toFixed(1)}%</div>
         </div>
       </div>
       <div style="font-size:9px;color:var(--dim);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.campanha}</div>
