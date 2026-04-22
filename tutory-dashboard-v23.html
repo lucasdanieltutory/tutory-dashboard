@@ -98,6 +98,11 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 .mn-stab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--brd2);background:transparent;color:var(--sub);transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif;}
 .mn-stab:hover,.mn-stab.on{background:rgba(79,142,247,.12);border-color:var(--mn-b);color:var(--mn);}
 .mn-subtab{}
+.dt-fx{table-layout:fixed!important;width:100%!important;}
+.dt-fx th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 6px;}
+.dt-fx td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;padding:8px 6px;}
+.dt-fx td.cel-wrap{white-space:normal;overflow:visible;}
+.dt-fx td.cel-classif{white-space:normal;overflow:visible;}
 .di{background:var(--s2);border:1px solid var(--brd2);color:var(--txt);border-radius:7px;padding:4px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;}
 .ph{margin-bottom:20px;}
 .ph-ey{font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;opacity:.7;}
@@ -528,8 +533,9 @@ async function supaInsert(table, body){
         <div><div class="ct">Aeroporto de Leads</div><div class="cs">Todos os canais · em tempo real 24hrs ✈️</div></div>
         <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-all-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
       </div>
-      <div class="cb np" style="overflow-x:auto;">
-        <table class="dt">
+      <div class="cb np" style="overflow-x:hidden;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:14%"></colgroup>
           <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
           <tbody id="mn-all-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
         </table>
@@ -592,9 +598,10 @@ async function supaInsert(table, body){
         <button onclick="exportarMnSecao('Qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
-        <table class="dt" style="width:100%;table-layout:fixed;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:10%"></colgroup>
           <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
-          <tbody id="mn-s1-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+          <tbody id="mn-s1-leads"><tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -609,9 +616,10 @@ async function supaInsert(table, body){
         <button onclick="exportarMnSecao('Pré-qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
-        <table class="dt" style="width:100%;table-layout:fixed;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:10%"></colgroup>
           <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
-          <tbody id="mn-s2-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+          <tbody id="mn-s2-leads"><tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -626,9 +634,10 @@ async function supaInsert(table, body){
         <button onclick="exportarMnSecao('Desqualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
       </div>
       <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
-        <table class="dt" style="width:100%;table-layout:fixed;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:10%"></colgroup>
           <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
-          <tbody id="mn-s3-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+          <tbody id="mn-s3-leads"><tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -641,8 +650,9 @@ async function supaInsert(table, body){
       <div><div class="ct">Aeroporto de Leads — Meta Ads</div><div class="cs">Caindo em tempo real 24hrs ✈️</div></div>
       <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
     </div>
-    <div class="cb np" style="overflow-x:auto;">
-      <table class="dt">
+    <div class="cb np" style="overflow-x:hidden;">
+      <table class="dt dt-fx">
+        <colgroup><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:14%"></colgroup>
         <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
         <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
       </table>
@@ -1233,16 +1243,16 @@ async function salvarClassifLead(id, classificacao, selectEl){
 function renderMnSecoes(leads){
   const _wa = p => { if(!p) return '—'; const n=p.replace(/\D/g,''); const num=n.startsWith('55')?n:'55'+n; return `<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`; };
   const _row = r => `<tr>
-    <td><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
-    <td>${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.contact_instagram}</a>`:'—'}</td>
-    <td>${platChip(r.plataforma_ad||'meta')}</td>
-    <td>${canalChip(r.canal)}</td>
-    <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
-    <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
-    <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
-    <td style="font-size:11px">${_wa(r.contact_phone)}</td>
-    <td>
-      <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:130px;">
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}</td>
+    <td class="cel-wrap">${canalChip(r.canal)}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_wa(r.contact_phone)}</td>
+    <td class="cel-classif">
+      <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
         <option value="">— Classificar</option>
         <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
         <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
@@ -1451,15 +1461,15 @@ async function renderMentoria(){
     }
     // leads table
     const _leadRow = r => `<tr>
-        <td class="mo">${fmtDate(r.created_at)}</td>
-        <td><strong>${r.contact_name||'—'}</strong></td>
-        <td>${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td style="white-space:nowrap;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span></td>
-        <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
-        <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
-        <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
-        <td style="font-size:11px">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
-        <td style="min-width:170px;">
+        <td class="mo" style="font-size:11px;">${fmtDate(r.created_at)}</td>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
+        <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span></td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+        <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
+        <td class="cel-classif">
           <div style="display:flex;flex-direction:column;gap:4px;">
             ${classifBadge(r.classificacao_manual)}
             <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
