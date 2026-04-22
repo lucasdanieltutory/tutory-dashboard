@@ -529,9 +529,9 @@ async function supaInsert(table, body){
         <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-all-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
       </div>
       <div class="cb np" style="overflow-x:auto;">
-        <table class="dt" style="min-width:1100px;">
-          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
-          <tbody id="mn-all-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
+        <table class="dt">
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
+          <tbody id="mn-all-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -642,8 +642,8 @@ async function supaInsert(table, body){
       <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;color:var(--sub)" id="mn-lcount">—</span><button onclick="exportarLeadsCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button></div>
     </div>
     <div class="cb np" style="overflow-x:auto;">
-      <table class="dt" style="min-width:1100px;">
-        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
+      <table class="dt">
+        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
         <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
       </table>
     </div>
@@ -1454,14 +1454,13 @@ async function renderMentoria(){
         <td class="mo">${fmtDate(r.created_at)}</td>
         <td><strong>${r.contact_name||'—'}</strong></td>
         <td>${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td>${platChip(r.plataforma_ad||'meta')}</td>
-        <td>${canalChip(r.canal)}</td>
+        <td style="white-space:nowrap;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span></td>
         <td style="color:var(--sub);font-size:11px">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px">${r.faturamento||'—'}</td>
         <td style="color:var(--sub);font-size:11px">${r.contact_email||'—'}</td>
         <td style="font-size:11px">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
-        <td>
-          <div style="display:flex;flex-direction:column;gap:4px;min-width:160px;">
+        <td style="min-width:170px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
             ${classifBadge(r.classificacao_manual)}
             <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
               <option value="">— Classificar</option>
