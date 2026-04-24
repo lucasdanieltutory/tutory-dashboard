@@ -663,30 +663,277 @@ async function supaInsert(table, body){
 
   <!-- ── GOOGLE ADS ── -->
   <div id="mn-sub-google" class="mn-subtab" style="display:none">
-    <div style="text-align:center;padding:60px 20px;">
-      <div style="font-size:36px;margin-bottom:14px;">🔍</div>
-      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">Google Ads — Em breve</div>
-      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do Google e os dados aparecerão aqui automaticamente.</div>
+
+    <!-- Setup UTM Card -->
+    <div class="card" style="border-left:3px solid #4285F4;margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">🔗 Configuração de UTMs — Google Ads</div><div class="cs">Adicione estes parâmetros nos links de destino dos anúncios para rastrear leads automaticamente</div></div>
+        <span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">⚡ Ação necessária</span>
+      </div>
+      <div class="cb">
+        <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#4285F4;margin-bottom:14px;word-break:break-all;">?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign={{nome_campanha}}&amp;utm_content={{nome_anuncio}}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+          <div style="background:var(--s2);border-radius:8px;padding:12px;">
+            <div style="font-size:10px;font-weight:700;color:#4285F4;text-transform:uppercase;margin-bottom:6px;">① Google Ads</div>
+            <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Abrir anúncio</div>
+            <div style="font-size:11px;color:var(--sub);">Campanhas → Anúncios → Editar → URL final</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:12px;">
+            <div style="font-size:10px;font-weight:700;color:#4285F4;text-transform:uppercase;margin-bottom:6px;">② Sufixo da URL</div>
+            <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Colar o parâmetro</div>
+            <div style="font-size:11px;color:var(--sub);">Cole no campo "Sufixo do URL final" ou na URL final diretamente</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:12px;">
+            <div style="font-size:10px;font-weight:700;color:#4285F4;text-transform:uppercase;margin-bottom:6px;">③ Automático</div>
+            <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Leads chegam aqui</div>
+            <div style="font-size:11px;color:var(--sub);">Cada lead via Google aparece nesta aba em tempo real</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- KPIs -->
+    <div class="kgrid" style="margin-bottom:14px;">
+      <div class="kpi mn"><div class="ki">👤</div><div class="kl">Total Leads</div><div class="kv" id="ggl-tot">—</div><div class="ks">Leads via Google Ads</div></div>
+      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="ggl-hot">—</div><div class="ks">Classificação manual</div></div>
+      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL</div><div class="kv" id="ggl-cpl-kpi">—</div><div class="ks">Futuro: API Google Ads</div></div>
+      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="ggl-inv-kpi">—</div><div class="ks">Futuro: API Google Ads</div></div>
+    </div>
+
+    <!-- Aeroporto Google -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">Aeroporto de Leads — Google Ads</div><div class="cs">Leads identificados com utm_source=google ✈️</div></div>
+        <span style="font-size:11px;color:var(--sub);" id="ggl-lcount">0 leads</span>
+      </div>
+      <div class="cb np" style="overflow-x:hidden;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:9%"><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:15%"><col style="width:10%"><col style="width:9%"></colgroup>
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação</th></tr></thead>
+          <tbody id="ggl-leads"><tr class="er"><td colspan="9">Aguardando leads via Google Ads — configure as UTMs nos anúncios.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Seções Google -->
+    <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:18px;">
+      <div class="card" style="border-left:3px solid #22C55E;">
+        <div class="ch"><div><div class="ct">✅ Qualificados — Google Ads — <span id="ggl-s1-count">0 leads</span></div><div class="cs">Leads aprovados via Google</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="ggl-s1-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EAB308;">
+        <div class="ch"><div><div class="ct">⭐ Pré-Qualificados — Google Ads — <span id="ggl-s2-count">0 leads</span></div><div class="cs">Leads em avaliação via Google</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="ggl-s2-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EF4444;">
+        <div class="ch"><div><div class="ct">🚫 Desqualificados — Google Ads — <span id="ggl-s3-count">0 leads</span></div><div class="cs">Leads reprovados via Google</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="ggl-s3-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mn-sub-google -->
 
   <!-- ── LINKEDIN ADS ── -->
   <div id="mn-sub-linkedin" class="mn-subtab" style="display:none">
-    <div style="text-align:center;padding:60px 20px;">
-      <div style="font-size:36px;margin-bottom:14px;">💼</div>
-      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">LinkedIn Ads — Em breve</div>
-      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do LinkedIn e os dados aparecerão aqui automaticamente.</div>
+
+    <!-- Status: conta não criada -->
+    <div class="card" style="border-left:3px solid #0077B5;margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">💼 LinkedIn Ads — Conta não criada</div><div class="cs">Siga o passo a passo abaixo para criar a conta e começar a rastrear leads</div></div>
+        <span style="background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#EAB308;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">🕐 Pendente</span>
+      </div>
+      <div class="cb">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#0077B5;margin-bottom:8px;">① Criar conta Business</div>
+            <div style="font-size:12px;color:var(--txt);margin-bottom:4px;font-weight:600;">linkedin.com/company/setup</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Criar Página da Empresa Tutory no LinkedIn (se ainda não existir)</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#0077B5;margin-bottom:8px;">② Campaign Manager</div>
+            <div style="font-size:12px;color:var(--txt);margin-bottom:4px;font-weight:600;">linkedin.com/campaignmanager</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Criar conta de anúncios, associar cartão de crédito e Página da empresa</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#0077B5;margin-bottom:8px;">③ UTM nos anúncios</div>
+            <div style="font-family:monospace;font-size:11px;color:#0077B5;background:var(--s3);border-radius:6px;padding:8px;word-break:break-all;">?utm_source=linkedin&amp;utm_medium=cpc</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#0077B5;margin-bottom:8px;">④ Leads chegam aqui</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Após as UTMs configuradas, cada lead via LinkedIn aparece automaticamente nesta aba</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- KPIs -->
+    <div class="kgrid" style="margin-bottom:14px;">
+      <div class="kpi mn"><div class="ki">👤</div><div class="kl">Total Leads</div><div class="kv" id="lk-tot">—</div><div class="ks">Leads via LinkedIn Ads</div></div>
+      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="lk-hot">—</div><div class="ks">Classificação manual</div></div>
+      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL</div><div class="kv" id="lk-cpl-kpi">—</div><div class="ks">Futuro: API LinkedIn</div></div>
+      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="lk-inv-kpi">—</div><div class="ks">Futuro: API LinkedIn</div></div>
+    </div>
+
+    <!-- Aeroporto LinkedIn -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">Aeroporto de Leads — LinkedIn Ads</div><div class="cs">Leads identificados com utm_source=linkedin ✈️</div></div>
+        <span style="font-size:11px;color:var(--sub);" id="lk-lcount">0 leads</span>
+      </div>
+      <div class="cb np" style="overflow-x:hidden;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:9%"><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:15%"><col style="width:10%"><col style="width:9%"></colgroup>
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação</th></tr></thead>
+          <tbody id="lk-leads"><tr class="er"><td colspan="9">Aguardando leads via LinkedIn Ads — crie a conta e configure as UTMs.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Seções LinkedIn -->
+    <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:18px;">
+      <div class="card" style="border-left:3px solid #22C55E;">
+        <div class="ch"><div><div class="ct">✅ Qualificados — LinkedIn Ads — <span id="lk-s1-count">0 leads</span></div><div class="cs">Leads aprovados via LinkedIn</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="lk-s1-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EAB308;">
+        <div class="ch"><div><div class="ct">⭐ Pré-Qualificados — LinkedIn Ads — <span id="lk-s2-count">0 leads</span></div><div class="cs">Leads em avaliação via LinkedIn</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="lk-s2-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EF4444;">
+        <div class="ch"><div><div class="ct">🚫 Desqualificados — LinkedIn Ads — <span id="lk-s3-count">0 leads</span></div><div class="cs">Leads reprovados via LinkedIn</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="lk-s3-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mn-sub-linkedin -->
 
   <!-- ── TIKTOK ADS ── -->
   <div id="mn-sub-tiktok" class="mn-subtab" style="display:none">
-    <div style="text-align:center;padding:60px 20px;">
-      <div style="font-size:36px;margin-bottom:14px;">🎵</div>
-      <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:8px;">TikTok Ads — Em breve</div>
-      <div style="font-size:13px;color:var(--sub);max-width:400px;margin:0 auto;line-height:1.6;">Configure as UTMs nos seus anúncios do TikTok e os dados aparecerão aqui automaticamente.</div>
+
+    <!-- Status: conta não criada -->
+    <div class="card" style="border-left:3px solid #FF0050;margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">🎵 TikTok Ads — Conta não criada</div><div class="cs">Siga o passo a passo abaixo para criar a conta e começar a rastrear leads</div></div>
+        <span style="background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#EAB308;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">🕐 Pendente</span>
+      </div>
+      <div class="cb">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#FF0050;margin-bottom:8px;">① Business Center</div>
+            <div style="font-size:12px;color:var(--txt);margin-bottom:4px;font-weight:600;">business.tiktok.com</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Criar conta no TikTok Business Center com e-mail da empresa</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#FF0050;margin-bottom:8px;">② TikTok Ads Manager</div>
+            <div style="font-size:12px;color:var(--txt);margin-bottom:4px;font-weight:600;">ads.tiktok.com</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Criar conta de anúncios, informar CNPJ e cadastrar forma de pagamento</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#FF0050;margin-bottom:8px;">③ UTM nos anúncios</div>
+            <div style="font-family:monospace;font-size:11px;color:#FF0050;background:var(--s3);border-radius:6px;padding:8px;word-break:break-all;">?utm_source=tiktok&amp;utm_medium=cpc</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--brd2);">
+            <div style="font-size:11px;font-weight:700;color:#FF0050;margin-bottom:8px;">④ Leads chegam aqui</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;">Após as UTMs configuradas, cada lead via TikTok aparece automaticamente nesta aba</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- KPIs -->
+    <div class="kgrid" style="margin-bottom:14px;">
+      <div class="kpi mn"><div class="ki">👤</div><div class="kl">Total Leads</div><div class="kv" id="tt-tot">—</div><div class="ks">Leads via TikTok Ads</div></div>
+      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="tt-hot">—</div><div class="ks">Classificação manual</div></div>
+      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL</div><div class="kv" id="tt-cpl-kpi">—</div><div class="ks">Futuro: API TikTok</div></div>
+      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="tt-inv-kpi">—</div><div class="ks">Futuro: API TikTok</div></div>
+    </div>
+
+    <!-- Aeroporto TikTok -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">Aeroporto de Leads — TikTok Ads</div><div class="cs">Leads identificados com utm_source=tiktok ✈️</div></div>
+        <span style="font-size:11px;color:var(--sub);" id="tt-lcount">0 leads</span>
+      </div>
+      <div class="cb np" style="overflow-x:hidden;">
+        <table class="dt dt-fx">
+          <colgroup><col style="width:9%"><col style="width:14%"><col style="width:10%"><col style="width:9%"><col style="width:13%"><col style="width:11%"><col style="width:15%"><col style="width:10%"><col style="width:9%"></colgroup>
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação</th></tr></thead>
+          <tbody id="tt-leads"><tr class="er"><td colspan="9">Aguardando leads via TikTok Ads — crie a conta e configure as UTMs.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Seções TikTok -->
+    <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:18px;">
+      <div class="card" style="border-left:3px solid #22C55E;">
+        <div class="ch"><div><div class="ct">✅ Qualificados — TikTok Ads — <span id="tt-s1-count">0 leads</span></div><div class="cs">Leads aprovados via TikTok</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="tt-s1-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EAB308;">
+        <div class="ch"><div><div class="ct">⭐ Pré-Qualificados — TikTok Ads — <span id="tt-s2-count">0 leads</span></div><div class="cs">Leads em avaliação via TikTok</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="tt-s2-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid #EF4444;">
+        <div class="ch"><div><div class="ct">🚫 Desqualificados — TikTok Ads — <span id="tt-s3-count">0 leads</span></div><div class="cs">Leads reprovados via TikTok</div></div></div>
+        <div style="overflow-y:auto;max-height:280px;overflow-x:hidden;">
+          <table class="dt dt-fx">
+            <colgroup><col style="width:16%"><col style="width:11%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Nome</th><th>Instagram</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead>
+            <tbody id="tt-s3-leads"><tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mn-sub-tiktok -->
 
 </div>
 </div>
@@ -1272,6 +1519,64 @@ function renderMnSecoes(leads){
   const s2tb=$('mn-s2-leads'); if(s2tb) s2tb.innerHTML=s2.length?s2.map(_row).join(''):_empty('Nenhum lead pré-qualificado ainda');
   const s3tb=$('mn-s3-leads'); if(s3tb) s3tb.innerHTML=s3.length?s3.map(_row).join(''):_empty('Nenhum lead desqualificado ainda');
 }
+function renderPlatLeads(pfx, leads){
+  const _wa=p=>{if(!p)return'—';const n=p.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`;};
+  const _row=r=>`<tr>
+    <td class="mo" style="font-size:11px;">${fmtDate(r.created_at)}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td class="cel-wrap">${canalChip(r.canal)}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_wa(r.contact_phone)}</td>
+    <td class="cel-classif">
+      <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+        <option value="">— Classificar</option>
+        <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
+        <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
+        <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
+        <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
+      </select>
+    </td>
+  </tr>`;
+  const _srow=r=>`<tr>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td class="cel-wrap">${canalChip(r.canal)}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_wa(r.contact_phone)}</td>
+    <td class="cel-classif">
+      <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+        <option value="">— Classificar</option>
+        <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
+        <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
+        <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
+        <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
+      </select>
+    </td>
+  </tr>`;
+  const _empty8=msg=>`<tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
+  const _empty9=msg=>`<tr class="er"><td colspan="9" style="text-align:center;padding:14px;">${msg}</td></tr>`;
+  const hot=leads.filter(r=>r.classificacao_manual==='Qualificado');
+  const warm=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
+  const cold=leads.filter(r=>r.classificacao_manual==='Desqualificado');
+  // Aeroporto
+  const lb=$(pfx+'-leads'); if(lb) lb.innerHTML=leads.length?leads.map(_row).join(''):_empty9('Aguardando leads — configure as UTMs nos anúncios');
+  if($(pfx+'-lcount')) $(pfx+'-lcount').textContent=leads.length+' leads';
+  // KPIs
+  if($(pfx+'-tot')) $(pfx+'-tot').textContent=leads.length||'—';
+  if($(pfx+'-hot')) $(pfx+'-hot').textContent=hot.length||'—';
+  // Seções
+  if($(pfx+'-s1-leads')) $(pfx+'-s1-leads').innerHTML=hot.length?hot.map(_srow).join(''):_empty8('Nenhum lead qualificado ainda');
+  if($(pfx+'-s2-leads')) $(pfx+'-s2-leads').innerHTML=warm.length?warm.map(_srow).join(''):_empty8('Nenhum lead pré-qualificado ainda');
+  if($(pfx+'-s3-leads')) $(pfx+'-s3-leads').innerHTML=cold.length?cold.map(_srow).join(''):_empty8('Nenhum lead desqualificado ainda');
+  if($(pfx+'-s1-count')) $(pfx+'-s1-count').textContent=hot.length+(hot.length===1?' lead':' leads');
+  if($(pfx+'-s2-count')) $(pfx+'-s2-count').textContent=warm.length+(warm.length===1?' lead':' leads');
+  if($(pfx+'-s3-count')) $(pfx+'-s3-count').textContent=cold.length+(cold.length===1?' lead':' leads');
+}
 function exportarMnSecao(classificacao){
   const {ini,fim}=getDates('mentoria');
   supaFetch('leads_mentoria',`select=*&classificacao_manual=eq.${encodeURIComponent(classificacao)}&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59&order=created_at.desc`).then(leads=>{
@@ -1525,6 +1830,10 @@ async function renderMentoria(){
         </div>`).join(''):'<div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Aguardando dados...</div>';
     }
     renderMnSecoes(leads);
+    // Plataformas individuais
+    renderPlatLeads('ggl', leads.filter(r=>r.plataforma_ad==='google'));
+    renderPlatLeads('lk',  leads.filter(r=>r.plataforma_ad==='linkedin'));
+    renderPlatLeads('tt',  leads.filter(r=>r.plataforma_ad==='tiktok'));
   }catch(e){console.error('renderMentoria:',e);}
 }
 
