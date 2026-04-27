@@ -2791,7 +2791,7 @@ async function exportarRelatorio(){
     const histIni='2025-11-01';
     const [hLeadsMn,hCampsMn,hCampsHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${fim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=gasto,data&data=gte.${histIni}&data=lte.${fim}`),
+      supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
       supaFetch('campanhas_hub',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
     ]);
 
@@ -2857,26 +2857,37 @@ async function exportarRelatorio(){
 
     // Comparativo histórico
     const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
-    // Qualificados fixos para meses sem registros individuais no Supabase
-    const staticQual={'2025-11':null,'2025-12':null,'2026-01':39,'2026-02':19};
+    // Dados fixos Nov-Fev (sem registros individuais no Supabase para esses meses)
+    const staticHistData={
+      '2025-11':{iMn:8907.13,iHb:3019.70,lMn:80,lHb:66,hot:null},
+      '2025-12':{iMn:10711.03,iHb:3120.99,lMn:70,lHb:59,hot:null},
+      '2026-01':{iMn:12060.48,iHb:4390.54,lMn:112,lHb:71,hot:39},
+      '2026-02':{iMn:16935.56,iHb:5674.59,lMn:169,lHb:67,hot:19},
+    };
     const histMonths=[
       {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
       {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
       {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
     ];
     const histData=histMonths.map(hm=>{
-      const lMn=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
+      const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
+      const sd=staticHistData[sqKey];
+      if(sd){
+        const cpMn=sd.lMn>0?sd.iMn/sd.lMn:0;
+        const cpHb=sd.lHb>0?sd.iHb/sd.lHb:0;
+        return{...hm,...sd,iT:sd.iMn+sd.iHb,cpMn,cpHb,hasData:true};
+      }
+      const lMnArr=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
       const cMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const cHb=hCampsHb.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const iMn=cMn.reduce((s,r)=>s+(+r.gasto||0),0);
       const iHb=cHb.reduce((s,r)=>s+(+r.gasto||0),0);
       const lHb=cHb.reduce((s,r)=>s+(+r.leads||0),0);
-      const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
-      const sqVal=staticQual[sqKey];
-      const hot=sqVal!=null?sqVal:lMn.filter(r=>r.classificacao_manual==='Qualificado').length;
-      const cpMn=lMn.length>0?iMn/lMn.length:0;
+      const lMn=lMnArr.length;
+      const hot=lMnArr.filter(r=>r.classificacao_manual==='Qualificado').length;
+      const cpMn=lMn>0?iMn/lMn:0;
       const cpHb=lHb>0?iHb/lHb:0;
-      return{...hm,lMn:lMn.length,lHb,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn.length>0||lHb>0||iMn>0};
+      return{...hm,lMn,lHb,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn>0||lHb>0||iMn>0};
     });
     const curDate=new Date(fim+'T12:00:00');
     const historicoRows=histData.map(hm=>{
