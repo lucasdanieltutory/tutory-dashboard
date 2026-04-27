@@ -2964,16 +2964,14 @@ VARIAÇÃO HISTÓRICA: Leads ${growthLeadsStr} | Qualificados ${growthQualStr} |
           body:JSON.stringify({
             model:'claude-sonnet-4-6',
             max_tokens:2500,
-            system:`Você é um especialista sênior em marketing digital, tráfego pago e performance de aquisição — equivalente aos maiores especialistas do mercado (nível Pedro Sobral, grandes agências de performance). Analise os dados fornecidos e gere um diagnóstico estratégico em exatamente 6 blocos HTML. Seja direto, específico, baseado APENAS nos números fornecidos. NÃO seja genérico. NÃO invente dados. Use linguagem profissional, nível empresa de grande porte.
+            system:`Você é especialista sênior em marketing digital e performance de aquisição. Analise os dados e gere diagnóstico em 6 blocos HTML. Regras obrigatórias: (1) use APENAS os números fornecidos, sem inventar; (2) sem travessões ou hífens nos textos; (3) máximo 2 frases por parágrafo intro; (4) máximo 4 bullets por bloco; (5) bullets curtos e diretos com métrica no início em negrito; (6) sem linguagem de IA ou jargão vago; (7) tom executivo, objetivo.
 
-Retorne APENAS HTML puro, sem markdown, sem \`\`\`. Use exatamente esta estrutura para cada bloco:
+Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
 
-<div class="diag-block diag-visao"><h4>1. VISÃO GERAL</h4><p>[texto]</p></div>
-<div class="diag-block diag-ok"><h4>2. O QUE ESTÁ FUNCIONANDO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
-<div class="diag-block diag-nok"><h4>3. O QUE NÃO ESTÁ FUNCIONANDO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
-<div class="diag-block diag-opp"><h4>4. OPORTUNIDADES DE ESCALA</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
-<div class="diag-block diag-atencao"><h4>5. PONTOS DE ATENÇÃO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
-<div class="diag-block diag-rec"><h4>6. RECOMENDAÇÕES PRÁTICAS</h4><ul><li>[ação direta]</li></ul></div>`,
+<div class="diag-block-full diag-visao"><div class="diag-label">📊 Visão Geral</div><p>[2 frases resumindo performance do período com números]</p></div>
+<div class="diag-grid"><div class="diag-block diag-ok"><div class="diag-label">✅ O que está funcionando</div><ul><li><strong>[métrica]</strong> [explicação curta]</li></ul></div><div class="diag-block diag-nok"><div class="diag-label">⚠️ O que não está funcionando</div><ul><li><strong>[métrica]</strong> [explicação curta]</li></ul></div></div>
+<div class="diag-grid"><div class="diag-block diag-opp"><div class="diag-label">🚀 Oportunidades de escala</div><ul><li><strong>[ação]</strong> [motivo com número]</li></ul></div><div class="diag-block diag-atencao"><div class="diag-label">🔔 Pontos de atenção</div><ul><li><strong>[risco]</strong> [contexto com número]</li></ul></div></div>
+<div class="diag-block-full diag-rec"><div class="diag-label">⚡ Recomendações práticas</div><ul><li><strong>[Imediato]</strong> [ação específica]</li><li><strong>[Esta semana]</strong> [ação específica]</li><li><strong>[Próximo mês]</strong> [ação específica]</li></ul></div>`,
             messages:[{role:'user',content:_prompt}]
           })
         });
@@ -3056,17 +3054,21 @@ Retorne APENAS HTML puro, sem markdown, sem \`\`\`. Use exatamente esta estrutur
       .up{color:#16A34A;}.down{color:#DC2626;}.neutral{color:#64748B;}
       .footer{text-align:center;padding:32px 0 16px;border-top:2px solid #E2E8F0;margin-top:40px;}
       .footer-text{font-size:11px;color:#94A3B8;}
-      .diag-block{border-radius:12px;padding:18px 20px;margin-bottom:16px;border-left:4px solid #ccc;}
-      .diag-block h4{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
-      .diag-block p,.diag-block li{font-size:13px;line-height:1.65;color:#374151;}
-      .diag-block ul{padding-left:18px;margin-top:6px;}
-      .diag-block li{margin-bottom:4px;}
-      .diag-visao{background:#EFF6FF;border-color:#2563EB;}.diag-visao h4{color:#2563EB;}
-      .diag-ok{background:#F0FDF4;border-color:#16A34A;}.diag-ok h4{color:#16A34A;}
-      .diag-nok{background:#FEF2F2;border-color:#DC2626;}.diag-nok h4{color:#DC2626;}
-      .diag-opp{background:#F5F3FF;border-color:#7C3AED;}.diag-opp h4{color:#7C3AED;}
-      .diag-atencao{background:#FFFBEB;border-color:#D97706;}.diag-atencao h4{color:#D97706;}
-      .diag-rec{background:#F0F9FF;border-color:#0284C7;}.diag-rec h4{color:#0284C7;}
+      .diag-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+      .diag-block{border-radius:14px;padding:20px 22px;margin-bottom:0;border:1px solid #E2E8F0;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+      .diag-block-full{border-radius:14px;padding:20px 22px;margin-bottom:14px;border:1px solid #E2E8F0;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+      .diag-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px;}
+      .diag-block p,.diag-block-full p{font-size:13px;line-height:1.7;color:#374151;margin-bottom:8px;}
+      .diag-block ul,.diag-block-full ul{padding-left:0;margin-top:8px;list-style:none;}
+      .diag-block li,.diag-block-full li{font-size:13px;line-height:1.6;color:#374151;margin-bottom:6px;padding-left:18px;position:relative;}
+      .diag-block li::before,.diag-block-full li::before{content:'›';position:absolute;left:0;font-weight:700;}
+      .diag-visao .diag-label{background:#DBEAFE;color:#1D4ED8;}.diag-visao .diag-block li::before{color:#2563EB;}
+      .diag-ok .diag-label{background:#DCFCE7;color:#15803D;}.diag-ok li::before{color:#16A34A;}
+      .diag-nok .diag-label{background:#FEE2E2;color:#B91C1C;}.diag-nok li::before{color:#DC2626;}
+      .diag-opp .diag-label{background:#EDE9FE;color:#6D28D9;}.diag-opp li::before{color:#7C3AED;}
+      .diag-atencao .diag-label{background:#FEF3C7;color:#B45309;}.diag-atencao li::before{color:#D97706;}
+      .diag-rec .diag-label{background:#E0F2FE;color:#0369A1;}.diag-rec li::before{color:#0284C7;}
+      .diag-block strong,.diag-block-full strong{color:#0F172A;font-weight:700;}
       .btn-baixar-pdf{position:fixed;top:20px;right:20px;z-index:9999;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;border:none;border-radius:12px;padding:12px 22px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.45);}
       @media print{
         body{background:#fff;}
