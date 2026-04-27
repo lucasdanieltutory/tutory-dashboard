@@ -2771,7 +2771,10 @@ function exportarProspeccoes(){
 // EXPORTAR RELATÓRIO PDF PREMIUM
 // ═══════════════════════════════════════════
 async function exportarRelatorio(){
-  // Garantir chave antes de qualquer coisa (prompt deve ser síncrono)
+  // Abrir janela IMEDIATAMENTE (antes de qualquer await — exigência do browser)
+  const w=window.open('','_blank');
+  if(w)w.document.write('<html><body style="font-family:sans-serif;padding:40px;color:#333"><h2>⏳ Gerando relatório...</h2><p>Aguarde, buscando dados e gerando diagnóstico de IA.</p></body></html>');
+  // Garantir chave (prompt síncrono)
   const _ckCheck=localStorage.getItem('tutory_claude_key');
   if(!_ckCheck){
     const _k=prompt('Cole sua Claude API Key (sk-ant-...):\nEla ficará salva permanentemente no navegador.','');
@@ -3293,9 +3296,8 @@ Retorne APENAS HTML puro, sem markdown, sem \`\`\`. Use exatamente esta estrutur
     </div>
     </body></html>`;
 
-    const w=window.open('','_blank');
-    w.document.write(html_rel);
-    w.document.close();
+    if(w){w.document.open();w.document.write(html_rel);w.document.close();}
+    else{const b=document.createElement('a');const u=URL.createObjectURL(new Blob([html_rel],{type:'text/html'}));b.href=u;b.download='relatorio-tutory.html';b.click();}
   }catch(e){
     console.error('Erro ao gerar relatório:',e);
     alert('Erro ao gerar relatório: '+e.message);
