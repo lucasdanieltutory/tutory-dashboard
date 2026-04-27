@@ -3042,8 +3042,8 @@ async function exportarRelatorio(){
           </div>
           <div class="kpi-card google">
             <div class="kpi-label">Leads Google Ads</div>
-            <div class="kpi-value">${num(gglLeads)}</div>
-            <div class="kpi-sub">${gglHot} qualificados · utm_source=google</div>
+            <div class="kpi-value">${num(gglData?gglData.searchLeads:gglLeads)}</div>
+            <div class="kpi-sub">Search · CPL ${gglData?brl(gglData.searchCpl):'—'}</div>
           </div>
         </div>
       </div>
