@@ -339,11 +339,7 @@ if(sessionStorage.getItem('tutory_auth')==='1'){
 <script>
 const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
 const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
-function getClaudeKey(){
-  let k=localStorage.getItem('tutory_claude_key');
-  if(!k){k=prompt('Cole sua Claude API Key (sk-ant-...):\nEla ficará salva no navegador permanentemente.','');if(k)localStorage.setItem('tutory_claude_key',k.trim());}
-  return(k||'').trim();
-}
+function getClaudeKey(){return(localStorage.getItem('tutory_claude_key')||'').trim();}
 const CLAUDE_KEY=null;
 
 async function supaFetch(table, params=''){
@@ -2775,6 +2771,12 @@ function exportarProspeccoes(){
 // EXPORTAR RELATÓRIO PDF PREMIUM
 // ═══════════════════════════════════════════
 async function exportarRelatorio(){
+  // Garantir chave antes de qualquer coisa (prompt deve ser síncrono)
+  const _ckCheck=localStorage.getItem('tutory_claude_key');
+  if(!_ckCheck){
+    const _k=prompt('Cole sua Claude API Key (sk-ant-...):\nEla ficará salva permanentemente no navegador.','');
+    if(_k)localStorage.setItem('tutory_claude_key',_k.trim());
+  }
   const btn=document.querySelector('[onclick="exportarRelatorio()"]');
   if(btn){btn.textContent='⏳ Gerando...';btn.disabled=true;}
   try{
