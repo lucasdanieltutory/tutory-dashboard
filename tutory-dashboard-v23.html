@@ -2857,6 +2857,8 @@ async function exportarRelatorio(){
 
     // Comparativo histórico
     const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
+    // Qualificados fixos para meses sem registros individuais no Supabase
+    const staticQual={'2025-11':null,'2025-12':null,'2026-01':39,'2026-02':19};
     const histMonths=[
       {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
       {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
@@ -2869,7 +2871,9 @@ async function exportarRelatorio(){
       const iMn=cMn.reduce((s,r)=>s+(+r.gasto||0),0);
       const iHb=cHb.reduce((s,r)=>s+(+r.gasto||0),0);
       const lHb=cHb.reduce((s,r)=>s+(+r.leads||0),0);
-      const hot=lMn.filter(r=>r.classificacao_manual==='Qualificado').length;
+      const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
+      const sqVal=staticQual[sqKey];
+      const hot=sqVal!=null?sqVal:lMn.filter(r=>r.classificacao_manual==='Qualificado').length;
       const cpMn=lMn.length>0?iMn/lMn.length:0;
       const cpHb=lHb>0?iHb/lHb:0;
       return{...hm,lMn:lMn.length,lHb,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn.length>0||lHb>0||iMn>0};
