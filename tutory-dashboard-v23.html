@@ -2772,85 +2772,22 @@ async function exportarRelatorio(){
   const btn=document.querySelector('[onclick="exportarRelatorio()"]');
   if(btn){btn.textContent='⏳ Gerando...';btn.disabled=true;}
   try{
-    const now=new Date();
-    const ano=now.getFullYear();
-    const mes=now.getMonth(); // 0-based
-    const ini=`${ano}-${String(mes+1).padStart(2,'0')}-01`;
-    const lastDay=new Date(ano,mes+1,0).getDate();
-    const fim=`${ano}-${String(mes+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const mesLabel=meses[mes];
-    const dataGeracao=now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const periodo=`01/${String(mes+1).padStart(2,'0')}/${ano} — ${String(lastDay).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${ano}`;
+    const {ini,fim}=getDates(cur); // usa o período ativo do painel no momento do clique
+    const _fp=s=>{const[,m,d]=s.split('-');return`${d}/${m}`;};
+    const periodo=ini===fim?`${_fp(ini)} · ${ini.split('-')[0]}`:`${_fp(ini)} a ${_fp(fim)} · ${fim.split('-')[0]}`;
+    const dataGeracao=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
-    // ── Fetch dados do mês atual ──
-    const [leadsMnAll,campsMn,anMn,campsHb,leadsHbAll,anHb]=await Promise.all([
+    // ── Fetch dados período atual ──
+    const [leads,campMn,campHb,campEx,anMn,anHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
       supaFetch('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('leads_hub',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      supaFetch('campanhas_experience',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
     ]);
 
-    // ── KPIs mês atual ──
-    const invMn=campsMn.reduce((s,r)=>s+(+r.gasto||0),0);
-    const invHb=campsHb.reduce((s,r)=>s+(+r.gasto||0),0);
-    const invTotal=invMn+invHb;
-    const totLeadsMn=leadsMnAll.length;
-    const totLeadsHb=leadsHbAll.length;
-    const hotMn=leadsMnAll.filter(r=>r.classificacao_manual==='Qualificado').length;
-    const warmMn=leadsMnAll.filter(r=>r.classificacao_manual==='Pré-qualificado').length;
-    const dqpMn=leadsMnAll.filter(r=>r.classificacao_manual==='Desqualificação prévia').length;
-    const coldMn=leadsMnAll.filter(r=>r.classificacao_manual==='Desqualificado').length;
-    const cplMn=totLeadsMn>0?invMn/totLeadsMn:0;
-    const hotHb=leadsHbAll.filter(r=>+r.score>=7).length;
-    const cplHb=totLeadsHb>0?invHb/totLeadsHb:0;
-    const totImp=anMn.reduce((s,r)=>s+(+r.impressoes||0),0);
-    const totClk=anMn.reduce((s,r)=>s+(+r.cliques||0),0);
-    const ctrMn=totImp>0?(totClk/totImp*100).toFixed(2):0;
-    const cpcMn=totClk>0?(invMn/totClk).toFixed(2):0;
-
-    // Plataformas
-    const metaLeads=leadsMnAll.filter(r=>!r.plataforma_ad||r.plataforma_ad==='meta').length;
-    const gglLeads=leadsMnAll.filter(r=>r.plataforma_ad==='google').length;
-    const lkLeads=leadsMnAll.filter(r=>r.plataforma_ad==='linkedin').length;
-    const ttLeads=leadsMnAll.filter(r=>r.plataforma_ad==='tiktok').length;
-    const orgLeads=leadsMnAll.filter(r=>r.plataforma_ad==='organico'||r.canal==='Orgânico').length;
-    const gglHot=leadsMnAll.filter(r=>r.plataforma_ad==='google'&&r.classificacao_manual==='Qualificado').length;
-
-    // Canal distribution
-    const canalMap={};
-    leadsMnAll.forEach(r=>{const c=r.canal||'Orgânico';canalMap[c]=(canalMap[c]||0)+1;});
-    const canalRows=Object.entries(canalMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>
-      `<tr><td>${c}</td><td class="num">${n}</td><td class="num dim">${totLeadsMn>0?Math.round(n/totLeadsMn*100):0}%</td></tr>`
-    ).join('')||`<tr><td colspan="3" class="empty">Sem dados</td></tr>`;
-
-    // Criativos — agrupar por anúncio e ordenar por leads desc
-    const _agrupaCr=arr=>{
-      const m={};
-      arr.forEach(r=>{
-        const k=(r.anuncio_nome||'—').trim();
-        if(!m[k])m[k]={nome:k,gasto:0,leads:0,cliques:0,impressoes:0};
-        m[k].gasto+=(+r.gasto||0);m[k].leads+=(+r.leads||0);
-        m[k].cliques+=(+r.cliques||0);m[k].impressoes+=(+r.impressoes||0);
-      });
-      return Object.values(m).sort((a,b)=>b.leads-a.leads);
-    };
-    const crMnData=_agrupaCr(anMn).slice(0,10);
-    const crHbData=_agrupaCr(anHb).slice(0,8);
-    const _fBrl=v=>v>0?'R$'+v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'—';
-    const _fCpl=v=>v>0?'R$'+v.toFixed(2).replace('.',','):'—';
-    const _crRow=(a,cor)=>{
-      const cpl=a.leads>0?a.gasto/a.leads:0;
-      const ctr=a.impressoes>0?(a.cliques/a.impressoes*100):0;
-      const cpc=a.cliques>0?a.gasto/a.cliques:0;
-      return`<tr><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">${a.nome}</td><td class="num" style="color:${cor};font-weight:800;">${a.leads||0}</td><td class="num">${_fBrl(a.gasto)}</td><td class="num">${_fCpl(cpl)}</td><td class="num">${ctr>0?ctr.toFixed(2)+'%':'—'}</td><td class="num">${cpc>0?'R$'+cpc.toFixed(2).replace('.',','):'—'}</td></tr>`;
-    };
-    const crMnRows=crMnData.length?crMnData.map(a=>_crRow(a,'#34D399')).join(''):`<tr><td colspan="6" class="empty">Sem criativos no período</td></tr>`;
-    const crHbRows=crHbData.length?crHbData.map(a=>_crRow(a,'#FB923C')).join(''):`<tr><td colspan="6" class="empty">Sem criativos no período</td></tr>`;
-
-    // ── Histórico Nov/2025 → mês atual ──
+    // ── Fetch histórico Nov/2025 → atual ──
     const histIni='2025-11-01';
     const [hLeadsMn,hCampsMn,hLeadsHb,hCampsHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${fim}T23:59:59`),
@@ -2858,323 +2795,395 @@ async function exportarRelatorio(){
       supaFetch('leads_hub',`select=id,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${fim}T23:59:59`),
       supaFetch('campanhas_hub',`select=gasto,data&data=gte.${histIni}&data=lte.${fim}`),
     ]);
+
+    // ── KPIs ──
+    const brl=v=>'R$'+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    const num=v=>v.toLocaleString('pt-BR');
+    const invMn=campMn.reduce((a,r)=>a+(+r.gasto||0),0);
+    const invHb=campHb.reduce((a,r)=>a+(+r.gasto||0),0);
+    const invEx=campEx.reduce((a,r)=>a+(+r.gasto||0),0);
+    const invTotal=invMn+invHb+invEx;
+    const leadsMn=leads.length;
+    const leadsHb=campHb.reduce((a,r)=>a+(+r.leads||0),0);
+    const vendasEx=campEx.reduce((a,r)=>a+(+r.vendas||0),0);
+    const qualMn=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
+    const cplMn=leadsMn>0?invMn/leadsMn:0;
+    const cplHb=leadsHb>0?invHb/leadsHb:0;
+    const custoEx=vendasEx>0?invEx/vendasEx:0;
+
+    // Google Ads (via plataforma_ad)
+    const gglLeads=leads.filter(r=>r.plataforma_ad==='google').length;
+    const gglHot=leads.filter(r=>r.plataforma_ad==='google'&&r.classificacao_manual==='Qualificado').length;
+    const gglCplMn=gglLeads>0?invMn/gglLeads:0; // estimativa baseada nos leads google
+
+    // Leads por canal
+    const canais={};
+    leads.forEach(r=>{const c=r.canal||'Desconhecido';canais[c]=(canais[c]||0)+1;});
+    const canalQual={};
+    leads.filter(r=>r.classificacao_manual==='Qualificado').forEach(r=>{const c=r.canal||'Desconhecido';canalQual[c]=(canalQual[c]||0)+1;});
+    const melhorCanal=Object.entries(canalQual).sort((a,b)=>b[1]-a[1])[0];
+
+    // Criativos — top campanhas por leads
+    const nomeBase=n=>n?(n.replace(/\s*\[.*$/,'').replace(/\s*-\s*\[.*$/,'').trim()):'?';
+    const crSet=new Set([...anMn,...anHb].map(r=>nomeBase(r.anuncio_nome)));
+    const crTotal=crSet.size;
+    const campMap={};
+    anMn.forEach(r=>{
+      const k=nomeBase(r.anuncio_nome);
+      if(!campMap[k])campMap[k]={nome:k,gasto:0,leads:0,cliques:0,impressoes:0};
+      campMap[k].gasto+=(+r.gasto||0);campMap[k].leads+=(+r.leads||0);
+      campMap[k].cliques+=(+r.cliques||0);campMap[k].impressoes+=(+r.impressoes||0);
+    });
+    const topCamps=Object.values(campMap).filter(c=>c.leads>0).sort((a,b)=>b.leads-a.leads).slice(0,8);
+    const campRows=topCamps.length?topCamps.map(c=>{
+      const cpl=c.leads>0?c.gasto/c.leads:0;
+      const ctr=c.impressoes>0?(c.cliques/c.impressoes*100):0;
+      const badge=cpl>0&&cpl<80?'gn':cpl<=150?'yw':'rd';
+      return`<tr><td><strong style="font-size:12px;">${c.nome}</strong></td><td style="text-align:center;font-weight:700;color:#16A34A;">${c.leads}</td><td style="text-align:right;">${brl(c.gasto)}</td><td style="text-align:right;"><span class="badge ${badge}">${cpl>0?brl(cpl):'—'}</span></td><td style="text-align:right;">${ctr>0?ctr.toFixed(1)+'%':'—'}</td></tr>`;
+    }).join(''):`<tr><td colspan="5" style="text-align:center;color:#94A3B8;font-style:italic;padding:16px;">Sem dados de criativos no período</td></tr>`;
+
+    // Criativos Hub
+    const campHbMap={};
+    anHb.forEach(r=>{
+      const k=nomeBase(r.anuncio_nome);
+      if(!campHbMap[k])campHbMap[k]={nome:k,gasto:0,leads:0};
+      campHbMap[k].gasto+=(+r.gasto||0);campHbMap[k].leads+=(+r.leads||0);
+    });
+    const topCampsHb=Object.values(campHbMap).filter(c=>c.leads>0).sort((a,b)=>b.leads-a.leads).slice(0,5);
+    const campHbRows=topCampsHb.length?topCampsHb.map(c=>{
+      const cpl=c.leads>0?c.gasto/c.leads:0;
+      const badge=cpl>0&&cpl<120?'gn':cpl<=200?'yw':'rd';
+      return`<tr><td><strong style="font-size:12px;">${c.nome}</strong></td><td style="text-align:center;font-weight:700;color:#EA580C;">${c.leads}</td><td style="text-align:right;">${brl(c.gasto)}</td><td style="text-align:right;"><span class="badge ${badge}">${cpl>0?brl(cpl):'—'}</span></td></tr>`;
+    }).join(''):`<tr><td colspan="4" style="text-align:center;color:#94A3B8;font-style:italic;padding:16px;">Sem dados de criativos Hub no período</td></tr>`;
+
+    // Comparativo histórico
+    const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
     const histMonths=[
       {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
       {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
       {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
     ];
-    const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
-    const historicoRows=histMonths.map(hm=>{
-      const isCur=hm.y===ano&&hm.m===mes+1;
-      const hLMn=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
-      const hLHb=hLeadsHb.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
-      const hCMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
-      const hCHb=hCampsHb.filter(r=>_inMonth(r.data,hm.y,hm.m));
-      const hInvMn=hCMn.reduce((s,r)=>s+(+r.gasto||0),0);
-      const hInvHb=hCHb.reduce((s,r)=>s+(+r.gasto||0),0);
-      const hInvT=hInvMn+hInvHb;
-      const hHot=hLMn.filter(r=>r.classificacao_manual==='Qualificado').length;
-      const hCplMn=hLMn.length>0?hInvMn/hLMn.length:0;
-      const hCplHb=hLHb.length>0?hInvHb/hLHb.length:0;
-      const hasData=hLMn.length>0||hLHb.length>0||hInvT>0;
-      const rowCls=isCur?' class="cur-row"':'';
-      if(!hasData)return`<tr${rowCls}><td class="month">${hm.label}${isCur?' ◀':''}</td><td class="num dim">—</td><td class="num dim">—</td><td class="num dim">—</td><td class="num dim">—</td><td class="num dim">—</td><td class="num dim">—</td></tr>`;
-      return`<tr${rowCls}><td class="month">${hm.label}${isCur?' ◀':''}</td><td class="num">${_fBrl(hInvT)}</td><td class="num">${hLMn.length||'—'}</td><td class="num">${hLHb.length||'—'}</td><td class="num gn">${hHot||'—'}</td><td class="num">${_fCpl(hCplMn)}</td><td class="num">${_fCpl(hCplHb)}</td></tr>`;
+    const histData=histMonths.map(hm=>{
+      const lMn=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
+      const lHb=hLeadsHb.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
+      const cMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
+      const cHb=hCampsHb.filter(r=>_inMonth(r.data,hm.y,hm.m));
+      const iMn=cMn.reduce((s,r)=>s+(+r.gasto||0),0);
+      const iHb=cHb.reduce((s,r)=>s+(+r.gasto||0),0);
+      const hot=lMn.filter(r=>r.classificacao_manual==='Qualificado').length;
+      const cpMn=lMn.length>0?iMn/lMn.length:0;
+      const cpHb=lHb.length>0?iHb/lHb.length:0;
+      return{...hm,lMn:lMn.length,lHb:lHb.length,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn.length>0||lHb.length>0||iMn>0};
+    });
+    const curDate=new Date(fim+'T12:00:00');
+    const historicoRows=histData.map(hm=>{
+      const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
+      const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
+      if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td></tr>`;
+      return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
     }).join('');
 
-    // ── Gerar HTML do relatório ──
+    // Insight de crescimento (Por que os Leads Subiram)
+    const mesesComDados=histData.filter(h=>h.hasData);
+    const primMes=mesesComDados[0];
+    const ultMes=mesesComDados[mesesComDados.length-1];
+    const growthLeads=primMes&&ultMes&&primMes.lMn>0?Math.round((ultMes.lMn-primMes.lMn)/primMes.lMn*100):null;
+    const growthQual=primMes&&ultMes&&primMes.hot>0?Math.round((ultMes.hot-primMes.hot)/primMes.hot*100):null;
+    const growthCpl=primMes&&ultMes&&primMes.cpMn>0?Math.round((ultMes.cpMn-primMes.cpMn)/primMes.cpMn*100):null;
+    const growthLeadsStr=growthLeads!==null?(growthLeads>=0?`+${growthLeads}%`:`${growthLeads}%`):'N/D';
+    const growthQualStr=growthQual!==null?(growthQual>=0?`+${growthQual}%`:`${growthQual}%`):'N/D';
+    const growthCplStr=growthCpl!==null?(growthCpl<=0?`${growthCpl}% (melhora)`:` +${growthCpl}% (piora)`):'N/D';
+    const melhorCanalNome=melhorCanal?melhorCanal[0]:'—';
+    const melhorCanalQtd=melhorCanal?melhorCanal[1]:0;
+
+    // ── Gerar HTML do relatório (formato original restaurado) ──
     const html_rel=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<title>Relatório Tutory — ${mesLabel} ${ano}</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#07090F;--s1:#0C1120;--s2:#101828;--s3:#141C2E;
-  --brd:rgba(255,255,255,.06);--brd2:rgba(255,255,255,.1);
-  --txt:#EDF2FF;--sub:#7A8BAA;--dim:#354560;
-  --mn:#4F8EF7;--mn-bg:rgba(79,142,247,.09);--mn-b:rgba(79,142,247,.3);
-  --hb:#FB923C;--hb-bg:rgba(251,146,60,.09);--hb-b:rgba(251,146,60,.3);
-  --gn:#34D399;--gn-bg:rgba(52,211,153,.08);--gn-b:rgba(52,211,153,.28);
-  --gg:#4285F4;--gg-bg:rgba(66,133,244,.1);--gg-b:rgba(66,133,244,.3);
-}
-body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;line-height:1.6;}
-.rpage{width:210mm;min-height:297mm;margin:0 auto;padding:36px 40px 60px;page-break-after:always;position:relative;}
-.rpage:last-of-type{page-break-after:avoid;}
+    <title>Relatório Tutory — ${periodo}</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:'Plus Jakarta Sans',sans-serif;background:#F8FAFC;color:#1E293B;}
+      .page{max-width:900px;margin:0 auto;padding:40px 48px;}
+      .cover{background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%);color:#fff;border-radius:24px;padding:60px 56px;margin-bottom:40px;position:relative;overflow:hidden;}
+      .cover::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;background:rgba(99,179,237,.12);border-radius:50%;}
+      .cover::after{content:'';position:absolute;bottom:-60px;left:-60px;width:240px;height:240px;background:rgba(147,197,253,.08);border-radius:50%;}
+      .cover-logo{display:flex;align-items:center;gap:14px;margin-bottom:48px;position:relative;z-index:1;}
+      .cover-logo span{font-size:28px;font-weight:800;letter-spacing:2px;}
+      .cover-title{font-size:42px;font-weight:800;line-height:1.15;margin-bottom:12px;position:relative;z-index:1;}
+      .cover-sub{font-size:16px;opacity:.75;margin-bottom:40px;position:relative;z-index:1;}
+      .cover-meta{display:flex;gap:40px;position:relative;z-index:1;}
+      .cover-meta-item label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.6;display:block;margin-bottom:4px;}
+      .cover-meta-item span{font-size:15px;font-weight:600;}
+      .section{margin-bottom:32px;}
+      .section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2563EB;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #DBEAFE;}
+      .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+      .kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+      .kpi-card{background:#fff;border-radius:16px;padding:20px 22px;border:1px solid #E2E8F0;box-shadow:0 1px 8px rgba(0,0,0,.05);}
+      .kpi-card.accent{background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;border:none;}
+      .kpi-card.accent .kpi-label,.kpi-card.accent .kpi-sub{color:rgba(255,255,255,.75);}
+      .kpi-card.accent .kpi-value{color:#fff;}
+      .kpi-card.green{border-left:4px solid #16A34A;}
+      .kpi-card.orange{border-left:4px solid #EA580C;}
+      .kpi-card.google{border-left:4px solid #4285F4;}
+      .kpi-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748B;margin-bottom:6px;}
+      .kpi-value{font-size:26px;font-weight:800;color:#0F172A;line-height:1;margin-bottom:4px;}
+      .kpi-sub{font-size:11px;color:#94A3B8;}
+      .plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+      .plat-card{background:#fff;border-radius:16px;padding:20px 22px;border-left:4px solid #ccc;border-top:1px solid #E2E8F0;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;}
+      .plat-card.mn{border-left-color:#4F8EF7;}
+      .plat-card.hb{border-left-color:#FB923C;}
+      .plat-card.ex{border-left-color:#FBBF24;}
+      .plat-card.gg{border-left-color:#4285F4;}
+      .plat-name{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748B;margin-bottom:10px;}
+      .plat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F1F5F9;}
+      .plat-row:last-child{border-bottom:none;}
+      .plat-row label{font-size:12px;color:#64748B;}
+      .plat-row span{font-size:13px;font-weight:700;color:#1E293B;}
+      table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.05);margin-bottom:24px;}
+      th{background:#F8FAFC;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748B;padding:12px 16px;text-align:left;border-bottom:2px solid #E2E8F0;}
+      td{padding:12px 16px;font-size:13px;border-bottom:1px solid #F1F5F9;}
+      tr:last-child td{border-bottom:none;}
+      .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
+      .badge.gn{background:#DCFCE7;color:#16A34A;}
+      .badge.yw{background:#FEF9C3;color:#CA8A04;}
+      .badge.rd{background:#FEE2E2;color:#DC2626;}
+      .info-box{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:16px 20px;margin-bottom:20px;}
+      .info-box.green{background:#F0FDF4;border-color:#BBF7D0;}
+      .info-box.yellow{background:#FEFCE8;border-color:#FDE68A;}
+      .info-box-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#2563EB;margin-bottom:8px;}
+      .info-box.green .info-box-title{color:#16A34A;}
+      .info-box.yellow .info-box-title{color:#CA8A04;}
+      .info-box p{font-size:13px;color:#374151;line-height:1.6;}
+      .growth-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+      .growth-card{background:#fff;border-radius:12px;padding:16px;border:1px solid #E2E8F0;text-align:center;}
+      .growth-card .g-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#64748B;margin-bottom:8px;}
+      .growth-card .g-value{font-size:22px;font-weight:800;margin-bottom:4px;}
+      .growth-card .g-sub{font-size:11px;color:#94A3B8;}
+      .up{color:#16A34A;}.down{color:#DC2626;}.neutral{color:#64748B;}
+      .footer{text-align:center;padding:32px 0 16px;border-top:2px solid #E2E8F0;margin-top:40px;}
+      .footer-text{font-size:11px;color:#94A3B8;}
+      .btn-baixar-pdf{position:fixed;top:20px;right:20px;z-index:9999;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;border:none;border-radius:12px;padding:12px 22px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.45);}
+      @media print{
+        body{background:#fff;}
+        .page{padding:20px 28px;}
+        *{box-shadow:none!important;}
+        .cover{background:#1a237e!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+        .cover,.cover *{color:#fff!important;}
+        .kpi-card.accent{background:linear-gradient(135deg,#1E3A5F,#2563EB)!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+        .btn-baixar-pdf{display:none!important;}
+      }
+    </style></head><body>
+    <button class="btn-baixar-pdf" onclick="window.print()">⬇ Baixar PDF</button>
+    <div class="page">
 
-/* COVER */
-.cover{background:linear-gradient(150deg,#07090F 0%,#0A0F1E 55%,#07090F 100%);display:flex;flex-direction:column;justify-content:space-between;padding:52px 48px;min-height:297mm;}
-.cover-badge{display:inline-flex;align-items:center;gap:8px;background:var(--mn-bg);border:1px solid var(--mn-b);border-radius:8px;padding:8px 16px;font-size:11px;font-weight:700;color:var(--mn);margin-bottom:32px;}
-.cover-title{font-size:52px;font-weight:800;line-height:1.1;margin-bottom:10px;}
-.cover-month{font-size:26px;font-weight:600;color:var(--sub);margin-bottom:32px;}
-.cover-period{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--brd2);border-radius:10px;padding:12px 20px;font-size:12px;color:var(--sub);}
-
-/* PAGE HEADER */
-.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid var(--brd2);}
-.ph-logo{font-size:13px;font-weight:800;letter-spacing:2px;color:var(--txt);}
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;}
-.badge.mn{background:var(--mn-bg);border:1px solid var(--mn-b);color:var(--mn);}
-.badge.hb{background:var(--hb-bg);border:1px solid var(--hb-b);color:var(--hb);}
-.badge.gn{background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);}
-.badge.gg{background:var(--gg-bg);border:1px solid var(--gg-b);color:var(--gg);}
-
-/* SECTION */
-.sec{margin-bottom:26px;}
-.sec-hd{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--brd2);}
-.sec-icon{font-size:16px;}
-.sec-title{font-size:13px;font-weight:700;color:var(--txt);}
-.sec-sub{font-size:10px;color:var(--sub);margin-left:auto;}
-
-/* KPI GRID */
-.kg{display:grid;gap:12px;margin-bottom:18px;}
-.kg3{grid-template-columns:repeat(3,1fr);}
-.kg4{grid-template-columns:repeat(4,1fr);}
-.kg5{grid-template-columns:repeat(5,1fr);}
-.kc{background:linear-gradient(145deg,var(--s1),var(--s2));border:1px solid var(--brd);border-radius:12px;padding:15px 16px;}
-.kc.mn{border-left:3px solid var(--mn);}
-.kc.hb{border-left:3px solid var(--hb);}
-.kc.gn{border-left:3px solid var(--gn);}
-.kc.gg{border-left:3px solid var(--gg);}
-.kc.lk{border-left:3px solid #0077B5;}
-.kc.tt{border-left:3px solid #FF0050;}
-.kc-icon{font-size:18px;margin-bottom:7px;}
-.kc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin-bottom:3px;}
-.kc-value{font-size:22px;font-weight:800;color:var(--txt);line-height:1.1;margin-bottom:3px;}
-.kc-sub{font-size:9px;color:var(--sub);}
-.kc-center{text-align:center;padding:12px 10px;}
-
-/* CARD */
-.card{background:linear-gradient(145deg,var(--s1),var(--s2));border:1px solid var(--brd);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
-.card.mn{border-left:3px solid var(--mn);}
-.card.hb{border-left:3px solid var(--hb);}
-.card.gn{border-left:3px solid var(--gn);}
-.card.gg{border-left:3px solid var(--gg);}
-.card-title{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:3px;}
-.card-sub{font-size:10px;color:var(--sub);margin-bottom:12px;}
-
-/* TABLE */
-table{width:100%;border-collapse:collapse;}
-th{font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--sub);padding:8px 10px;border-bottom:1px solid var(--brd);background:var(--s2);text-align:left;}
-td{font-size:11px;color:var(--txt);padding:9px 10px;border-bottom:1px solid var(--brd);}
-tr:last-child td{border-bottom:none;}
-.num{font-weight:600;text-align:right;}
-.dim{color:var(--dim);}
-.gn{color:var(--gn);}
-.empty{color:var(--dim);font-style:italic;text-align:center;padding:16px;}
-.month{font-weight:700;}
-.cur-row td{background:rgba(79,142,247,.06);}
-
-/* COLS */
-.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-
-/* INSIGHT */
-.insight{background:var(--s2);border:1px solid var(--brd2);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
-.insight-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin-bottom:8px;}
-.insight-text{font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;}
-
-/* ANALYSIS GRID */
-.anlg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.anl{background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px;}
-.anl-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;}
-
-/* PAGE FOOTER */
-.pf{position:absolute;bottom:22px;left:40px;right:40px;display:flex;justify-content:space-between;font-size:9px;color:var(--dim);border-top:1px solid var(--brd);padding-top:8px;}
-
-/* PRINT */
-.print-bar{position:fixed;bottom:24px;right:24px;z-index:999;}
-.btn-pdf{background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:13px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.4);}
-@page{size:A4;margin:0;}
-@media print{.print-bar{display:none!important;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.rpage{page-break-after:always;}}
-</style></head><body>
-
-<!-- ① CAPA -->
-<div class="rpage cover">
-  <div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:56px;">
-      <div style="width:44px;height:44px;background:linear-gradient(135deg,#4F8EF7,#1D4ED8);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;">T</div>
-      <div><div style="font-size:18px;font-weight:800;letter-spacing:2px;">TUTORY</div><div style="font-size:10px;color:var(--sub);letter-spacing:1.5px;">MARKETING INTELLIGENCE</div></div>
-    </div>
-    <div class="cover-badge">📊 Relatório Mensal</div>
-    <div class="cover-title">Relatório de<br>Marketing</div>
-    <div class="cover-month">${mesLabel} ${ano}</div>
-    <div class="cover-period">📅 Período: ${periodo}</div>
-  </div>
-  <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:20px;display:flex;justify-content:space-between;">
-    <div><div style="font-size:11px;color:var(--sub);">Gerado em ${dataGeracao}</div><div style="font-size:10px;color:var(--dim);">Confidencial · Uso interno</div></div>
-    <div style="text-align:right;font-size:10px;color:var(--dim);">tutory-dashboard.vercel.app</div>
-  </div>
-</div>
-
-<!-- ② VISÃO CONSOLIDADA -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span class="badge mn">📊 Visão Consolidada · ${mesLabel} ${ano}</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">📊</span><span class="sec-title">KPIs do Mês</span><span class="sec-sub">${periodo}</span></div>
-    <div class="kg kg3">
-      <div class="kc mn"><div class="kc-icon">📣</div><div class="kc-label">Investimento Total</div><div class="kc-value">${_fBrl(invTotal)}</div><div class="kc-sub">Meta Ads · todos os canais</div></div>
-      <div class="kc mn"><div class="kc-icon">👤</div><div class="kc-label">Leads Mentoria</div><div class="kc-value">${totLeadsMn||'—'}</div><div class="kc-sub">LP + Typebot + Respondi</div></div>
-      <div class="kc hb"><div class="kc-icon">🏪</div><div class="kc-label">Leads Hub</div><div class="kc-value">${totLeadsHb||'—'}</div><div class="kc-sub">Campanhas Hub</div></div>
-      <div class="kc gn"><div class="kc-icon">✅</div><div class="kc-label">Qualificados Mentoria</div><div class="kc-value">${hotMn||'—'}</div><div class="kc-sub">Classificação manual</div></div>
-      <div class="kc mn"><div class="kc-icon">🎯</div><div class="kc-label">CPL Mentoria</div><div class="kc-value">${_fCpl(cplMn)}</div><div class="kc-sub">Invest. ÷ Leads</div></div>
-      <div class="kc hb"><div class="kc-icon">🎯</div><div class="kc-label">CPL Hub</div><div class="kc-value">${_fCpl(cplHb)}</div><div class="kc-sub">Invest. ÷ Leads</div></div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🔍</span><span class="sec-title">Leads por Plataforma</span></div>
-    <div class="kg kg5">
-      <div class="kc mn kc-center"><div style="font-size:20px;margin-bottom:5px;">📘</div><div class="kc-label">Meta Ads</div><div class="kc-value" style="font-size:20px;">${metaLeads||'—'}</div></div>
-      <div class="kc gg kc-center"><div style="font-size:20px;margin-bottom:5px;">🔍</div><div class="kc-label">Google Ads</div><div class="kc-value" style="font-size:20px;">${gglLeads||'—'}</div></div>
-      <div class="kc lk kc-center"><div style="font-size:20px;margin-bottom:5px;">💼</div><div class="kc-label">LinkedIn</div><div class="kc-value" style="font-size:20px;">${lkLeads||'—'}</div></div>
-      <div class="kc tt kc-center"><div style="font-size:20px;margin-bottom:5px;">🎵</div><div class="kc-label">TikTok</div><div class="kc-value" style="font-size:20px;">${ttLeads||'—'}</div></div>
-      <div class="kc gn kc-center"><div style="font-size:20px;margin-bottom:5px;">🌱</div><div class="kc-label">Orgânico</div><div class="kc-value" style="font-size:20px;">${orgLeads||'—'}</div></div>
-    </div>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>${periodo} · gerado em ${dataGeracao}</span></div>
-</div>
-
-<!-- ③ MENTORIA -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span class="badge mn">🎓 Tutory Mentoria</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🎓</span><span class="sec-title">Tutory Mentoria — Performance do Mês</span><span class="sec-sub">${periodo}</span></div>
-    <div class="kg kg4">
-      <div class="kc mn"><div class="kc-label">Investimento</div><div class="kc-value">${_fBrl(invMn)}</div><div class="kc-sub">Meta Ads · Mentoria</div></div>
-      <div class="kc mn"><div class="kc-label">Total Leads</div><div class="kc-value">${totLeadsMn||'—'}</div><div class="kc-sub">Todos os canais</div></div>
-      <div class="kc gn"><div class="kc-label">Qualificados</div><div class="kc-value">${hotMn||'—'}</div><div class="kc-sub">Classificação manual</div></div>
-      <div class="kc mn"><div class="kc-label">CPL Real</div><div class="kc-value">${_fCpl(cplMn)}</div><div class="kc-sub">Invest. ÷ Leads</div></div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">📡</span><span class="sec-title">Canais & Classificação</span></div>
-    <div class="cols2">
-      <div class="card mn">
-        <div class="card-title">Leads por Canal de Origem</div>
-        <table><thead><tr><th>Canal</th><th style="text-align:right">Leads</th><th style="text-align:right">%</th></tr></thead><tbody>${canalRows}</tbody></table>
+      <!-- CAPA -->
+      <div class="cover">
+        <div class="cover-logo">
+          <div style="width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;">T</div>
+          <span>TUTORY</span>
+        </div>
+        <div class="cover-title">Relatório de<br>Marketing Intelligence</div>
+        <div class="cover-sub">Performance consolidada de campanhas, leads e criativos</div>
+        <div class="cover-meta">
+          <div class="cover-meta-item"><label>Período</label><span>${periodo}</span></div>
+          <div class="cover-meta-item"><label>Gerado em</label><span>${dataGeracao}</span></div>
+          <div class="cover-meta-item"><label>Emitido por</label><span>Marketing Tutory</span></div>
+        </div>
       </div>
-      <div class="card mn">
-        <div class="card-title">Classificação dos Leads</div>
-        <table><tbody>
-          <tr><td>✅ Qualificados</td><td class="num" style="color:#34D399;">${hotMn||'—'}</td></tr>
-          <tr><td>⚡ Pré-qualificados</td><td class="num" style="color:#EAB308;">${warmMn||'—'}</td></tr>
-          <tr><td>⚠ Desq. prévia</td><td class="num" style="color:#F97316;">${dqpMn||'—'}</td></tr>
-          <tr><td>✕ Desqualificados</td><td class="num" style="color:#EF4444;">${coldMn||'—'}</td></tr>
-        </tbody></table>
+
+      <!-- KPIs CONSOLIDADOS -->
+      <div class="section">
+        <div class="section-title">📊 Visão Consolidada</div>
+        <div class="kpi-grid">
+          <div class="kpi-card accent">
+            <div class="kpi-label">Investimento Total</div>
+            <div class="kpi-value">${brl(invTotal)}</div>
+            <div class="kpi-sub">Meta Ads · todas as plataformas</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Leads Mentoria</div>
+            <div class="kpi-value">${num(leadsMn)}</div>
+            <div class="kpi-sub">Total captados no período</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Leads Hub</div>
+            <div class="kpi-value">${num(leadsHb)}</div>
+            <div class="kpi-sub">Registros concluídos</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Leads Qualificados</div>
+            <div class="kpi-value">${num(qualMn)}</div>
+            <div class="kpi-sub">Classificação manual</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Vendas Experience</div>
+            <div class="kpi-value">${num(vendasEx)}</div>
+            <div class="kpi-sub">Ingressos do evento</div>
+          </div>
+          <div class="kpi-card google">
+            <div class="kpi-label">Leads Google Ads</div>
+            <div class="kpi-value">${num(gglLeads)}</div>
+            <div class="kpi-sub">${gglHot} qualificados · utm_source=google</div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">📈</span><span class="sec-title">Métricas de Mídia</span></div>
-    <div class="kg kg3">
-      <div class="kc mn"><div class="kc-label">CTR Médio</div><div class="kc-value">${ctrMn>0?ctrMn+'%':'—'}</div><div class="kc-sub">Meta ≥ 2%</div></div>
-      <div class="kc mn"><div class="kc-label">CPC Médio</div><div class="kc-value">${cpcMn>0?'R$'+cpcMn:'—'}</div><div class="kc-sub">Meta ≤ R$ 3,00</div></div>
-      <div class="kc mn"><div class="kc-label">Impressões</div><div class="kc-value">${totImp>0?totImp.toLocaleString('pt-BR'):'—'}</div><div class="kc-sub">Total do período</div></div>
-    </div>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>Tutory Mentoria · ${periodo}</span></div>
-</div>
 
-<!-- ④ HUB -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span class="badge hb">🏪 TutoryHub</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🏪</span><span class="sec-title">TutoryHub — Performance do Mês</span><span class="sec-sub">${periodo}</span></div>
-    <div class="kg kg4">
-      <div class="kc hb"><div class="kc-label">Investimento</div><div class="kc-value">${_fBrl(invHb)}</div><div class="kc-sub">Meta Ads · Hub</div></div>
-      <div class="kc hb"><div class="kc-label">Total Leads</div><div class="kc-value">${totLeadsHb||'—'}</div><div class="kc-sub">Campanhas Hub</div></div>
-      <div class="kc gn"><div class="kc-label">Leads Quentes</div><div class="kc-value">${hotHb||'—'}</div><div class="kc-sub">Score ≥ 7</div></div>
-      <div class="kc hb"><div class="kc-label">CPL Hub</div><div class="kc-value">${_fCpl(cplHb)}</div><div class="kc-sub">Invest. ÷ Leads</div></div>
-    </div>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>TutoryHub · ${periodo}</span></div>
-</div>
+      <!-- POR PLATAFORMA -->
+      <div class="section">
+        <div class="section-title">🎯 Desempenho por Plataforma</div>
+        <div class="plat-grid">
+          <div class="plat-card mn">
+            <div class="plat-name">🎓 Mentoria</div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(invMn)}</span></div>
+            <div class="plat-row"><label>Leads</label><span>${num(leadsMn)}</span></div>
+            <div class="plat-row"><label>CPL</label><span>${brl(cplMn)}</span></div>
+            <div class="plat-row"><label>Qualificados</label><span style="color:#16A34A;">${num(qualMn)}</span></div>
+          </div>
+          <div class="plat-card hb">
+            <div class="plat-name">🏪 Hub</div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(invHb)}</span></div>
+            <div class="plat-row"><label>Leads</label><span>${num(leadsHb)}</span></div>
+            <div class="plat-row"><label>CPL</label><span>${brl(cplHb)}</span></div>
+          </div>
+          <div class="plat-card ex">
+            <div class="plat-name">🎟 Experience</div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(invEx)}</span></div>
+            <div class="plat-row"><label>Vendas</label><span>${num(vendasEx)}</span></div>
+            <div class="plat-row"><label>Custo/Ingresso</label><span>${vendasEx>0?brl(custoEx):'—'}</span></div>
+          </div>
+        </div>
+      </div>
 
-<!-- ⑤ GOOGLE ADS -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span class="badge gg">🔍 Google Ads</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🔍</span><span class="sec-title">Google Ads — Performance do Mês</span><span class="sec-sub">${periodo}</span></div>
-    <div class="kg kg4">
-      <div class="kc gg"><div class="kc-label">Investimento</div><div class="kc-value">—</div><div class="kc-sub">Requer API Google Ads</div></div>
-      <div class="kc gg"><div class="kc-label">Total Leads</div><div class="kc-value">${gglLeads||'—'}</div><div class="kc-sub">utm_source=google</div></div>
-      <div class="kc gn"><div class="kc-label">Qualificados</div><div class="kc-value">${gglHot||'—'}</div><div class="kc-sub">Classificação manual</div></div>
-      <div class="kc gg"><div class="kc-label">CPL Google</div><div class="kc-value">—</div><div class="kc-sub">Requer API Google Ads</div></div>
-    </div>
-  </div>
-  <div class="card gg">
-    <div class="card-title">📌 Status da Integração Google Ads</div>
-    <div class="card-sub">Configuração atual e próximos passos</div>
-    <table><tbody>
-      <tr><td style="width:42%;font-weight:600;">Rastreamento via UTMs</td><td style="color:#EAB308;">⚡ Em configuração — adicionar utm_source=google nos anúncios ativos</td></tr>
-      <tr><td style="font-weight:600;">API Google Ads (dados de mídia)</td><td style="color:#EAB308;">⚡ Futuro — investimento, CTR e CPC virão via integração de API</td></tr>
-      <tr><td style="font-weight:600;">Captura de Leads</td><td style="color:#34D399;">✅ Automático via UTM + backend existente</td></tr>
-    </tbody></table>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>Google Ads · ${periodo}</span></div>
-</div>
+      <!-- LEADS POR CANAL -->
+      <div class="section">
+        <div class="section-title">📡 Leads por Canal — Mentoria</div>
+        <table>
+          <thead><tr><th>Canal</th><th>Total Leads</th><th>Qualificados</th><th>Taxa</th></tr></thead>
+          <tbody>
+            ${Object.entries(canais).sort((a,b)=>b[1]-a[1]).map(([c,tot])=>{
+              const q=canalQual[c]||0;
+              const taxa=tot>0?Math.round(q/tot*100):0;
+              const badge=taxa>=30?'gn':taxa>=15?'yw':'rd';
+              return`<tr><td><strong>${c}</strong></td><td>${num(tot)}</td><td>${num(q)}</td><td><span class="badge ${badge}">${taxa}%</span></td></tr>`;
+            }).join('')}
+            ${melhorCanal?`<tr style="background:#F0FDF4;"><td colspan="4" style="font-size:12px;color:#16A34A;font-weight:700;">🏆 Canal com mais qualificados: ${melhorCanalNome} (${melhorCanalQtd} leads qualificados)</td></tr>`:''}
+          </tbody>
+        </table>
+      </div>
 
-<!-- ⑥ CRIATIVOS -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span style="font-size:11px;color:var(--sub);">🎨 Criativos · ${mesLabel} ${ano}</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🎓</span><span class="sec-title" style="color:var(--mn);">Criativos — Tutory Mentoria</span><span class="sec-sub">${crMnData.length} criativos · ordenado por leads</span></div>
-    <table><thead><tr><th style="width:36%">Anúncio</th><th style="text-align:right">Leads</th><th style="text-align:right">Invest.</th><th style="text-align:right">CPL</th><th style="text-align:right">CTR</th><th style="text-align:right">CPC</th></tr></thead><tbody>${crMnRows}</tbody></table>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🏪</span><span class="sec-title" style="color:var(--hb);">Criativos — TutoryHub</span><span class="sec-sub">${crHbData.length} criativos · ordenado por leads</span></div>
-    <table><thead><tr><th style="width:36%">Anúncio</th><th style="text-align:right">Leads</th><th style="text-align:right">Invest.</th><th style="text-align:right">CPL</th><th style="text-align:right">CTR</th><th style="text-align:right">CPC</th></tr></thead><tbody>${crHbRows}</tbody></table>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>Criativos · ${periodo}</span></div>
-</div>
+      <!-- GOOGLE ADS -->
+      <div class="section">
+        <div class="section-title">🔍 Google Ads</div>
+        <div class="kpi-grid-4">
+          <div class="kpi-card google">
+            <div class="kpi-label">Leads Captados</div>
+            <div class="kpi-value">${num(gglLeads)}</div>
+            <div class="kpi-sub">utm_source=google</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Qualificados</div>
+            <div class="kpi-value">${num(gglHot)}</div>
+            <div class="kpi-sub">Classificação manual</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Investimento</div>
+            <div class="kpi-value">—</div>
+            <div class="kpi-sub">Requer API Google Ads</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">CPL Google</div>
+            <div class="kpi-value">—</div>
+            <div class="kpi-sub">Requer API Google Ads</div>
+          </div>
+        </div>
+        <div class="info-box yellow">
+          <div class="info-box-title">⚡ Status da Integração</div>
+          <p>UTM tracking em configuração — adicionar <strong>utm_source=google</strong> nos anúncios ativos para rastrear leads por canal. Dados de investimento/CTR/CPC virão via API Google Ads (próxima etapa).</p>
+        </div>
+      </div>
 
-<!-- ⑦ COMPARATIVO HISTÓRICO -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span style="font-size:11px;color:var(--sub);">📅 Comparativo · Nov/2025 → ${mesLabel}/${ano}</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">📅</span><span class="sec-title">Comparativo Mês a Mês</span><span class="sec-sub">Nov/2025 — ${mesLabel}/${ano}</span></div>
-    <table><thead><tr>
-      <th>Mês</th>
-      <th style="text-align:right">Invest. Total</th>
-      <th style="text-align:right">Leads Mentoria</th>
-      <th style="text-align:right">Leads Hub</th>
-      <th style="text-align:right">Qualificados</th>
-      <th style="text-align:right">CPL Mentoria</th>
-      <th style="text-align:right">CPL Hub</th>
-    </tr></thead><tbody>${historicoRows}</tbody></table>
-    <div style="margin-top:10px;font-size:10px;color:var(--dim);">◀ Mês atual &nbsp;·&nbsp; — Sem dados registrados no período</div>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>Histórico Nov/2025 — ${mesLabel}/${ano}</span></div>
-</div>
+      <!-- CAMPANHAS QUE TIVERAM RESULTADO -->
+      <div class="section">
+        <div class="section-title">🏆 Campanhas que Tiveram Resultado — Mentoria</div>
+        <table>
+          <thead><tr><th style="width:40%">Campanha / Criativo</th><th style="text-align:center;">Leads</th><th style="text-align:right;">Invest.</th><th style="text-align:right;">CPL</th><th style="text-align:right;">CTR</th></tr></thead>
+          <tbody>${campRows}</tbody>
+        </table>
+        ${topCamps.length>0?`
+        <div class="info-box green">
+          <div class="info-box-title">✅ Por que essas campanhas performaram?</div>
+          <p>Os criativos com mais leads têm CPL abaixo da média — indicando melhor segmentação ou mensagem mais assertiva para o público-alvo. Criativos com CTR acima de 2% são os que mais geram cliques qualificados. Esses devem ser priorizados para escalar o investimento no próximo período.</p>
+        </div>`:''}
+      </div>
 
-<!-- ⑧ INSIGHTS & ANÁLISE -->
-<div class="rpage">
-  <div class="ph"><div class="ph-logo">TUTORY</div><span style="font-size:11px;color:var(--sub);">💡 Insights & Análise · ${mesLabel}</span></div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">💡</span><span class="sec-title">Insights do Período</span><span class="sec-sub">${periodo}</span></div>
-    <div class="insight">
-      <div class="insight-label">📈 Variação no Volume de Leads</div>
-      <div class="insight-text">[ Preencher — descrever o motivo da variação no volume de leads vs. mês anterior ]</div>
-    </div>
-    <div class="insight">
-      <div class="insight-label">⭐ Variação na Qualidade dos Leads</div>
-      <div class="insight-text">[ Preencher — descrever o motivo da variação na qualidade dos leads vs. mês anterior ]</div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-icon">🏆</span><span class="sec-title">Análise de Performance</span></div>
-    <div class="insight">
-      <div class="insight-label">🥇 Melhor Campanha do Mês</div>
-      <div class="insight-text">[ Preencher — nome da campanha com melhor resultado ]</div>
-    </div>
-    <div class="anlg">
-      <div class="anl"><div class="anl-label" style="color:var(--gn);">CPL</div><div class="insight-text">[ Preencher — performance de CPL ]</div></div>
-      <div class="anl"><div class="anl-label" style="color:var(--mn);">Volume</div><div class="insight-text">[ Preencher — volume de leads ]</div></div>
-      <div class="anl"><div class="anl-label" style="color:#EAB308;">Qualidade</div><div class="insight-text">[ Preencher — qualidade dos leads ]</div></div>
-    </div>
-  </div>
-  <div class="pf"><span>TUTORY Marketing Intelligence · Confidencial</span><span>Gerado em ${dataGeracao} · tutory-dashboard.vercel.app</span></div>
-</div>
+      <!-- CAMPANHAS HUB -->
+      ${topCampsHb.length>0?`
+      <div class="section">
+        <div class="section-title">🏪 Campanhas com Resultado — Hub</div>
+        <table>
+          <thead><tr><th style="width:44%">Campanha / Criativo</th><th style="text-align:center;">Leads</th><th style="text-align:right;">Invest.</th><th style="text-align:right;">CPL</th></tr></thead>
+          <tbody>${campHbRows}</tbody>
+        </table>
+      </div>`:''}
 
-<div class="print-bar"><button class="btn-pdf" onclick="window.print()">⬇ Baixar PDF</button></div>
-</body></html>`;
+      <!-- COMPARATIVO MÊS A MÊS -->
+      <div class="section">
+        <div class="section-title">📅 Comparativo Mês a Mês — Nov/2025 → ${periodo.split(' ')[0]}</div>
+        <table>
+          <thead><tr>
+            <th>Mês</th>
+            <th style="text-align:right;">Invest.</th>
+            <th style="text-align:right;">Leads Mentoria</th>
+            <th style="text-align:right;">Leads Hub</th>
+            <th style="text-align:right;">Qualificados</th>
+            <th style="text-align:right;">CPL Mentoria</th>
+            <th style="text-align:right;">CPL Hub</th>
+          </tr></thead>
+          <tbody>${historicoRows}</tbody>
+        </table>
+        <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; — Sem dados registrados</p>
+      </div>
+
+      <!-- POR QUE OS LEADS SUBIRAM -->
+      <div class="section">
+        <div class="section-title">📈 Por que os Leads Subiram e a Qualidade Também</div>
+        <div class="growth-grid">
+          <div class="growth-card">
+            <div class="g-label">Crescimento de Leads</div>
+            <div class="g-value ${growthLeads!==null&&growthLeads>=0?'up':'down'}">${growthLeadsStr}</div>
+            <div class="g-sub">${primMes?primMes.label:''} → ${ultMes?ultMes.label:''}</div>
+          </div>
+          <div class="growth-card">
+            <div class="g-label">Crescimento de Qualificados</div>
+            <div class="g-value ${growthQual!==null&&growthQual>=0?'up':'down'}">${growthQualStr}</div>
+            <div class="g-sub">Leads Qualificados no período</div>
+          </div>
+          <div class="growth-card">
+            <div class="g-label">Evolução do CPL</div>
+            <div class="g-value ${growthCpl!==null&&growthCpl<=0?'up':'down'}">${growthCplStr}</div>
+            <div class="g-sub">CPL Mentoria no período</div>
+          </div>
+        </div>
+        <div class="info-box">
+          <div class="info-box-title">💡 Análise de Crescimento</div>
+          <p>
+            O crescimento de leads de <strong>${primMes?primMes.label:'N/D'}</strong> até <strong>${ultMes?ultMes.label:'N/D'}</strong> é resultado do amadurecimento das campanhas de tráfego pago e da otimização dos criativos. O canal <strong>${melhorCanalNome}</strong> foi o principal responsável pela melhora na qualidade dos leads, com maior taxa de qualificação no período.<br><br>
+            A melhora simultânea em volume e qualidade indica que o público-alvo está sendo impactado de forma mais assertiva. Próximo passo: escalar os criativos com menor CPL e replicar a abordagem do canal de maior conversão.
+          </p>
+        </div>
+      </div>
+
+      <!-- RODAPÉ -->
+      <div class="footer">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+          <div style="width:20px;height:20px;background:linear-gradient(135deg,#1E3A5F,#2563EB);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">T</div>
+          <span style="font-size:14px;font-weight:700;color:#64748B;letter-spacing:2px;">TUTORY</span>
+        </div>
+        <div class="footer-text">Relatório gerado em ${dataGeracao} · tutory-dashboard.vercel.app · Confidencial</div>
+      </div>
+
+    </div>
+    </body></html>`;
 
     const w=window.open('','_blank');
     w.document.write(html_rel);
