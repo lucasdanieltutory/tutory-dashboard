@@ -2791,7 +2791,7 @@ async function exportarRelatorio(){
     const histIni='2025-11-01';
     const [hLeadsMn,hCampsMn,hCampsHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${fim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=gasto,data&data=gte.${histIni}&data=lte.${fim}`),
+      supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
       supaFetch('campanhas_hub',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
     ]);
 
@@ -2865,7 +2865,7 @@ async function exportarRelatorio(){
       {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
     ];
     const histData=histMonths.map(hm=>{
-      const lMn=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
+      const lMnArr=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
       const cMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const cHb=hCampsHb.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const iMn=cMn.reduce((s,r)=>s+(+r.gasto||0),0);
@@ -2873,10 +2873,13 @@ async function exportarRelatorio(){
       const lHb=cHb.reduce((s,r)=>s+(+r.leads||0),0);
       const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
       const sqVal=staticQual[sqKey];
-      const hot=sqVal!=null?sqVal:lMn.filter(r=>r.classificacao_manual==='Qualificado').length;
-      const cpMn=lMn.length>0?iMn/lMn.length:0;
+      // Meses históricos (sqKey no mapa): usa campanhas_mentoria.leads; meses recentes: conta leads_mentoria
+      const lMnCamp=cMn.reduce((s,r)=>s+(+r.leads||0),0);
+      const lMn=sqKey in staticQual?lMnCamp:lMnArr.length;
+      const hot=sqVal!=null?sqVal:lMnArr.filter(r=>r.classificacao_manual==='Qualificado').length;
+      const cpMn=lMn>0?iMn/lMn:0;
       const cpHb=lHb>0?iHb/lHb:0;
-      return{...hm,lMn:lMn.length,lHb,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn.length>0||lHb>0||iMn>0};
+      return{...hm,lMn,lHb,hot,iMn,iHb,iT:iMn+iHb,cpMn,cpHb,hasData:lMn>0||lHb>0||iMn>0};
     });
     const curDate=new Date(fim+'T12:00:00');
     const historicoRows=histData.map(hm=>{
