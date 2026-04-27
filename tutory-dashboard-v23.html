@@ -206,6 +206,9 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 .pl{font-size:12px;color:var(--sub);}
 .pv{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;}
 .pbar2{height:8px;background:var(--s3);border-radius:4px;overflow:hidden;}
+.pfil{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.pfb{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--brd2);background:transparent;color:var(--sub);transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif;}
+.pfb:hover,.pfb.act{background:var(--s1);border-color:var(--mn-b);color:var(--txt);}
 .pfill{height:100%;border-radius:4px;transition:width .5s;}
 
 
@@ -1195,12 +1198,27 @@ async function supaInsert(table, body){
     <div class="ph-s">Leads prospectados manualmente · Importe via Excel · Qualifique cada lead</div>
   </div>
 
+  <!-- Filtro de data -->
+  <div class="pfil" id="pf-prospeccoes">
+    <button class="pfb" onclick="setPeriod('prospeccoes','hoje',this)">Hoje</button>
+    <button class="pfb" onclick="setPeriod('prospeccoes','7',this)">7 dias</button>
+    <button class="pfb act" onclick="setPeriod('prospeccoes','30',this)">30 dias</button>
+    <button class="pfb" onclick="setPeriod('prospeccoes','mes',this)">Mês atual</button>
+    <button class="pfb" onclick="setPeriod('prospeccoes','all',this)">Todos</button>
+    <button class="pfb" onclick="setPeriod('prospeccoes','custom',this)">Personalizado</button>
+    <span id="custom-prosp" style="display:none;gap:6px;align-items:center;">
+      <input type="date" id="df-prospeccoes" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:4px 8px;color:var(--txt);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
+      <span style="color:var(--sub);font-size:12px;">até</span>
+      <input type="date" id="dt-prospeccoes" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:4px 8px;color:var(--txt);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
+    </span>
+  </div>
+
   <!-- KPIs -->
   <div class="kgrid" style="margin-bottom:16px;">
-    <div class="kpi gn"><div class="ki">🎯</div><div class="kl">Total Prospecções</div><div class="kv" id="pr-total">—</div><div class="ks">Todos os leads</div></div>
+    <div class="kpi gn"><div class="ki">🎯</div><div class="kl">Total Prospecções</div><div class="kv" id="pr-total">—</div><div class="ks">No período</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Prospecções Mentoria</div><div class="kv" id="pr-mn">—</div><div class="ks">Nicho mentoria</div></div>
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Prospecções Hub</div><div class="kv" id="pr-hb">—</div><div class="ks">Nicho hub</div></div>
-    <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="pr-qual">—</div><div class="ks">Status qualificado</div></div>
+    <div class="kpi" style="border-left:3px solid #22C55E;"><div class="ki">✅</div><div class="kl" style="color:#16A34A;font-weight:700;">Qualificados</div><div class="kv" style="color:#16A34A;" id="pr-qual">—</div><div class="ks">Leads aprovados</div></div>
     <div class="kpi ex"><div class="ki">✕</div><div class="kl">Desqualificados</div><div class="kv" id="pr-desq">—</div><div class="ks">Status desqualificado</div></div>
   </div>
 
@@ -1246,24 +1264,6 @@ async function supaInsert(table, body){
   <!-- SEÇÕES DE QUALIFICAÇÃO -->
   <div style="margin-top:28px;border-top:1px solid var(--brd);padding-top:24px;display:flex;flex-direction:column;gap:14px;">
 
-    <!-- SEÇÃO 1: QUALIFICADOS -->
-    <div class="card" style="border-left:3px solid #22C55E;">
-      <div class="ch">
-        <div><div class="ct">✅ Qualificados — <span id="pr-s1-count">0 leads</span></div><div class="cs">Leads aprovados no Aeroporto Geral</div></div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <select id="pr-s1-filter" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:4px 8px;border-radius:7px;font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;">
-            <option value="">Todos</option>
-            <option value="mentoria">Mentoria</option>
-            <option value="hub">Hub</option>
-          </select>
-          <button onclick="exportarSecaoProsp('Qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">⬇ Exportar CSV</button>
-        </div>
-      </div>
-      <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
-        <table class="dt" style="width:100%;table-layout:fixed;"><thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Data</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Status</th></tr></thead><tbody id="pr-s1-leads"></tbody></table>
-      </div>
-    </div>
-
     <!-- SEÇÃO 2: PRÉ-QUALIFICADOS -->
     <div class="card" style="border-left:3px solid #EAB308;">
       <div class="ch">
@@ -1306,6 +1306,43 @@ async function supaInsert(table, body){
       </div>
     </div>
 
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ✅✅✅ LEADS QUALIFICADOS — SEÇÃO FINAL ✅✅✅ -->
+  <div style="margin-top:36px;">
+    <div style="background:linear-gradient(135deg,#052e16,#14532d);border-radius:16px;padding:22px 30px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:18px;">
+        <div style="width:52px;height:52px;background:rgba(34,197,94,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">✅</div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#4ADE80;margin-bottom:3px;">LEADS QUALIFICADOS</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.1;">Aprovados para Avanço Comercial</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:3px;">Leads prontos — originados via prospecção ou qualificados na Mentoria</div>
+        </div>
+      </div>
+      <div style="text-align:right;padding-right:4px;">
+        <div style="font-size:10px;color:#4ADE80;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">TOTAL</div>
+        <div style="font-size:40px;font-weight:900;color:#fff;line-height:1;" id="pr-qual-banner">—</div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 1: QUALIFICADOS -->
+    <div class="card" style="border:2px solid #22C55E;border-radius:14px;">
+      <div class="ch" style="background:rgba(34,197,94,.05);border-radius:12px 12px 0 0;padding:14px 20px;">
+        <div><div class="ct" style="color:#16A34A;font-weight:800;">✅ Qualificados — <span id="pr-s1-count">0 leads</span></div><div class="cs">Leads aprovados no Aeroporto Geral</div></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <select id="pr-s1-filter" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:4px 8px;border-radius:7px;font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;">
+            <option value="">Todos</option>
+            <option value="mentoria">Mentoria</option>
+            <option value="hub">Hub</option>
+          </select>
+          <button onclick="exportarSecaoProsp('Qualificado')" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#16A34A;padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">⬇ Exportar CSV</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;max-height:420px;overflow-x:hidden;">
+        <table class="dt" style="width:100%;table-layout:fixed;"><thead style="position:sticky;top:0;z-index:10;background:rgba(34,197,94,.07);"><tr><th>Data</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Status</th><th>Classificação</th></tr></thead><tbody id="pr-s1-leads"></tbody></table>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -1461,6 +1498,20 @@ function classifSelect(leadId, atual){
 async function salvarClassifLead(id, classificacao, selectEl){
   try{
     await supaUpdate('leads_mentoria', id, {classificacao_manual: classificacao});
+    // Req #4: quando qualificar em Mentoria, sincronizar para Prospecções
+    if(classificacao==='Qualificado'){
+      const lead=(window._mnLeads||[]).find(r=>r.id==id);
+      if(lead){
+        const nome=lead.contact_name||lead.nome||'Lead Mentoria';
+        const existing=await supaFetch('prospeccoes',`select=id&nome=eq.${encodeURIComponent(nome)}&classificacao_manual=eq.Qualificado`).catch(()=>[]);
+        if(!existing.length){
+          fetch(`${SUPA_URL}/rest/v1/prospeccoes`,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({nome,instagram:lead.contact_instagram||null,plataforma:'mentoria',classificacao_manual:'Qualificado',data:(lead.created_at||'').slice(0,10),created_at:lead.created_at})
+          }).catch(()=>{});
+          window._prData=null; // força reload de prospecções
+        }
+      }
+    }
     // Atualiza só o badge sem recarregar tudo
     if(selectEl){
       const td = selectEl.closest('td');
@@ -2026,7 +2077,7 @@ function filterCamps(){
 }
 
 // PERIOD FILTER STATE
-const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30'};
+const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30',prospeccoes:'30'};
 function getDates(pg){
   const s=periodState[pg]||'30';
   const hoje=new Date();
@@ -2055,6 +2106,15 @@ function selP(btn,pg,val){
   if(val!=='custom')reload();
 }
 function applyCustom(pg){periodState[pg]='custom';reload();}
+function setPeriod(pg,val,btn){
+  periodState[pg]=val;
+  const bar=btn.closest('.pfil');
+  if(bar)bar.querySelectorAll('.pfb').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  const customSpan=$('custom-prosp');
+  if(customSpan)customSpan.style.display=val==='custom'?'flex':'none';
+  if(val!=='custom')renderProspeccoes(true);
+}
 
 // NAVIGATION
 let cur='geral';
@@ -2536,7 +2596,16 @@ async function renderProspeccoes(force=false){
       window._prData=await supaFetch('prospeccoes','select=*&order=created_at.desc');
       if(force) window._prPage=0;
     }
-    const prosp=window._prData;
+    // Filtro de data
+    const ps=periodState['prospeccoes']||'30';
+    let prIni='',prFim='';
+    if(ps!=='all'){
+      const _d=getDates('prospeccoes');prIni=_d.ini;prFim=_d.fim;
+    }
+    const prosp=ps==='all'?window._prData:window._prData.filter(r=>{
+      const d=(r.data||r.created_at||'').slice(0,10);
+      return(!prIni||d>=prIni)&&(!prFim||d<=prFim);
+    });
     const total = prosp.length;
     const mn = prosp.filter(r=>!r.plataforma||r.plataforma==='mentoria').length;
     const hb = prosp.filter(r=>r.plataforma==='hub').length;
@@ -2547,6 +2616,7 @@ async function renderProspeccoes(force=false){
     if($('pr-mn'))$('pr-mn').textContent=mn||'—';
     if($('pr-hb'))$('pr-hb').textContent=hb||'—';
     if($('pr-qual'))$('pr-qual').textContent=qual||'—';
+    if($('pr-qual-banner'))$('pr-qual-banner').textContent=qual||'0';
     if($('pr-desq'))$('pr-desq').textContent=desq||'—';
     if($('pr-count'))$('pr-count').textContent=total+' prospecções';
 
@@ -2628,8 +2698,14 @@ async function renderProspeccoes(force=false){
           <option value="Aguardando" ${st==='Aguardando'?'selected':''} style="background:#0f1629;color:#EAB308;font-weight:700;">⏳ Aguardando</option>
           <option value="Perdido" ${st==='Perdido'?'selected':''} style="background:#0f1629;color:#EF4444;font-weight:700;">❌ Perdido</option>
         </select></td>
+        <td><select onchange="salvarClassifProsp('${r.id}',this.value)" title="Alterar classificação (só afeta Prospecções)" style="padding:4px 8px;border-radius:7px;font-size:11px;cursor:pointer;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+          <option value="Qualificado" selected>✅ Qualificado</option>
+          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
+          <option value="Desqualificação prévia">⚠️ Desq. prévia</option>
+          <option value="Desqualificado">🚫 Desqualificado</option>
+        </select></td>
       </tr>`;
-    }).join('') : _empty(5);
+    }).join('') : _empty(6);
 
     // ── SEÇÃO 2: PRÉ-QUALIFICADOS ──
     const s2Filter=($('pr-s2-filter')||{}).value||'';
