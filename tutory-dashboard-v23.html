@@ -2916,7 +2916,12 @@ async function exportarRelatorio(){
     // ── Diagnóstico Estratégico IA ──
     btn.textContent='🧠 Analisando...';
     let diagnosticoHTML='';
-    const _apiKey=sessionStorage.getItem('tutory_claude_key')||'';
+    let _apiKey=sessionStorage.getItem('tutory_claude_key')||'';
+    if(!_apiKey){
+      _apiKey=prompt('Cole sua Claude API Key para gerar o diagnóstico estratégico:\n(começa com sk-ant-...)','');
+      if(_apiKey)sessionStorage.setItem('tutory_claude_key',_apiKey.trim());
+      _apiKey=(_apiKey||'').trim();
+    }
     if(_apiKey){
       try{
         const _histResumo=histData.filter(h=>h.hasData).map(h=>`${h.label}: Invest R$${h.iT.toFixed(0)} | Leads MN ${h.lMn} | Leads HB ${h.lHb} | Qual ${h.hot!=null?h.hot:'—'} | CPL MN ${h.cpMn>0?'R$'+h.cpMn.toFixed(2):'—'} | CPL HB ${h.cpHb>0?'R$'+h.cpHb.toFixed(2):'—'}`).join('\n');
