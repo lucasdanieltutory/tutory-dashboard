@@ -2913,6 +2913,69 @@ async function exportarRelatorio(){
     const melhorCanalNome=melhorCanal?melhorCanal[0]:'—';
     const melhorCanalQtd=melhorCanal?melhorCanal[1]:0;
 
+    // ── Diagnóstico Estratégico IA ──
+    btn.textContent='🧠 Analisando...';
+    let diagnosticoHTML='';
+    const _apiKey=sessionStorage.getItem('tutory_claude_key')||'';
+    if(_apiKey){
+      try{
+        const _histResumo=histData.filter(h=>h.hasData).map(h=>`${h.label}: Invest R$${h.iT.toFixed(0)} | Leads MN ${h.lMn} | Leads HB ${h.lHb} | Qual ${h.hot!=null?h.hot:'—'} | CPL MN ${h.cpMn>0?'R$'+h.cpMn.toFixed(2):'—'} | CPL HB ${h.cpHb>0?'R$'+h.cpHb.toFixed(2):'—'}`).join('\n');
+        const _topResumo=topCamps.slice(0,6).map(c=>`- ${c.nome}: ${c.leads} leads | CPL R$${(c.gasto/c.leads).toFixed(2)} | Gasto R$${c.gasto.toFixed(0)}`).join('\n');
+        const _canaisResumo=Object.entries(canais).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`${c}: ${n}`).join(' | ');
+        const _taxaQual=leadsMn>0?((qualMn/leadsMn)*100).toFixed(1):0;
+        const _gglCtx=gglData?`Google Ads: Invest R$${gglData.inv.toFixed(2)}, ${gglData.impressoes.toLocaleString()} impressões, ${gglData.cliques} cliques, CTR ${(gglData.cliques/gglData.impressoes*100).toFixed(2)}% | Search: ${gglData.searchLeads} leads CPL R$${gglData.searchCpl} | Demand Gen: ${gglData.demandInscritos} inscritos R$${gglData.demandCusto}/inscrito`:'Google Ads: sem dados no período';
+
+        const _prompt=`PERÍODO ANALISADO: ${periodo}
+
+INVESTIMENTO:
+- Total: R$${invTotal.toFixed(2)} | Mentoria: R$${invMn.toFixed(2)} | Hub: R$${invHb.toFixed(2)} | Experience: R$${invEx.toFixed(2)}
+- ${_gglCtx}
+
+LEADS E QUALIDADE:
+- Mentoria: ${leadsMn} leads | CPL R$${cplMn.toFixed(2)} | Qualificados: ${qualMn} (taxa ${_taxaQual}%)
+- Hub: ${leadsHb} leads | CPL R$${cplHb.toFixed(2)}
+- Experience: ${vendasEx} vendas
+- Melhor canal qualificados: ${melhorCanalNome} (${melhorCanalQtd} qualificados)
+
+CANAIS: ${_canaisResumo}
+
+TOP CRIATIVOS MENTORIA:
+${_topResumo||'Sem dados de criativos no período'}
+
+HISTÓRICO MENSAL (Nov/2025 → hoje):
+${_histResumo}
+
+VARIAÇÃO HISTÓRICA: Leads ${growthLeadsStr} | Qualificados ${growthQualStr} | CPL ${growthCplStr}`;
+
+        const _res=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({
+            model:'claude-sonnet-4-6',
+            max_tokens:2500,
+            system:`Você é um especialista sênior em marketing digital, tráfego pago e performance de aquisição — equivalente aos maiores especialistas do mercado (nível Pedro Sobral, grandes agências de performance). Analise os dados fornecidos e gere um diagnóstico estratégico em exatamente 6 blocos HTML. Seja direto, específico, baseado APENAS nos números fornecidos. NÃO seja genérico. NÃO invente dados. Use linguagem profissional, nível empresa de grande porte.
+
+Retorne APENAS HTML puro, sem markdown, sem \`\`\`. Use exatamente esta estrutura para cada bloco:
+
+<div class="diag-block diag-visao"><h4>1. VISÃO GERAL</h4><p>[texto]</p></div>
+<div class="diag-block diag-ok"><h4>2. O QUE ESTÁ FUNCIONANDO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
+<div class="diag-block diag-nok"><h4>3. O QUE NÃO ESTÁ FUNCIONANDO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
+<div class="diag-block diag-opp"><h4>4. OPORTUNIDADES DE ESCALA</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
+<div class="diag-block diag-atencao"><h4>5. PONTOS DE ATENÇÃO</h4><p>[texto]</p><ul><li>[item]</li></ul></div>
+<div class="diag-block diag-rec"><h4>6. RECOMENDAÇÕES PRÁTICAS</h4><ul><li>[ação direta]</li></ul></div>`,
+            messages:[{role:'user',content:_prompt}]
+          })
+        });
+        const _data=await _res.json();
+        if(_data.content&&_data.content[0])diagnosticoHTML=_data.content[0].text;
+        else if(_data.error)diagnosticoHTML=`<div class="diag-block diag-atencao"><h4>Erro</h4><p>${_data.error.message}</p></div>`;
+      }catch(_e){
+        diagnosticoHTML=`<div class="diag-block diag-atencao"><h4>Erro de conexão</h4><p>Não foi possível conectar à API. Verifique sua chave Claude.</p></div>`;
+      }
+    }else{
+      diagnosticoHTML=`<div class="info-box yellow"><div class="info-box-title">⚡ Configure a Claude API Key</div><p>Para gerar o diagnóstico estratégico automático, configure sua chave no painel principal (ícone de configurações) e exporte novamente.</p></div>`;
+    }
+
     // ── Logo ──
     const logoSrc=document.querySelector('.login-logo img')?.src||'';
 
@@ -2982,6 +3045,17 @@ async function exportarRelatorio(){
       .up{color:#16A34A;}.down{color:#DC2626;}.neutral{color:#64748B;}
       .footer{text-align:center;padding:32px 0 16px;border-top:2px solid #E2E8F0;margin-top:40px;}
       .footer-text{font-size:11px;color:#94A3B8;}
+      .diag-block{border-radius:12px;padding:18px 20px;margin-bottom:16px;border-left:4px solid #ccc;}
+      .diag-block h4{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+      .diag-block p,.diag-block li{font-size:13px;line-height:1.65;color:#374151;}
+      .diag-block ul{padding-left:18px;margin-top:6px;}
+      .diag-block li{margin-bottom:4px;}
+      .diag-visao{background:#EFF6FF;border-color:#2563EB;}.diag-visao h4{color:#2563EB;}
+      .diag-ok{background:#F0FDF4;border-color:#16A34A;}.diag-ok h4{color:#16A34A;}
+      .diag-nok{background:#FEF2F2;border-color:#DC2626;}.diag-nok h4{color:#DC2626;}
+      .diag-opp{background:#F5F3FF;border-color:#7C3AED;}.diag-opp h4{color:#7C3AED;}
+      .diag-atencao{background:#FFFBEB;border-color:#D97706;}.diag-atencao h4{color:#D97706;}
+      .diag-rec{background:#F0F9FF;border-color:#0284C7;}.diag-rec h4{color:#0284C7;}
       .btn-baixar-pdf{position:fixed;top:20px;right:20px;z-index:9999;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;border:none;border-radius:12px;padding:12px 22px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.45);}
       @media print{
         body{background:#fff;}
@@ -3193,33 +3267,10 @@ async function exportarRelatorio(){
         <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; — Sem dados registrados</p>
       </div>
 
-      <!-- POR QUE OS LEADS SUBIRAM -->
+      <!-- DIAGNÓSTICO ESTRATÉGICO IA -->
       <div class="section">
-        <div class="section-title">📈 Por que os Leads Subiram e a Qualidade Também</div>
-        <div class="growth-grid">
-          <div class="growth-card">
-            <div class="g-label">Crescimento de Leads</div>
-            <div class="g-value ${growthLeads!==null&&growthLeads>=0?'up':'down'}">${growthLeadsStr}</div>
-            <div class="g-sub">${primMes?primMes.label:''} → ${ultMes?ultMes.label:''}</div>
-          </div>
-          <div class="growth-card">
-            <div class="g-label">Crescimento de Qualificados</div>
-            <div class="g-value ${growthQual!==null&&growthQual>=0?'up':'down'}">${growthQualStr}</div>
-            <div class="g-sub">Leads Qualificados no período</div>
-          </div>
-          <div class="growth-card">
-            <div class="g-label">Evolução do CPL</div>
-            <div class="g-value ${growthCpl!==null&&growthCpl<=0?'up':'down'}">${growthCplStr}</div>
-            <div class="g-sub">CPL Mentoria no período</div>
-          </div>
-        </div>
-        <div class="info-box">
-          <div class="info-box-title">💡 Análise de Crescimento</div>
-          <p>
-            O crescimento de leads de <strong>${primMes?primMes.label:'N/D'}</strong> até <strong>${ultMes?ultMes.label:'N/D'}</strong> é resultado do amadurecimento das campanhas de tráfego pago e da otimização dos criativos. O canal <strong>${melhorCanalNome}</strong> foi o principal responsável pela melhora na qualidade dos leads, com maior taxa de qualificação no período.<br><br>
-            A melhora simultânea em volume e qualidade indica que o público-alvo está sendo impactado de forma mais assertiva. Próximo passo: escalar os criativos com menor CPL e replicar a abordagem do canal de maior conversão.
-          </p>
-        </div>
+        <div class="section-title">🧠 Diagnóstico Estratégico de Performance</div>
+        ${diagnosticoHTML}
       </div>
 
       <!-- RODAPÉ -->
