@@ -339,7 +339,12 @@ if(sessionStorage.getItem('tutory_auth')==='1'){
 <script>
 const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
 const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
-const CLAUDE_KEY=atob('c2stYW50LWFwaTAzLWw1Z2p3TnIxUG1UM2Jxek9PSEJJbEVWdHJCZmVvRG5EUUZmR3RQdktaOFp5cFdqZW5wQXZBcHZjcXJ2UFQtZS1LNFdYSnN5WnViVEhxU0FuTTQwNWJBLW9qcGRnUUFB');
+function getClaudeKey(){
+  let k=localStorage.getItem('tutory_claude_key');
+  if(!k){k=prompt('Cole sua Claude API Key (sk-ant-...):\nEla ficará salva no navegador permanentemente.','');if(k)localStorage.setItem('tutory_claude_key',k.trim());}
+  return(k||'').trim();
+}
+const CLAUDE_KEY=null;
 
 async function supaFetch(table, params=''){
   const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
@@ -2158,7 +2163,7 @@ async function sendChat(){
   const msgs=$('chat-messages');
   const question=input.value.trim();
   if(!question)return;
-  const apiKey=sessionStorage.getItem('tutory_claude_key')||CLAUDE_KEY;
+  const apiKey=getClaudeKey();
   if(!apiKey){addMsg('assistant','⚠️ Configure sua Claude API Key no campo abaixo para usar o assistente.');return;}
   addMsg('user',question);
   input.value='';
@@ -2917,7 +2922,7 @@ async function exportarRelatorio(){
     // ── Diagnóstico Estratégico IA ──
     btn.textContent='🧠 Analisando...';
     let diagnosticoHTML='';
-    let _apiKey=sessionStorage.getItem('tutory_claude_key')||CLAUDE_KEY;
+    let _apiKey=getClaudeKey();
     if(_apiKey){
       try{
         const _histResumo=histData.filter(h=>h.hasData).map(h=>`${h.label}: Invest R$${h.iT.toFixed(0)} | Leads MN ${h.lMn} | Leads HB ${h.lHb} | Qual ${h.hot!=null?h.hot:'—'} | CPL MN ${h.cpMn>0?'R$'+h.cpMn.toFixed(2):'—'} | CPL HB ${h.cpHb>0?'R$'+h.cpHb.toFixed(2):'—'}`).join('\n');
