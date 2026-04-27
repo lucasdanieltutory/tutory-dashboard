@@ -2810,10 +2810,13 @@ async function exportarRelatorio(){
     const cplHb=leadsHb>0?invHb/leadsHb:0;
     const custoEx=vendasEx>0?invEx/vendasEx:0;
 
-    // Google Ads (via plataforma_ad)
+    // Google Ads (via plataforma_ad + dados manuais por período)
     const gglLeads=leads.filter(r=>r.plataforma_ad==='google').length;
     const gglHot=leads.filter(r=>r.plataforma_ad==='google'&&r.classificacao_manual==='Qualificado').length;
-    const gglCplMn=gglLeads>0?invMn/gglLeads:0; // estimativa baseada nos leads google
+    const gglManual={
+      '2026-04':{inv:1663.38,impressoes:178725,cliques:1810,searchLeads:10,searchCpl:99.37,demandInscritos:1385,demandCusto:0.48},
+    };
+    const gglData=gglManual[fim.slice(0,7)]||null;
 
     // Leads por canal
     const canais={};
@@ -3090,33 +3093,62 @@ async function exportarRelatorio(){
 
       <!-- GOOGLE ADS -->
       <div class="section">
-        <div class="section-title">🔍 Google Ads</div>
-        <div class="kpi-grid-4">
+        <div class="section-title">🔍 Google Ads — ${periodo.split(' ')[0]}</div>
+        ${gglData?`
+        <div class="kpi-grid-4" style="margin-bottom:20px;">
           <div class="kpi-card google">
-            <div class="kpi-label">Leads Captados</div>
-            <div class="kpi-value">${num(gglLeads)}</div>
-            <div class="kpi-sub">utm_source=google</div>
+            <div class="kpi-label">Investimento Total</div>
+            <div class="kpi-value" style="font-size:22px;">${brl(gglData.inv)}</div>
+            <div class="kpi-sub">Google Ads · período</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Impressões</div>
+            <div class="kpi-value" style="font-size:22px;">${gglData.impressoes.toLocaleString('pt-BR')}</div>
+            <div class="kpi-sub">Total de exibições</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Cliques</div>
+            <div class="kpi-value" style="font-size:22px;">${gglData.cliques.toLocaleString('pt-BR')}</div>
+            <div class="kpi-sub">CTR ${(gglData.cliques/gglData.impressoes*100).toFixed(2)}%</div>
           </div>
           <div class="kpi-card green">
-            <div class="kpi-label">Qualificados</div>
-            <div class="kpi-value">${num(gglHot)}</div>
-            <div class="kpi-sub">Classificação manual</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Investimento</div>
-            <div class="kpi-value">—</div>
-            <div class="kpi-sub">Requer API Google Ads</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">CPL Google</div>
-            <div class="kpi-value">—</div>
-            <div class="kpi-sub">Requer API Google Ads</div>
+            <div class="kpi-label">CPC Médio</div>
+            <div class="kpi-value" style="font-size:22px;">${brl(gglData.inv/gglData.cliques)}</div>
+            <div class="kpi-sub">Custo por clique</div>
           </div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #E2E8F0;border-top:4px solid #4285F4;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4285F4;margin-bottom:14px;">🔎 Search</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Leads</div>
+                <div style="font-size:28px;font-weight:800;color:#0F172A;">${gglData.searchLeads}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">CPL</div>
+                <div style="font-size:22px;font-weight:700;color:#16A34A;">${brl(gglData.searchCpl)}</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #E2E8F0;border-top:4px solid #FBBC04;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F59E0B;margin-bottom:14px;">📣 Demand Gen</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Inscritos</div>
+                <div style="font-size:28px;font-weight:800;color:#0F172A;">${gglData.demandInscritos.toLocaleString('pt-BR')}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Custo / Inscrito</div>
+                <div style="font-size:22px;font-weight:700;color:#16A34A;">${brl(gglData.demandCusto)}</div>
+              </div>
+            </div>
+          </div>
+        </div>`:`
         <div class="info-box yellow">
-          <div class="info-box-title">⚡ Status da Integração</div>
-          <p>UTM tracking em configuração — adicionar <strong>utm_source=google</strong> nos anúncios ativos para rastrear leads por canal. Dados de investimento/CTR/CPC virão via API Google Ads (próxima etapa).</p>
-        </div>
+          <div class="info-box-title">⚡ Dados não disponíveis para este período</div>
+          <p>Os dados do Google Ads ainda não foram inseridos para o período selecionado.</p>
+        </div>`}
       </div>
 
       <!-- CAMPANHAS QUE TIVERAM RESULTADO -->
