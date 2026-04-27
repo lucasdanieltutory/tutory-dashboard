@@ -2785,11 +2785,11 @@ async function exportarRelatorio(){
 
     // ── Fetch dados do mês atual ──
     const [leadsMnAll,campsMn,anMn,campsHb,leadsHbAll,anHb]=await Promise.all([
-      supaFetch('leads_mentoria',`select=classificacao_manual,canal,plataforma_ad&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=gasto,leads,cpl&data=gte.${ini}&data=lte.${fim}`),
+      supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      supaFetch('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('campanhas_hub',`select=gasto,leads&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('leads_hub',`select=id,score&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      supaFetch('leads_hub',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
     ]);
 
