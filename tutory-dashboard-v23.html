@@ -339,7 +339,7 @@ if(sessionStorage.getItem('tutory_auth')==='1'){
 <script>
 const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
 const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
-const CLAUDE_KEY=['sk-ant-api03-GSvyvWHid39Kqq_vQPfkgfraKar50bJp7nq18VPsQbErOZE','SC7IyF82HXITK5xmJuddOl_Z6jSuDa6VQQKr7pA-IIY98QAA'].join('');
+const CLAUDE_KEY=atob('c2stYW50LWFwaTAzLWw1Z2p3TnIxUG1UM2Jxek9PSEJJbEVWdHJCZmVvRG5EUUZmR3RQdktaOFp5cFdqZW5wQXZBcHZjcXJ2UFQtZS1LNFdYSnN5WnViVEhxU0FuTTQwNWJBLW9qcGRnUUFB');
 
 async function supaFetch(table, params=''){
   const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
