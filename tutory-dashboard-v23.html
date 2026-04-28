@@ -576,6 +576,7 @@ async function supaInsert(table, body){
   </div>
   <div class="cbar">
     <div class="cbadge"><div class="cbi">🌐</div><div><div class="cbl">Landing Page</div><div class="cbv" id="mn-lp">—</div></div></div>
+    <div class="cbadge" style="border-left:2px solid rgba(59,130,246,.4);"><div class="cbi">🚔</div><div><div class="cbl" style="color:#60A5FA;">LP Carreiras Policiais</div><div class="cbv" id="mn-lp-pol" style="color:#60A5FA;">—</div></div></div>
     <div class="cbadge"><div class="cbi">🤖</div><div><div class="cbl">Typebot</div><div class="cbv" id="mn-tb">—</div></div></div>
     <div class="cbadge"><div class="cbi">💬</div><div><div class="cbl">Respondi</div><div class="cbv" id="mn-rp">—</div></div></div>
     <div class="cbadge"><div class="cbi">🌐</div><div><div class="cbl">Site</div><div class="cbv" id="mn-site">—</div></div></div>
@@ -1661,7 +1662,7 @@ function exportarMnSecao(classificacao){
     URL.revokeObjectURL(url);
   });
 }
-function canalChip(c){if(c==='Landing Page')return'<span class="chip clp">🌐 LP</span>';if(c==='Typebot')return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi')return'<span class="chip crp">💬 Respondi</span>';if(c==='Site'||c==='Site Oficial')return'<span class="chip cst">🌐 Site</span>';if(c==='Orgânico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
+function canalChip(c){if(c==='LP Carreiras Policiais')return'<span style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#60A5FA;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🚔 LP Pol.</span>';if(c==='LP Carreiras Fiscais')return'<span style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.4);color:#FACC15;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">💼 LP Fisc.</span>';if(c==='LP Carreiras Tribunais')return'<span style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#C084FC;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">⚖️ LP Trib.</span>';if(c==='Landing Page')return'<span class="chip clp">🌐 LP</span>';if(c==='Typebot')return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi')return'<span class="chip crp">💬 Respondi</span>';if(c==='Site'||c==='Site Oficial')return'<span class="chip cst">🌐 Site</span>';if(c==='Orgânico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">'+c+'</span>';}
 function platChip(p){
   if(!p||p==='meta')return'<span style="background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
   if(p==='google')return'<span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🔍 Google</span>';
@@ -1759,6 +1760,7 @@ async function renderMentoria(){
     const dqpL=leads.filter(r=>r.classificacao_manual==='Desqualificação prévia').length;
     const coldL=leads.filter(r=>r.classificacao_manual==='Desqualificado').length;
     const lpL=leads.filter(r=>r.canal==='Landing Page').length;
+    const lpPolL=leads.filter(r=>r.canal==='LP Carreiras Policiais').length;
     const tbL=leads.filter(r=>r.canal==='Typebot').length;
     const rpL=leads.filter(r=>r.canal==='Respondi').length;
     const siteL=leads.filter(r=>r.canal==='Site'||r.canal==='Site Oficial').length;
@@ -1779,6 +1781,7 @@ async function renderMentoria(){
     if($('mn-ctr'))$('mn-ctr').textContent=fmt.pct(ctrMed);
     if($('mn-cac'))$('mn-cac').textContent=cpcMed>0?'R$'+cpcMed.toFixed(2).replace('.',','):'—';
     if($("mn-lp"))$("mn-lp").textContent=lpL;
+    if($("mn-lp-pol"))$("mn-lp-pol").textContent=lpPolL||'0';
     if($("mn-tb"))$("mn-tb").textContent=tbL;
     if($("mn-rp"))$("mn-rp").textContent=rpL;
     if($("mn-site"))$("mn-site").textContent=siteL;
