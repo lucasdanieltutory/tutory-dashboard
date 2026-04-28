@@ -324,9 +324,24 @@ function doLogin(){
 }
 function _applyRole(role){
   if(role==='sdr'){
+    // Mantém apenas Visão Geral e Prospecções
     document.querySelectorAll('.tb-tab').forEach(t=>{
-      if(!t.textContent.includes('Prospec'))t.style.display='none';
+      const txt=t.textContent||'';
+      if(!txt.includes('Prospec')&&!txt.includes('Visão'))t.style.display='none';
     });
+    // Garante que começa na Visão Geral
+    const goFn=window.go;
+    if(typeof goFn==='function'){
+      const pTab=document.querySelector('.tb-tab[onclick*="geral"],.tb-tab[onclick*="prospeccoes"]');
+      goFn('geral',pTab);
+    }
+    // Bloqueia navegação para abas restritas
+    const _origGo=window.go;
+    window.go=function(id,el){
+      const restricted=['mentoria','hub','experience','criativos','chat'];
+      if(restricted.includes(id))return;
+      _origGo&&_origGo(id,el);
+    };
   }
 }
 if(sessionStorage.getItem('tutory_auth')==='1'){
