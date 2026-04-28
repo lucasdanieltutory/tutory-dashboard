@@ -1566,8 +1566,8 @@ function renderMnSecoes(leads){
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
   const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
   const s1c=$('mn-s1-count'); if(s1c) s1c.textContent=s1.length+(s1.length===1?' lead':' leads');
-  const s2c=$('mn-s2-count'); if(s2c) s2c.textContent=s2.length+(s2.length===1?' lead':' leads');
-  const s3c=$('mn-s3-count'); if(s3c) s3c.textContent=s3.length+(s3.length===1?' lead':' leads');
+  const s2c=$('mn-s2-count'); if(s2c) s2c.textContent=s2.length+(s2.length===1?' prospecção':' prospecções');
+  const s3c=$('mn-s3-count'); if(s3c) s3c.textContent=s3.length+(s3.length===1?' prospecção':' prospecções');
   const s1tb=$('mn-s1-leads'); if(s1tb) s1tb.innerHTML=s1.length?s1.map(_row).join(''):_empty('Nenhum lead qualificado ainda');
   const s2tb=$('mn-s2-leads'); if(s2tb) s2tb.innerHTML=s2.length?s2.map(_row).join(''):_empty('Nenhum lead pré-qualificado ainda');
   const s3tb=$('mn-s3-leads'); if(s3tb) s3tb.innerHTML=s3.length?s3.map(_row).join(''):_empty('Nenhum lead desqualificado ainda');
@@ -2685,7 +2685,7 @@ async function renderProspeccoes(force=false){
     let s1 = prosp.filter(r=>r.classificacao_manual==='Qualificado');
     const s1Filter = ($('pr-s1-filter')||{}).value||'';
     let sq = sqFilter ? s1.filter(r=>_plat(r)===sqFilter) : s1.slice();
-    if($('pr-sq-count')) $('pr-sq-count').textContent = sq.length+(sq.length===1?' lead':' leads');
+    if($('pr-sq-count')) $('pr-sq-count').textContent = sq.length+(sq.length===1?' prospecção':' prospecções');
     const sqtb=$('pr-sq-leads');
     if(sqtb) sqtb.innerHTML = sq.length ? sq.map(r=>{
       const st=localStorage.getItem('pst_'+r.id)||r.status_qualificado||'Aguardando';
@@ -2708,8 +2708,9 @@ async function renderProspeccoes(force=false){
         </select></td>
       </tr>`;
     }).join('') : _empty(6);
-    // ── ÚLTIMA SEÇÃO: QUALIFICADOS DO AEROPORTO DE MENTORIA ──
-    const mnQuals = await supaFetch('leads_mentoria','select=*&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+    // ── ÚLTIMA SEÇÃO: QUALIFICADOS DO AEROPORTO DE MENTORIA (respeita filtro de data) ──
+    const mnDateFilter=ps!=='all'?`&created_at=gte.${prIni}T00:00:00&created_at=lte.${prFim}T23:59:59`:'';
+    const mnQuals = await supaFetch('leads_mentoria',`select=*&classificacao_manual=eq.Qualificado${mnDateFilter}&order=created_at.desc`).catch(()=>[]);
     if($('pr-s1-count')) $('pr-s1-count').textContent = mnQuals.length+(mnQuals.length===1?' lead':' leads');
     if($('pr-qual-banner')) $('pr-qual-banner').textContent = mnQuals.length||'0';
     if($('pr-qual')) $('pr-qual').textContent = mnQuals.length||'—';
@@ -2737,7 +2738,7 @@ async function renderProspeccoes(force=false){
     const s2Filter=($('pr-s2-filter')||{}).value||'';
     let s2=prosp.filter(r=>r.classificacao_manual==='Pré-qualificado');
     if(s2Filter) s2=s2.filter(r=>_plat(r)===s2Filter);
-    if($('pr-s2-count')) $('pr-s2-count').textContent = s2.length+(s2.length===1?' lead':' leads');
+    if($('pr-s2-count')) $('pr-s2-count').textContent = s2.length+(s2.length===1?' prospecção':' prospecções');
     const s2tb=$('pr-s2-leads');
     if(s2tb) s2tb.innerHTML = s2.length ? s2.map(r=>`<tr>
       <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
@@ -2751,7 +2752,7 @@ async function renderProspeccoes(force=false){
     const s3Filter=($('pr-s3-filter')||{}).value||'';
     let s3=prosp.filter(r=>r.classificacao_manual==='Desqualificado');
     if(s3Filter) s3=s3.filter(r=>_plat(r)===s3Filter);
-    if($('pr-s3-count')) $('pr-s3-count').textContent = s3.length+(s3.length===1?' lead':' leads');
+    if($('pr-s3-count')) $('pr-s3-count').textContent = s3.length+(s3.length===1?' prospecção':' prospecções');
     const s3tb=$('pr-s3-leads');
     if(s3tb) s3tb.innerHTML = s3.length ? s3.map(r=>`<tr>
       <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
@@ -2765,7 +2766,7 @@ async function renderProspeccoes(force=false){
     const s4Filter=($('pr-s4-filter')||{}).value||'';
     let s4=prosp.filter(r=>r.classificacao_manual==='Desqualificação prévia');
     if(s4Filter) s4=s4.filter(r=>_plat(r)===s4Filter);
-    if($('pr-s4-count')) $('pr-s4-count').textContent = s4.length+(s4.length===1?' lead':' leads');
+    if($('pr-s4-count')) $('pr-s4-count').textContent = s4.length+(s4.length===1?' prospecção':' prospecções');
     const s4tb=$('pr-s4-leads');
     if(s4tb) s4tb.innerHTML = s4.length ? s4.map(r=>`<tr>
       <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
