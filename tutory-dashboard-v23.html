@@ -1202,9 +1202,9 @@ async function supaInsert(table, body){
   <div class="pfil" id="pf-prospeccoes">
     <button class="pfb" onclick="setPeriod('prospeccoes','hoje',this)">Hoje</button>
     <button class="pfb" onclick="setPeriod('prospeccoes','7',this)">7 dias</button>
-    <button class="pfb act" onclick="setPeriod('prospeccoes','30',this)">30 dias</button>
+    <button class="pfb" onclick="setPeriod('prospeccoes','30',this)">30 dias</button>
     <button class="pfb" onclick="setPeriod('prospeccoes','mes',this)">Mês atual</button>
-    <button class="pfb" onclick="setPeriod('prospeccoes','all',this)">Todos</button>
+    <button class="pfb act" onclick="setPeriod('prospeccoes','all',this)">Todos</button>
     <button class="pfb" onclick="setPeriod('prospeccoes','custom',this)">Personalizado</button>
     <span id="custom-prosp" style="display:none;gap:6px;align-items:center;">
       <input type="date" id="df-prospeccoes" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:4px 8px;color:var(--txt);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
@@ -2077,7 +2077,7 @@ function filterCamps(){
 }
 
 // PERIOD FILTER STATE
-const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30',prospeccoes:'30'};
+const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30',prospeccoes:'all'};
 function getDates(pg){
   const s=periodState[pg]||'30';
   const hoje=new Date();
@@ -2598,7 +2598,7 @@ async function renderProspeccoes(force=false){
     }
     // Busca qualificados da Mentoria para espelhar na seção Qualificados
     if(force||!window._mnQualData){
-      window._mnQualData=await supaFetch('leads_mentoria','select=id,contact_name,contact_instagram,classificacao_manual,created_at,plataforma_ad&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+      window._mnQualData=await supaFetch('leads_mentoria','select=*&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
     }
     // Filtro de data
     const ps=periodState['prospeccoes']||'30';
