@@ -1354,7 +1354,7 @@ async function supaInsert(table, body){
         </div>
       </div>
       <div style="overflow-y:auto;max-height:420px;overflow-x:hidden;">
-        <table class="dt" style="width:100%;table-layout:fixed;"><thead style="position:sticky;top:0;z-index:10;background:rgba(34,197,94,.07);"><tr><th>Data</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Status</th><th>Classificação</th></tr></thead><tbody id="pr-s1-leads"></tbody></table>
+        <table class="dt dt-fx" style="width:100%;"><thead style="position:sticky;top:0;z-index:10;background:rgba(34,197,94,.08);"><tr><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Canal</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificar</th></tr></thead><tbody id="pr-s1-leads"></tbody></table>
       </div>
     </div>
   </div>
@@ -2708,30 +2708,30 @@ async function renderProspeccoes(force=false){
         </select></td>
       </tr>`;
     }).join('') : _empty(6);
-    if(s1Filter) s1 = s1.filter(r=>_plat(r)===s1Filter);
-    if($('pr-s1-count')) $('pr-s1-count').textContent = s1.length+(s1.length===1?' lead':' leads');
+    // ── ÚLTIMA SEÇÃO: QUALIFICADOS DO AEROPORTO DE MENTORIA ──
+    const mnQuals = await supaFetch('leads_mentoria','select=*&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+    if($('pr-s1-count')) $('pr-s1-count').textContent = mnQuals.length+(mnQuals.length===1?' lead':' leads');
+    if($('pr-qual-banner')) $('pr-qual-banner').textContent = mnQuals.length||'0';
+    if($('pr-qual')) $('pr-qual').textContent = mnQuals.length||'—';
+    const _wa2=p=>{if(!p)return'—';const n=p.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`;};
     const s1tb=$('pr-s1-leads');
-    if(s1tb) s1tb.innerHTML = s1.length ? s1.map(r=>{
-      const st=localStorage.getItem('pst_'+r.id)||r.status_qualificado||'Aguardando';
-      const c=_stMap[st]||_stMap['Aguardando'];
-      return `<tr>
-        <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
-        <td><strong style="font-size:12px;">${r.nome||'—'}</strong></td>
-        <td>${_insta(r)}</td>
-        <td>${_platBadge(r)}</td>
-        <td><select onchange="salvarStatusQual('${r.id}',this.value);const _m=(_stMap[this.value]||_stMap['Aguardando']);this.style.border='1px solid '+_m.brd;this.style.background=_m.bg;this.style.color=_m.cor;" style="padding:4px 8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${c.brd};background:${c.bg};color:${c.cor};font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
-          <option value="Reunião Agendada" ${st==='Reunião Agendada'?'selected':''} style="background:#0f1629;color:#60A5FA;font-weight:700;">📅 Reunião Agendada</option>
-          <option value="Aguardando" ${st==='Aguardando'?'selected':''} style="background:#0f1629;color:#EAB308;font-weight:700;">⏳ Aguardando</option>
-          <option value="Perdido" ${st==='Perdido'?'selected':''} style="background:#0f1629;color:#EF4444;font-weight:700;">❌ Perdido</option>
-        </select></td>
-        <td><select onchange="salvarClassifProsp('${r.id}',this.value)" style="padding:4px 8px;border-radius:7px;font-size:11px;cursor:pointer;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
-          <option value="Qualificado" selected>✅ Qualificado</option>
-          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
-          <option value="Desqualificação prévia">⚠️ Desq. prévia</option>
-          <option value="Desqualificado">🚫 Desqualificado</option>
-        </select></td>
-      </tr>`;
-    }).join('') : _empty(6);
+    if(s1tb) s1tb.innerHTML = mnQuals.length ? mnQuals.map(r=>`<tr>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+      <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}</td>
+      <td class="cel-wrap">${canalChip(r.canal)}</td>
+      <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+      <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+      <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+      <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_wa2(r.contact_phone)}</td>
+      <td class="cel-classif"><select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+        <option value="">— Classificar</option>
+        <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
+        <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
+        <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
+        <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
+      </select></td>
+    </tr>`).join('') : `<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:18px;">Nenhum lead qualificado ainda</td></tr>`;
 
     // ── SEÇÃO 2: PRÉ-QUALIFICADOS ──
     const s2Filter=($('pr-s2-filter')||{}).value||'';
