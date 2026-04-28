@@ -2596,6 +2596,10 @@ async function renderProspeccoes(force=false){
       window._prData=await supaFetch('prospeccoes','select=*&order=created_at.desc');
       if(force) window._prPage=0;
     }
+    // Busca qualificados da Mentoria para espelhar na seção Qualificados
+    if(force||!window._mnQualData){
+      window._mnQualData=await supaFetch('leads_mentoria','select=id,contact_name,contact_instagram,classificacao_manual,created_at,plataforma_ad&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+    }
     // Filtro de data
     const ps=periodState['prospeccoes']||'30';
     let prIni='',prFim='';
@@ -2606,10 +2610,20 @@ async function renderProspeccoes(force=false){
       const d=(r.data||r.created_at||'').slice(0,10);
       return(!prIni||d>=prIni)&&(!prFim||d<=prFim);
     });
+    // Qualificados de Mentoria com filtro de data, deduplicados por instagram
+    const mnQualFiltered=(window._mnQualData||[]).filter(r=>{
+      const d=(r.created_at||'').slice(0,10);
+      return(!prIni||d>=prIni)&&(!prFim||d<=prFim);
+    });
+    const prQualInstas=new Set(prosp.filter(r=>r.classificacao_manual==='Qualificado').map(r=>r.instagram).filter(Boolean));
+    const mnQualMapped=mnQualFiltered
+      .filter(r=>!r.contact_instagram||!prQualInstas.has(r.contact_instagram))
+      .map(r=>({id:'mn-'+r.id,_fromMentoria:true,nome:r.contact_name||'—',instagram:r.contact_instagram||null,plataforma:'mentoria',data:(r.created_at||'').slice(0,10),classificacao_manual:'Qualificado',status_qualificado:null}));
+
     const total = prosp.length;
     const mn = prosp.filter(r=>!r.plataforma||r.plataforma==='mentoria').length;
     const hb = prosp.filter(r=>r.plataforma==='hub').length;
-    const qual = prosp.filter(r=>r.classificacao_manual==='Qualificado').length;
+    const qual = prosp.filter(r=>r.classificacao_manual==='Qualificado').length + mnQualMapped.length;
     const desq = prosp.filter(r=>r.classificacao_manual==='Desqualificado').length;
 
     if($('pr-total'))$('pr-total').textContent=total||'—';
@@ -2679,31 +2693,39 @@ async function renderProspeccoes(force=false){
     const _dt = r => r.data||fmtDate(r.created_at);
     const _empty = n => `<tr class="er"><td colspan="${n}" style="color:var(--dim);font-style:italic;text-align:center;padding:18px;">Nenhum lead nesta seção ainda</td></tr>`;
 
-    // ── SEÇÃO 1: QUALIFICADOS ──
+    // ── SEÇÃO 1: QUALIFICADOS (prospecções + espelho Mentoria) ──
     const s1Filter = ($('pr-s1-filter')||{}).value||'';
-    let s1 = prosp.filter(r=>r.classificacao_manual==='Qualificado');
-    if(s1Filter) s1 = s1.filter(r=>_plat(r)===s1Filter);
+    let s1Prosp = prosp.filter(r=>r.classificacao_manual==='Qualificado');
+    let s1Mn = mnQualMapped.slice();
+    if(s1Filter==='mentoria'){ s1Prosp=s1Prosp.filter(r=>_plat(r)==='mentoria'); }
+    else if(s1Filter==='hub'){ s1Prosp=s1Prosp.filter(r=>_plat(r)==='hub'); s1Mn=[]; }
+    const s1=[...s1Prosp,...s1Mn];
     if($('pr-s1-count')) $('pr-s1-count').textContent = s1.length+(s1.length===1?' lead':' leads');
     const s1tb=$('pr-s1-leads');
     if(s1tb) s1tb.innerHTML = s1.length ? s1.map(r=>{
-      const st=localStorage.getItem('pst_'+r.id)||r.status_qualificado||'Aguardando';
+      const st=r._fromMentoria?'Mentoria':localStorage.getItem('pst_'+r.id)||r.status_qualificado||'Aguardando';
       const c=_stMap[st]||_stMap['Aguardando'];
+      const statusCell=r._fromMentoria
+        ? `<td><span style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:700;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22C55E;">✅ Mentoria</span></td>`
+        : `<td><select onchange="salvarStatusQual('${r.id}',this.value);const _m=(_stMap[this.value]||_stMap['Aguardando']);this.style.border='1px solid '+_m.brd;this.style.background=_m.bg;this.style.color=_m.cor;" style="padding:4px 8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${c.brd};background:${c.bg};color:${c.cor};font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+          <option value="Reunião Agendada" ${st==='Reunião Agendada'?'selected':''} style="background:#0f1629;color:#60A5FA;font-weight:700;">📅 Reunião Agendada</option>
+          <option value="Aguardando" ${st==='Aguardando'?'selected':''} style="background:#0f1629;color:#EAB308;font-weight:700;">⏳ Aguardando</option>
+          <option value="Perdido" ${st==='Perdido'?'selected':''} style="background:#0f1629;color:#EF4444;font-weight:700;">❌ Perdido</option>
+        </select></td>`;
+      const classifCell=r._fromMentoria
+        ? `<td><span style="font-size:11px;color:var(--dim);">—</span></td>`
+        : `<td><select onchange="salvarClassifProsp('${r.id}',this.value)" style="padding:4px 8px;border-radius:7px;font-size:11px;cursor:pointer;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+          <option value="Qualificado" selected>✅ Qualificado</option>
+          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
+          <option value="Desqualificação prévia">⚠️ Desq. prévia</option>
+          <option value="Desqualificado">🚫 Desqualificado</option>
+        </select></td>`;
       return `<tr>
         <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
         <td><strong style="font-size:12px;">${r.nome||'—'}</strong></td>
         <td>${_insta(r)}</td>
         <td>${_platBadge(r)}</td>
-        <td><select onchange="salvarStatusQual('${r.id}',this.value);const _m=(_stMap[this.value]||_stMap['Aguardando']);this.style.border='1px solid '+_m.brd;this.style.background=_m.bg;this.style.color=_m.cor;" style="padding:4px 8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${c.brd};background:${c.bg};color:${c.cor};font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
-          <option value="Reunião Agendada" ${st==='Reunião Agendada'?'selected':''} style="background:#0f1629;color:#60A5FA;font-weight:700;">📅 Reunião Agendada</option>
-          <option value="Aguardando" ${st==='Aguardando'?'selected':''} style="background:#0f1629;color:#EAB308;font-weight:700;">⏳ Aguardando</option>
-          <option value="Perdido" ${st==='Perdido'?'selected':''} style="background:#0f1629;color:#EF4444;font-weight:700;">❌ Perdido</option>
-        </select></td>
-        <td><select onchange="salvarClassifProsp('${r.id}',this.value)" title="Alterar classificação (só afeta Prospecções)" style="padding:4px 8px;border-radius:7px;font-size:11px;cursor:pointer;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
-          <option value="Qualificado" selected>✅ Qualificado</option>
-          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
-          <option value="Desqualificação prévia">⚠️ Desq. prévia</option>
-          <option value="Desqualificado">🚫 Desqualificado</option>
-        </select></td>
+        ${statusCell}${classifCell}
       </tr>`;
     }).join('') : _empty(6);
 
