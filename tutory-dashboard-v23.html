@@ -1264,6 +1264,20 @@ async function supaInsert(table, body){
   <!-- SEÇÕES DE QUALIFICAÇÃO -->
   <div style="margin-top:28px;border-top:1px solid var(--brd);padding-top:24px;display:flex;flex-direction:column;gap:14px;">
 
+    <!-- SEÇÃO QUALIFICADOS -->
+    <div class="card" style="border-left:3px solid #22C55E;">
+      <div class="ch">
+        <div><div class="ct" style="color:#16A34A;font-weight:700;">✅ Qualificados — <span id="pr-sq-count">0 leads</span></div><div class="cs">Leads aprovados via prospecção</div></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <select id="pr-sq-filter" onchange="renderProspeccoes()" style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:4px 8px;border-radius:7px;font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;"><option value="">Todos</option><option value="mentoria">Mentoria</option><option value="hub">Hub</option></select>
+          <button onclick="exportarSecaoProsp('Qualificado')" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#16A34A;padding:4px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">⬇ Exportar CSV</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;max-height:380px;overflow-x:hidden;">
+        <table class="dt" style="width:100%;table-layout:fixed;"><thead style="position:sticky;top:0;z-index:10;background:var(--s1);"><tr><th>Data</th><th>Nome</th><th>Instagram</th><th>Plataforma</th><th>Status</th><th>Classificação</th></tr></thead><tbody id="pr-sq-leads"></tbody></table>
+      </div>
+    </div>
+
     <!-- SEÇÃO 2: PRÉ-QUALIFICADOS -->
     <div class="card" style="border-left:3px solid #EAB308;">
       <div class="ch">
@@ -1498,20 +1512,6 @@ function classifSelect(leadId, atual){
 async function salvarClassifLead(id, classificacao, selectEl){
   try{
     await supaUpdate('leads_mentoria', id, {classificacao_manual: classificacao});
-    // Req #4: quando qualificar em Mentoria, sincronizar para Prospecções
-    if(classificacao==='Qualificado'){
-      const lead=(window._mnLeads||[]).find(r=>r.id==id);
-      if(lead){
-        const nome=lead.contact_name||lead.nome||'Lead Mentoria';
-        const existing=await supaFetch('prospeccoes',`select=id&nome=eq.${encodeURIComponent(nome)}&classificacao_manual=eq.Qualificado`).catch(()=>[]);
-        if(!existing.length){
-          fetch(`${SUPA_URL}/rest/v1/prospeccoes`,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-            body:JSON.stringify({nome,instagram:lead.contact_instagram||null,plataforma:'mentoria',classificacao_manual:'Qualificado',data:(lead.created_at||'').slice(0,10),created_at:lead.created_at})
-          }).catch(()=>{});
-          window._prData=null; // força reload de prospecções
-        }
-      }
-    }
     // Atualiza só o badge sem recarregar tudo
     if(selectEl){
       const td = selectEl.closest('td');
@@ -2680,9 +2680,34 @@ async function renderProspeccoes(force=false){
     const _dt = r => r.data||fmtDate(r.created_at);
     const _empty = n => `<tr class="er"><td colspan="${n}" style="color:var(--dim);font-style:italic;text-align:center;padding:18px;">Nenhum lead nesta seção ainda</td></tr>`;
 
-    // ── SEÇÃO 1: QUALIFICADOS ──
-    const s1Filter = ($('pr-s1-filter')||{}).value||'';
+    // ── SEÇÃO QUALIFICADOS (card no grupo + banner no final) ──
+    const sqFilter = ($('pr-sq-filter')||{}).value||'';
     let s1 = prosp.filter(r=>r.classificacao_manual==='Qualificado');
+    const s1Filter = ($('pr-s1-filter')||{}).value||'';
+    let sq = sqFilter ? s1.filter(r=>_plat(r)===sqFilter) : s1.slice();
+    if($('pr-sq-count')) $('pr-sq-count').textContent = sq.length+(sq.length===1?' lead':' leads');
+    const sqtb=$('pr-sq-leads');
+    if(sqtb) sqtb.innerHTML = sq.length ? sq.map(r=>{
+      const st=localStorage.getItem('pst_'+r.id)||r.status_qualificado||'Aguardando';
+      const c=_stMap[st]||_stMap['Aguardando'];
+      return `<tr>
+        <td class="mo" style="font-size:11px;white-space:nowrap;">${_dt(r)}</td>
+        <td><strong style="font-size:12px;">${r.nome||'—'}</strong></td>
+        <td>${_insta(r)}</td>
+        <td>${_platBadge(r)}</td>
+        <td><select onchange="salvarStatusQual('${r.id}',this.value);const _m=(_stMap[this.value]||_stMap['Aguardando']);this.style.border='1px solid '+_m.brd;this.style.background=_m.bg;this.style.color=_m.cor;" style="padding:4px 8px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${c.brd};background:${c.bg};color:${c.cor};font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+          <option value="Reunião Agendada" ${st==='Reunião Agendada'?'selected':''} style="background:#0f1629;color:#60A5FA;font-weight:700;">📅 Reunião Agendada</option>
+          <option value="Aguardando" ${st==='Aguardando'?'selected':''} style="background:#0f1629;color:#EAB308;font-weight:700;">⏳ Aguardando</option>
+          <option value="Perdido" ${st==='Perdido'?'selected':''} style="background:#0f1629;color:#EF4444;font-weight:700;">❌ Perdido</option>
+        </select></td>
+        <td><select onchange="salvarClassifProsp('${r.id}',this.value)" style="padding:4px 8px;border-radius:7px;font-size:11px;cursor:pointer;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+          <option value="Qualificado" selected>✅ Qualificado</option>
+          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
+          <option value="Desqualificação prévia">⚠️ Desq. prévia</option>
+          <option value="Desqualificado">🚫 Desqualificado</option>
+        </select></td>
+      </tr>`;
+    }).join('') : _empty(6);
     if(s1Filter) s1 = s1.filter(r=>_plat(r)===s1Filter);
     if($('pr-s1-count')) $('pr-s1-count').textContent = s1.length+(s1.length===1?' lead':' leads');
     const s1tb=$('pr-s1-leads');
