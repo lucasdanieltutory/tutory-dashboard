@@ -3035,7 +3035,11 @@ async function renderProspeccoes(force=false){
     }).join('') : _empty(6);
 
     // ── APROVADOS PARA AVANÇO COMERCIAL: LEADS MENTORIA QUALIFICADOS (pr-s1) ──
-    const mnQuals = await supaFetch('leads_mentoria','select=*&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+    // ── APROVADOS PARA AVANÇO COMERCIAL: LEADS MENTORIA QUALIFICADOS (pr-s1) ──
+    if(force || !window._prS1Cache){
+      window._prS1Cache = await supaFetch('leads_mentoria','select=*&classificacao_manual=eq.Qualificado&order=created_at.desc').catch(()=>[]);
+    }
+    const mnQuals = window._prS1Cache;
     if($('pr-s1-count')) $('pr-s1-count').textContent = mnQuals.length+(mnQuals.length===1?' lead':' leads');
     if($('pr-qual-banner')) $('pr-qual-banner').textContent = mnQuals.length||'0';
     if($('pr-qual')) $('pr-qual').textContent = mnQuals.length||'—';
@@ -3051,7 +3055,7 @@ async function renderProspeccoes(force=false){
       <td style="${_tc}color:var(--sub);font-size:10px;">${r.faturamento||'—'}</td>
       <td style="${_tc}color:var(--sub);font-size:10px;">${r.contact_email||'—'}</td>
       <td style="${_tc}font-size:10px;">${_wa2(r.contact_phone)}</td>
-      <td><select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:2px 4px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+      <td><select onchange="salvarClassifLeadProsp('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:2px 4px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
         <option value="">— Classificar</option>
         <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
         <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
@@ -3059,7 +3063,6 @@ async function renderProspeccoes(force=false){
         <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
       </select></td>
     </tr>`).join('') : `<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:18px;">Nenhum lead qualificado ainda</td></tr>`;
-
     // ── SEÇÃO 2: PRÉ-QUALIFICADOS ──
     const s2Filter=($('pr-s2-filter')||{}).value||'';
     let s2=prosp.filter(r=>r.classificacao_manual==='Pré-qualificado');
@@ -3118,6 +3121,20 @@ async function salvarClassifProsp(id, classificacao){
     if(window._prData){const r=window._prData.find(r=>r.id===id);if(r)r.classificacao_manual=classificacao;}
     renderProspeccoes(false);
   }catch(e){ console.error('Erro ao salvar:', e); }
+}
+// Salva classificação de lead da Mentoria a partir da aba Prospecções
+// Não dispara re-render de Mentoria nem Visão Geral — só atualiza Prospecções
+async function salvarClassifLeadProsp(id, classificacao, selectEl){
+  try{
+    await supaUpdate('leads_mentoria', id, {classificacao_manual: classificacao});
+    // Atualiza cache local sem tocar no cache da Mentoria (_mnLeads)
+    if(window._prS1Cache){
+      const r=window._prS1Cache.find(r=>r.id===id);
+      if(r) r.classificacao_manual=classificacao;
+    }
+    // Se o lead foi desqualificado ou alterado, remove da lista de qualificados e re-renderiza
+    renderProspeccoes(false);
+  }catch(e){console.error('Erro ao salvar classificação (prosp):',e);alert('Erro ao salvar: '+e.message);}
 }
 async function salvarPlataformaProsp(id, plataforma){
   try{
