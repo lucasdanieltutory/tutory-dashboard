@@ -1482,9 +1482,28 @@ async function supaInsert(table, body){
     <div class="ph-s">Leads prospectados manualmente · Importe via Excel · Qualifique cada lead</div>
   </div>
 
+  <!-- Filtro de período -->
+  <div class="pbar">
+    <div class="pbar-l">
+      <button class="pb" onclick="selP(this,'prospeccoes','hoje')">Hoje</button>
+      <button class="pb" onclick="selP(this,'prospeccoes','7')">7 dias</button>
+      <button class="pb on" onclick="selP(this,'prospeccoes','30')">30 dias</button>
+      <button class="pb" onclick="selP(this,'prospeccoes','mes')">Mês atual</button>
+      <button class="pb" onclick="selP(this,'prospeccoes','todos')" style="">Todos</button>
+      <button class="pb" onclick="selP(this,'prospeccoes','custom')">Personalizado</button>
+      <span id="prospeccoes-custom-row" style="display:none;align-items:center;gap:6px;">
+        <input type="date" id="df-prospeccoes" class="di">
+        <span style="color:var(--sub);font-size:12px">até</span>
+        <input type="date" id="dt-prospeccoes" class="di">
+        <button class="pb on" onclick="applyCustom('prospeccoes')">Aplicar</button>
+      </span>
+    </div>
+    <div class="pbar-r" id="pr-period-label">—</div>
+  </div>
+
   <!-- KPIs -->
   <div class="kgrid" style="margin-bottom:16px;">
-    <div class="kpi gn"><div class="ki">🎯</div><div class="kl">Total Prospecções</div><div class="kv" id="pr-total">—</div><div class="ks">Todos os leads</div></div>
+    <div class="kpi gn"><div class="ki">🎯</div><div class="kl">Total Prospecções</div><div class="kv" id="pr-total">—</div><div class="ks">No período</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Prospecções Mentoria</div><div class="kv" id="pr-mn">—</div><div class="ks">Nicho mentoria</div></div>
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Prospecções Hub</div><div class="kv" id="pr-hb">—</div><div class="ks">Nicho hub</div></div>
     <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="pr-qual">—</div><div class="ks">Status qualificado</div></div>
@@ -2371,11 +2390,10 @@ function filterCamps(){
 }
 
 // PERIOD FILTER STATE
-const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30'};
+const periodState={mentoria:'30',hub:'30',experience:'30',geral:'30',criativos:'30',prospeccoes:'30'};
 function getDates(pg){
   const s=periodState[pg]||'30';
   const hoje=new Date();
-  // Usa timezone local para evitar problema de data
   const pad=n=>String(n).padStart(2,'0');
   const fim=hoje.getFullYear()+'-'+pad(hoje.getMonth()+1)+'-'+pad(hoje.getDate());
   let ini;
@@ -2383,6 +2401,7 @@ function getDates(pg){
   else if(s==='7'){const d=new Date(hoje);d.setDate(d.getDate()-6);ini=d.toISOString().split('T')[0];}
   else if(s==='30'){const d=new Date(hoje);d.setDate(d.getDate()-29);ini=d.toISOString().split('T')[0];}
   else if(s==='mes'){ini=hoje.getFullYear()+'-'+(String(hoje.getMonth()+1).padStart(2,'0'))+'-01';}
+  else if(s==='todos'){ini='2020-01-01';}
   else if(s==='custom'){
     const df=$('df-'+pg);const dt=$('dt-'+pg);
     if(df&&dt&&df.value&&dt.value){ini=df.value;return{ini,fim:dt.value};}
@@ -2454,7 +2473,7 @@ function reload(m=false){
   else if(cur==='hub')renderHub();
   else if(cur==='experience')renderExperience();
   else if(cur==='criativos')renderCriativos();
-  else if(cur==='prospeccoes')renderProspeccoes(true);
+  else if(cur==='prospeccoes')renderProspeccoes(false);
   setTimeout(()=>{if(b)b.classList.remove('spin');},700);
 }
 setInterval(()=>reload(),5*60*1000);
@@ -2900,7 +2919,21 @@ async function renderProspeccoes(force=false){
       window._prData=await supaFetch('prospeccoes','select=*&order=created_at.desc');
       if(force) window._prPage=0;
     }
-    const prosp=window._prData;
+
+    // Aplica filtro de data
+    const {ini,fim}=getDates('prospeccoes');
+    const ps=periodState['prospeccoes']||'30';
+    const prosp = ps==='todos' ? window._prData : window._prData.filter(r=>{
+      const d=(r.data||r.created_at||'').slice(0,10);
+      return d>=ini && d<=fim;
+    });
+
+    // Atualiza label de período
+    const _fp=s=>{const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+    if($('pr-period-label')){
+      $('pr-period-label').textContent = ps==='todos'?'Todos os registros':`${_fp(ini)} → ${_fp(fim)}`;
+    }
+
     const total = prosp.length;
     const mn = prosp.filter(r=>!r.plataforma||r.plataforma==='mentoria').length;
     const hb = prosp.filter(r=>r.plataforma==='hub').length;
