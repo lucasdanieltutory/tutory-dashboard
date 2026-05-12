@@ -555,6 +555,9 @@ function metaClassify(name){
   if(n.includes('hub'))return'hub';
   if(n.includes('experience'))return'experience';
   if(n.includes('mentoria'))return'mentoria';
+  // Campanhas GMS (ex: [GMS]-[CONTINUA]-[CADASTR...], [GMS]-[CONTINUA]-[SITE-OF...])
+  // que não contêm "hub" ou "experience" são campanhas de Mentoria
+  if(n.includes('gms'))return'mentoria';
   return null;
 }
 function metaSumByPlatform(insights){
