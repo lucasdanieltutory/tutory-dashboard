@@ -527,7 +527,7 @@ const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
 const META_ACCOUNT='act_1448033875601177';
 const META_APP_ID='754854064155303';
 const META_APP_SECRET='ba8b85346ded8d82f117e87a85a1f054';
-const _META_FALLBACK='EAAT8avTSQLEBRThBaOCFg0bCjxrGOcTZC72vH8AyPLJAWjrP4sLlhKhSPkRQ2ZC6RAZC8m1urj4QZBCHZCZBd9omhkAZBs6DZCNFYuyODYD3TOHXkbLc0gJREyxsO0CotXI4RwvTNZABHip45sVBmRBMWojK408WlZCgNUNknZAKbu8vjayJSF3EJoDxXmUI0jkZBjZCTltbewN0XNNRAaG2jVqcxuJ0KDJuMqEnZA';
+const _META_FALLBACK='EAAT8avTSQLEBRd3oRWVDS3apgyfbTVCIW8F75M7O1ziFhZBcbWMuv7NvwbzZArQnVuKyghR8AasQjo4a7GZBAszPgwb1ebjnVZCFIZCezh3UUIziHFwLoifSgSjBiouZBrYZApZCsji90ZBSbBdCldiwtzAKmFaY7VoqKHiuEBm0FUSSSM5BVK38gyM9w3QcEIoXveruKn25wUO1Qp64KYPeqZCEq0nLKcAztacopKbHFybVtWTkcrcDvmPK6TVrZAoUJoIISfl3pNie8aMezTr77MV';
 
 function getMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
@@ -565,11 +565,13 @@ async function initMetaToken(){
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
   const isValid=stored&&expiry&&Date.now()<expiry-86400000;
   if(!isValid){
-    const current=stored||_META_FALLBACK;
-    const longLived=await exchangeLongLivedToken(current);
+    // Remove token expirado do localStorage antes de trocar
+    localStorage.removeItem('tutory_meta_token');
+    localStorage.removeItem('tutory_meta_token_expiry');
+    const longLived=await exchangeLongLivedToken(_META_FALLBACK);
     if(longLived){
-      // Limpa cache para re-buscar com novo token
       Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+      console.log('✅ Token Meta renovado por 60 dias');
     }
   }
 }
