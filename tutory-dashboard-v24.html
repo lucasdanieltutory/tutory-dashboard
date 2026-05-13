@@ -586,7 +586,22 @@ async function fetchMetaInsights(since,until){
     const url='https://graph.facebook.com/v19.0/'+META_ACCOUNT+'/insights?fields='+encodeURIComponent(fields)+'&time_range='+encodeURIComponent(tr)+'&level=campaign&limit=500&access_token='+token;
     const res=await fetch(url);
     const data=await res.json();
-    if(data.error){console.warn('Meta API:',data.error.message);return null;}
+    if(data.error){
+      console.warn('Meta API:',data.error.message);
+      // Mostra banner de aviso se token inválido/expirado
+      if(data.error.code===190||data.error.type==='OAuthException'){
+        let _b=document.getElementById('meta-token-banner');
+        if(!_b){
+          _b=document.createElement('div');
+          _b.id='meta-token-banner';
+          _b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#7F1D1D,#991B1B);color:#fff;padding:10px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.4);';
+          _b.innerHTML='<span>⚠️ Token Meta Ads expirado — os investimentos exibidos são dados desatualizados.</span>'
+            +'<button onclick="openConfig();document.getElementById(\'meta-token-banner\').remove()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">Atualizar Token</button>';
+          document.body.prepend(_b);
+        }
+      }
+      return null;
+    }
     // Handle pagination
     let rows=data.data||[];
     let next=data.paging&&data.paging.next;
