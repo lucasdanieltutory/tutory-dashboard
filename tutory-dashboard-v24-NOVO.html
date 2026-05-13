@@ -525,7 +525,55 @@ const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
 const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
 // META ADS API
 const META_ACCOUNT='act_1448033875601177';
-function getMetaToken(){return(localStorage.getItem('tutory_meta_token')||'EAAT8avTSQLEBRThBaOCFg0bCjxrGOcTZC72vH8AyPLJAWjrP4sLlhKhSPkRQ2ZC6RAZC8m1urj4QZBCHZCZBd9omhkAZBs6DZCNFYuyODYD3TOHXkbLc0gJREyxsO0CotXI4RwvTNZABHip45sVBmRBMWojK408WlZCgNUNknZAKbu8vjayJSF3EJoDxXmUI0jkZBjZCTltbewN0XNNRAaG2jVqcxuJ0KDJuMqEnZA').trim();}
+const META_APP_ID='754854064155303';
+const META_APP_SECRET='ba8b85346ded8d82f117e87a85a1f054';
+const _META_FALLBACK='EAAT8avTSQLEBRThBaOCFg0bCjxrGOcTZC72vH8AyPLJAWjrP4sLlhKhSPkRQ2ZC6RAZC8m1urj4QZBCHZCZBd9omhkAZBs6DZCNFYuyODYD3TOHXkbLc0gJREyxsO0CotXI4RwvTNZABHip45sVBmRBMWojK408WlZCgNUNknZAKbu8vjayJSF3EJoDxXmUI0jkZBjZCTltbewN0XNNRAaG2jVqcxuJ0KDJuMqEnZA';
+
+function getMetaToken(){
+  const stored=localStorage.getItem('tutory_meta_token');
+  const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
+  // Usa token armazenado se válido (com 1 dia de margem)
+  if(stored&&expiry&&Date.now()<expiry-86400000)return stored.trim();
+  // Fallback para token embutido (curta duração)
+  return _META_FALLBACK;
+}
+
+async function exchangeLongLivedToken(shortToken){
+  try{
+    const url='https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token'
+      +'&client_id='+META_APP_ID
+      +'&client_secret='+META_APP_SECRET
+      +'&fb_exchange_token='+shortToken;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data.access_token){
+      const expiresIn=data.expires_in||5183944; // ~60 dias padrão
+      const expiry=Date.now()+expiresIn*1000;
+      localStorage.setItem('tutory_meta_token',data.access_token);
+      localStorage.setItem('tutory_meta_token_expiry',expiry);
+      const expiryDate=new Date(expiry).toLocaleDateString('pt-BR');
+      console.log('✅ Token Meta de longa duração obtido. Expira em:',expiryDate);
+      return data.access_token;
+    }
+    console.warn('Erro ao trocar token:',data.error&&data.error.message);
+    return null;
+  }catch(e){console.warn('exchangeLongLivedToken:',e);return null;}
+}
+
+async function initMetaToken(){
+  const stored=localStorage.getItem('tutory_meta_token');
+  const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
+  const isValid=stored&&expiry&&Date.now()<expiry-86400000;
+  if(!isValid){
+    const current=stored||_META_FALLBACK;
+    const longLived=await exchangeLongLivedToken(current);
+    if(longLived){
+      // Limpa cache para re-buscar com novo token
+      Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+    }
+  }
+}
+
 const _metaCache={};
 async function fetchMetaInsights(since,until){
   const token=getMetaToken();
@@ -570,14 +618,29 @@ function metaSumByPlatform(insights){
   });
   return r;
 }
-function saveMetaToken(){
+async function saveMetaToken(){
   const inp=document.getElementById('cfg-meta-token-inp');
   if(!inp)return;
   const t=inp.value.trim();
-  localStorage.setItem('tutory_meta_token',t);
+  if(!t)return;
   const st=document.getElementById('cfg-meta-status');
-  if(st){st.textContent=t?'● Ativo':'● Inativo';st.className='cfg-int-status '+(t?'on':'off');}
-  if(t){alert('Token salvo! Atualizando dados...');location.reload();}
+  if(st){st.textContent='⏳ Trocando por token de 60 dias...';st.className='cfg-int-status';}
+  // Tenta trocar por token de longa duração
+  const longLived=await exchangeLongLivedToken(t);
+  if(longLived){
+    const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
+    const expiryDate=new Date(expiry).toLocaleDateString('pt-BR');
+    if(st){st.textContent='● Ativo até '+expiryDate;st.className='cfg-int-status on';}
+    alert('✅ Token de 60 dias ativado! Expira em: '+expiryDate+'\nAtualizando dados...');
+  } else {
+    // Salva token curto como fallback
+    localStorage.setItem('tutory_meta_token',t);
+    localStorage.removeItem('tutory_meta_token_expiry');
+    if(st){st.textContent='● Ativo (curta duração)';st.className='cfg-int-status on';}
+    alert('Token salvo (curta duração). Atualizando dados...');
+  }
+  Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+  location.reload();
 }
 
 function getClaudeKey(){return(localStorage.getItem('tutory_claude_key')||'').trim();}
@@ -3998,7 +4061,7 @@ async function renderCriativos(){
 }
 
 // INIT
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded',async ()=>{
   // Restaurar tema salvo
   if(localStorage.getItem('tutory_theme')==='light'){
     document.documentElement.classList.add('light-mode');
@@ -4007,6 +4070,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   const saved=sessionStorage.getItem('tutory_claude_key');
   if(saved&&$('claude-key-input'))$('claude-key-input').value=saved;
+  // Inicializa token Meta (troca para longa duração se necessário)
+  await initMetaToken();
   renderGeral();updateFab('geral');
 });
 
