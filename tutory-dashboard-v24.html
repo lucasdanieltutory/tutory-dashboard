@@ -620,10 +620,10 @@ function metaClassify(name){
   if(n.includes('hub'))return'hub';
   if(n.includes('experience'))return'experience';
   if(n.includes('mentoria'))return'mentoria';
-  // Campanhas GMS (ex: [GMS]-[CONTINUA]-[CADASTR...], [GMS]-[CONTINUA]-[SITE-OF...])
-  // que não contêm "hub" ou "experience" são campanhas de Mentoria
   if(n.includes('gms'))return'mentoria';
-  return null;
+  // Todas as demais campanhas da conta são de Mentoria por padrão
+  // (Hub e Experience sempre têm suas palavras no nome)
+  return'mentoria';
 }
 function metaSumByPlatform(insights){
   const r={mentoria:0,hub:0,experience:0,total:0};
