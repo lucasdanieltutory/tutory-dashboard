@@ -604,7 +604,7 @@ async function fetchMetaInsights(since,until){
           _b.id='meta-token-banner';
           _b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#7F1D1D,#991B1B);color:#fff;padding:10px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.4);';
           _b.innerHTML='<span>⚠️ Token Meta Ads expirado — os investimentos exibidos são dados desatualizados.</span>'
-            +'<button onclick="connectMetaFacebook()" style="background:#1877F2;border:none;color:#fff;padding:5px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">🔵 Reconectar Meta (1 clique)</button>';
+            +'<button onclick="openMetaTokenModal()" style="background:#1877F2;border:none;color:#fff;padding:5px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🔑 Renovar Token (60 dias)</button>';
           document.body.prepend(_b);
         }
       }
@@ -664,6 +664,67 @@ async function saveMetaToken(){
   }
   Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
   location.reload();
+}
+
+function openMetaTokenModal(){
+  let m=document.getElementById('meta-token-modal');
+  if(m){m.style.display='flex';return;}
+  m=document.createElement('div');
+  m.id='meta-token-modal';
+  m.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;';
+  m.innerHTML=`
+    <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">🔑 Renovar Token Meta Ads</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:20px;">Token de 60 dias — você só precisa fazer isso a cada 2 meses</div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;font-size:12px;color:#94a3b8;line-height:1.8;">
+        <b style="color:#fff;">Passo 1:</b> Clique no botão abaixo para abrir o Graph API Explorer<br>
+        <b style="color:#fff;">Passo 2:</b> Clique em <b style="color:#60a5fa;">"Generate Access Token"</b><br>
+        <b style="color:#fff;">Passo 3:</b> Marque <b style="color:#60a5fa;">ads_read</b> → Gerar → Copiar<br>
+        <b style="color:#fff;">Passo 4:</b> Cole o token abaixo e clique Salvar
+      </div>
+      <a href="https://developers.facebook.com/tools/explorer/?app_id=754854064155303&method=GET&path=me&version=v19.0" target="_blank"
+        style="display:block;text-align:center;background:#1877F2;color:#fff;text-decoration:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;margin-bottom:14px;">
+        🔗 Abrir Graph API Explorer
+      </a>
+      <div style="display:flex;gap:8px;">
+        <input id="meta-modal-token-inp" type="text" placeholder="Cole aqui o token copiado..."
+          style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:9px 12px;font-size:12px;color:#fff;outline:none;">
+        <button onclick="saveMetaTokenFromModal()"
+          style="background:#22c55e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          Salvar
+        </button>
+      </div>
+      <button onclick="document.getElementById('meta-token-modal').style.display='none'"
+        style="width:100%;margin-top:12px;background:transparent;border:1px solid #333;border-radius:8px;padding:8px;font-size:12px;color:#666;cursor:pointer;">
+        Fechar
+      </button>
+    </div>`;
+  document.body.appendChild(m);
+}
+async function saveMetaTokenFromModal(){
+  const inp=document.getElementById('meta-modal-token-inp');
+  if(!inp||!inp.value.trim()){alert('Cole o token primeiro.');return;}
+  const t=inp.value.trim();
+  inp.disabled=true;
+  const longLived=await exchangeLongLivedToken(t);
+  if(longLived){
+    const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
+    const expiryDate=new Date(expiry).toLocaleDateString('pt-BR');
+    document.getElementById('meta-token-modal').style.display='none';
+    const b=document.getElementById('meta-token-banner');if(b)b.remove();
+    Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+    alert('✅ Token de 60 dias ativado!\nExpira em: '+expiryDate+'\nAtualizando dados...');
+    location.reload();
+  } else {
+    // Token curto como fallback
+    localStorage.setItem('tutory_meta_token',t);
+    localStorage.removeItem('tutory_meta_token_expiry');
+    document.getElementById('meta-token-modal').style.display='none';
+    const b=document.getElementById('meta-token-banner');if(b)b.remove();
+    Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+    alert('Token salvo. Atualizando dados...');
+    location.reload();
+  }
 }
 
 async function connectMetaFacebook(){
@@ -4207,18 +4268,7 @@ function doLogout(){
           <div style="font-size:11px;color:var(--sub);margin-right:8px;">act_1448033875601177</div>
           <div class="cfg-int-status" id="cfg-meta-status">● Verificar</div>
         </div>
-        <div style="padding:6px 0 2px 36px;">
-          <button onclick="connectMetaFacebook()" style="width:100%;background:#1877F2;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            Conectar com Facebook (token 60 dias)
-          </button>
-        </div>
-        <div style="padding:4px 36px 6px;display:flex;align-items:center;gap:6px;">
-          <div style="flex:1;height:1px;background:var(--brd2);"></div>
-          <span style="font-size:10px;color:var(--sub);">ou cole manualmente</span>
-          <div style="flex:1;height:1px;background:var(--brd2);"></div>
-        </div>
-        <div style="padding:0 0 6px 36px;display:flex;gap:8px;align-items:center;">
+        <div style="padding:6px 0 6px 36px;display:flex;gap:8px;align-items:center;">
           <input id="cfg-meta-token-inp" type="password" placeholder="Cole seu token de acesso Meta Ads aqui..." style="flex:1;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--txt);outline:none;">
           <button onclick="saveMetaToken()" style="background:#4F8EF7;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;">Salvar</button>
         </div>
