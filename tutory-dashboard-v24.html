@@ -538,10 +538,41 @@ const _META_FALLBACK='EAAT8avTSQLEBRd3oRWVDS3apgyfbTVCIW8F75M7O1ziFhZBcbWMuv7Nvw
 function getMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
-  // Usa token armazenado se válido (com 1 dia de margem)
   if(stored&&expiry&&Date.now()<expiry-86400000)return stored.trim();
-  // Fallback para token embutido (curta duração)
+  if(stored&&!expiry)return stored.trim(); // token sem prazo (curto)
   return _META_FALLBACK;
+}
+
+async function saveTokenToSupabase(token, expiry){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes`,{
+      method:'POST',
+      headers:{
+        'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'
+      },
+      body:JSON.stringify({chave:'meta_token',valor:token,expiry:expiry})
+    });
+  }catch(e){}
+}
+
+async function loadTokenFromSupabase(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.meta_token&limit=1`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d||!d[0]||!d[0].valor)return false;
+    const token=d[0].valor;
+    const expiry=d[0].expiry||0;
+    if(expiry&&Date.now()>expiry-86400000)return false; // expirado
+    // Salva localmente
+    localStorage.setItem('tutory_meta_token',token);
+    if(expiry)localStorage.setItem('tutory_meta_token_expiry',String(expiry));
+    console.log('✅ Token Meta carregado do Supabase');
+    return true;
+  }catch(e){return false;}
 }
 
 async function exchangeLongLivedToken(shortToken){
@@ -556,7 +587,9 @@ async function exchangeLongLivedToken(shortToken){
       const expiresIn=data.expires_in||5183944; // ~60 dias padrão
       const expiry=Date.now()+expiresIn*1000;
       localStorage.setItem('tutory_meta_token',data.access_token);
-      localStorage.setItem('tutory_meta_token_expiry',expiry);
+      localStorage.setItem('tutory_meta_token_expiry',String(expiry));
+      // Salva no Supabase para todos os navegadores
+      saveTokenToSupabase(data.access_token, expiry);
       const expiryDate=new Date(expiry).toLocaleDateString('pt-BR');
       console.log('✅ Token Meta de longa duração obtido. Expira em:',expiryDate);
       return data.access_token;
@@ -570,16 +603,16 @@ async function initMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
   const isValid=stored&&expiry&&Date.now()<expiry-86400000;
-  if(!isValid){
-    // Remove token expirado do localStorage antes de trocar
-    localStorage.removeItem('tutory_meta_token');
-    localStorage.removeItem('tutory_meta_token_expiry');
-    const longLived=await exchangeLongLivedToken(_META_FALLBACK);
-    if(longLived){
-      Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
-      console.log('✅ Token Meta renovado por 60 dias');
-    }
+  if(isValid)return; // já tem token válido local
+  // Tenta buscar do Supabase (token renovado em outro navegador)
+  const fromSupa=await loadTokenFromSupabase();
+  if(fromSupa){
+    Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+    return;
   }
+  // Sem token válido — banner vai aparecer via fetchMetaInsights
+  localStorage.removeItem('tutory_meta_token');
+  localStorage.removeItem('tutory_meta_token_expiry');
 }
 
 const _metaCache={};
