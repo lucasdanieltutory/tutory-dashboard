@@ -533,7 +533,7 @@ const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
 const META_ACCOUNT='act_1448033875601177';
 const META_APP_ID='754854064155303';
 const META_APP_SECRET='ba8b85346ded8d82f117e87a85a1f054';
-const _META_FALLBACK='EAAT8avTSQLEBRd3oRWVDS3apgyfbTVCIW8F75M7O1ziFhZBcbWMuv7NvwbzZArQnVuKyghR8AasQjo4a7GZBAszPgwb1ebjnVZCFIZCezh3UUIziHFwLoifSgSjBiouZBrYZApZCsji90ZBSbBdCldiwtzAKmFaY7VoqKHiuEBm0FUSSSM5BVK38gyM9w3QcEIoXveruKn25wUO1Qp64KYPeqZCEq0nLKcAztacopKbHFybVtWTkcrcDvmPK6TVrZAoUJoIISfl3pNie8aMezTr77MV';
+const _META_FALLBACK='EAAKuiShZA6qcBRSwOPpOjaxns9CnCtDmXbsLPVMYrY00naDV5Ag2KVWLVJlp9DCdIh2cMnHtlvZBEg3vtOz6AKV0F2GHWmEP1cpgFBV09wq2y1Nf9oxBnAYH9tbOVOYRlCLXawZBUppg7gcpG66r7E906XCYmEEPmgD6nigzEYrocrxjgMdu8DGynXPYCLfUsK4hqvj1o8MLanxuxKTC65QKlrHVkLacDugAvSdRmwsxyyPyh03U0RjcdlZCZA13Sk64LQWW5wBCu8ynFXsCK';
 
 function getMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
@@ -610,9 +610,14 @@ async function initMetaToken(){
     Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
     return;
   }
-  // Sem token válido — banner vai aparecer via fetchMetaInsights
+  // Tenta trocar fallback por token de 60 dias e salvar no Supabase
   localStorage.removeItem('tutory_meta_token');
   localStorage.removeItem('tutory_meta_token_expiry');
+  const longLived=await exchangeLongLivedToken(_META_FALLBACK);
+  if(longLived){
+    Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
+    console.log('✅ Token Meta renovado automaticamente por 60 dias');
+  }
 }
 
 const _metaCache={};
