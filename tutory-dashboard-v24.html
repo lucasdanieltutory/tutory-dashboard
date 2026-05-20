@@ -603,14 +603,18 @@ async function initMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
   const isValid=stored&&expiry&&Date.now()<expiry-86400000;
-  if(isValid)return; // já tem token válido local
-  // Tenta buscar do Supabase (token renovado em outro navegador)
+  if(isValid){
+    // Token local válido — sincroniza pro Supabase para todos os outros navegadores
+    saveTokenToSupabase(stored,expiry);
+    return;
+  }
+  // Tenta buscar do Supabase (token salvo por outro navegador)
   const fromSupa=await loadTokenFromSupabase();
   if(fromSupa){
     Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
     return;
   }
-  // Tenta trocar fallback por token de 60 dias e salvar no Supabase
+  // Tenta trocar fallback por token de 60 dias
   localStorage.removeItem('tutory_meta_token');
   localStorage.removeItem('tutory_meta_token_expiry');
   const longLived=await exchangeLongLivedToken(_META_FALLBACK);
