@@ -631,7 +631,7 @@ async function fetchMetaInsights(since,until){
   if(_metaCache[_ck])return _metaCache[_ck];
   if(!token)return null;
   try{
-    const fields='campaign_name,spend,impressions,clicks,reach';
+    const fields='campaign_name,spend,impressions,clicks,reach,actions';
     const tr=JSON.stringify({since:since,until:until});
     const url='https://graph.facebook.com/v19.0/'+META_ACCOUNT+'/insights?fields='+encodeURIComponent(fields)+'&time_range='+encodeURIComponent(tr)+'&level=campaign&limit=500&access_token='+token;
     const res=await fetch(url);
@@ -673,13 +673,27 @@ function metaClassify(name){
   // (Hub e Experience sempre têm suas palavras no nome)
   return'mentoria';
 }
+function metaGetRegistros(actions){
+  // Pega "Registros concluídos" (complete_registration) ou "lead"
+  if(!actions||!actions.length)return 0;
+  const reg=actions.find(a=>a.action_type==='complete_registration')||
+            actions.find(a=>a.action_type==='lead')||
+            actions.find(a=>a.action_type==='onsite_conversion.lead_grouped');
+  return reg?parseInt(reg.value||0):0;
+}
 function metaSumByPlatform(insights){
-  const r={mentoria:0,hub:0,experience:0,total:0};
+  const r={mentoria:0,hub:0,experience:0,total:0,
+           leads_mentoria:0,leads_hub:0,leads_experience:0};
   if(!insights||!insights.length)return r;
   insights.forEach(function(c){
     const spend=parseFloat(c.spend||0);
     const plat=metaClassify(c.campaign_name);
-    if(plat){r[plat]=(r[plat]||0)+spend;r.total+=spend;}
+    const regs=metaGetRegistros(c.actions);
+    if(plat){
+      r[plat]=(r[plat]||0)+spend;
+      r.total+=spend;
+      r['leads_'+plat]=(r['leads_'+plat]||0)+regs;
+    }
   });
   return r;
 }
@@ -2229,7 +2243,9 @@ async function renderGeral(){
     if($('g-roi'))$('g-roi').textContent=totInv>0?fmt.pct(totRoi):'—';
     if($('g-leads'))$('g-leads').textContent=fmt.num(leads.length);
     if($('g-hot'))$('g-hot').textContent=hot;
-    const totLeadsHb=leadsHub?leadsHub.reduce((a,r)=>a+(+r.leads||0),0):0;
+    const metaInsGeral=await fetchMetaInsights(gIni,gFim);
+    const msGeral=metaSumByPlatform(metaInsGeral);
+    const totLeadsHb=msGeral&&msGeral.leads_hub>0?msGeral.leads_hub:(leadsHub?leadsHub.reduce((a,r)=>a+(+r.leads||0),0):0);
     if($('g-leads-hb'))$('g-leads-hb').textContent=totLeadsHb||'—';
     // Prospecções na Visão Geral
     supaFetch('prospeccoes','select=id').then(pr=>{
@@ -2438,8 +2454,11 @@ async function renderHub(){
     const cpcArr=camps.filter(r=>r.cpc>0).map(r=>+r.cpc);
     const cpcMed=cpcArr.length?cpcArr.reduce((a,b)=>a+b,0)/cpcArr.length:0;
     const totRec=receita.reduce((a,r)=>a+(+r.valor||0),0);
-    const totLeadsHb=camps.reduce((a,r)=>a+(+r.leads||0),0);
-    const hotLeadsHb=0; // Hub não tem score individual
+    // Usa registros da API Meta se disponível, senão soma manual do banco
+    const metaLeadsHb=_msHb&&_msHb.leads_hub>0?_msHb.leads_hub:0;
+    const manualLeadsHb=camps.reduce((a,r)=>a+(+r.leads||0),0);
+    const totLeadsHb=metaLeadsHb||manualLeadsHb;
+    const hotLeadsHb=0;
     const cplHb=totLeadsHb>0?invest/totLeadsHb:0;
     if($('hb-inv'))$('hb-inv').textContent=fmt.brlK(invest);
     if($('hb-ctr'))$('hb-ctr').textContent=fmt.pct(ctrMed);
