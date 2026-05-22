@@ -4418,13 +4418,33 @@ async function fetchYtAnalytics(startDate,endDate){
   }catch(e){return null;}
 }
 
+async function fetchYtUploadsPlaylistId(){
+  const token=getYtToken();if(!token)return null;
+  try{
+    const r=await fetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true',
+      {headers:{Authorization:'Bearer '+token}});
+    const d=await r.json();
+    return d.items&&d.items[0]?d.items[0].contentDetails.relatedPlaylists.uploads:null;
+  }catch(e){return null;}
+}
+
 async function fetchYtTopVideos(){
   const token=getYtToken();if(!token)return[];
   try{
-    const r=await fetch('https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&chart=mostPopular&maxResults=10&regionCode=BR',
+    // Busca playlist de uploads do canal conectado
+    const uploadsId=await fetchYtUploadsPlaylistId();
+    if(!uploadsId)return[];
+    // Busca últimos vídeos
+    const r=await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId='+uploadsId+'&maxResults=10',
       {headers:{Authorization:'Bearer '+token}});
     const d=await r.json();
-    return d.items||[];
+    if(!d.items||!d.items.length)return[];
+    // Busca estatísticas dos vídeos
+    const ids=d.items.map(i=>i.snippet.resourceId.videoId).join(',');
+    const r2=await fetch('https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id='+ids,
+      {headers:{Authorization:'Bearer '+token}});
+    const d2=await r2.json();
+    return d2.items||[];
   }catch(e){return[];}
 }
 
@@ -4537,6 +4557,10 @@ async function renderYouTube(){
     if($('yt-video-count'))$('yt-video-count').textContent=ytFmt(ch.statistics.videoCount);
     const avatar=$('yt-channel-avatar');
     if(avatar){avatar.src=ch.snippet.thumbnails?.default?.url||'';avatar.style.display='block';}
+  } else {
+    // Canal não encontrado — conta errada conectada
+    if($('yt-channel-sub'))$('yt-channel-sub').innerHTML='⚠️ <span style="color:#f59e0b;">Conecte com a conta <b>tutory@tutory.com.br</b> para ver os dados do canal</span>';
+    if(connectBtn){connectBtn.textContent='🔄 Trocar conta';connectBtn.style.background='#f59e0b';connectBtn.style.display='flex';}
   }
   await renderYouTubeData();
 }
