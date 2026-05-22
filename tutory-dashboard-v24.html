@@ -1263,6 +1263,7 @@ async function supaInsert(table, body){
         <button id="gads-disconnect-btn" onclick="disconnectGoogleAds()" style="display:none;background:transparent;color:var(--sub);border:1px solid var(--brd2);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-left:8px;">Desconectar</button>
       </div>
     </div>
+    <div id="gads-error-banner" style="display:none;background:rgba(234,67,53,.1);border:1px solid rgba(234,67,53,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#EA4335;line-height:1.5;"></div>
 
     <!-- KPIs Google Ads -->
     <div class="kgrid" style="margin-bottom:14px;">
@@ -4560,11 +4561,13 @@ function gadsClassify(name){
   return'mentoria';
 }
 
+let _gadsLastError='';
 async function fetchGAdsCampaigns(startDate,endDate){
   const token=getGadsToken();
-  if(!token)return null;
+  if(!token){_gadsLastError='sem_token';return null;}
   const cacheKey=startDate+'_'+endDate;
   if(_gadsCache[cacheKey])return _gadsCache[cacheKey];
+  _gadsLastError='';
   try{
     const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
     const r=await fetch(`https://googleads.googleapis.com/v17/customers/${GADS_CUSTOMER_ID}/googleAds:search`,{
@@ -4573,11 +4576,20 @@ async function fetchGAdsCampaigns(startDate,endDate){
       body:JSON.stringify({query})
     });
     const d=await r.json();
-    if(d.error){console.warn('Google Ads API erro:',d.error);return null;}
+    if(d.error){
+      const msg=d.error.message||JSON.stringify(d.error);
+      console.warn('Google Ads API erro:',d.error);
+      _gadsLastError=msg;
+      return null;
+    }
     _gadsCache[cacheKey]=d;
     setTimeout(()=>{delete _gadsCache[cacheKey];},300000);
     return d;
-  }catch(e){console.warn('Google Ads fetch erro:',e);return null;}
+  }catch(e){
+    console.warn('Google Ads fetch erro:',e);
+    _gadsLastError='Erro de rede/CORS: '+e.message;
+    return null;
+  }
 }
 
 function gadsSumByType(results){
@@ -4606,6 +4618,14 @@ function gadsSumByType(results){
 async function renderGoogleAdsMetrics(){
   const{ini,fim}=getDates('mentoria');
   const results=await fetchGAdsCampaigns(ini,fim);
+  // Mostrar/ocultar banner de erro
+  const errBanner=$('gads-error-banner');
+  if(errBanner){
+    if(_gadsLastError&&_gadsLastError!=='sem_token'){
+      errBanner.style.display='block';
+      errBanner.innerHTML='❌ <strong>Erro Google Ads API:</strong> '+_gadsLastError+'<br><small style="opacity:.7">Verifique se o Token de Desenvolvedor está aprovado e se a API Google Ads está habilitada no Google Cloud Console do projeto <code>rosy-sky-497113-u0</code>.</small>';
+    }else{errBanner.style.display='none';}
+  }
   const sums=gadsSumByType(results);
   const mn=sums.mentoria;
   const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -4623,7 +4643,7 @@ async function renderGoogleAdsMetrics(){
   if(tb){
     const allCamps=[...sums.mentoria.campaigns,...sums.hub.campaigns];
     if(!allCamps.length){
-      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!getGadsToken()?'🔍 Conecte com o Google Ads acima para ver os dados':'Nenhuma campanha encontrada')+'</td></tr>';
+      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null?(_gadsLastError?'❌ Erro API: '+_gadsLastError:'🔍 Conecte com o Google Ads acima para ver os dados'):'Nenhuma campanha encontrada')+'</td></tr>';
     } else {
       tb.innerHTML=allCamps.map(c=>`
         <tr style="border-top:1px solid var(--brd2);">
@@ -4646,7 +4666,7 @@ async function renderGoogleAdsMetrics(){
   const tbYt=$('gads-yt-camp-table');
   if(tbYt){
     if(!yt.campaigns.length){
-      tbYt.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!getGadsToken()?'🔍 Conecte com o Google Ads acima para ver os dados':'Nenhuma campanha de vídeo encontrada')+'</td></tr>';
+      tbYt.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null?(_gadsLastError?'❌ Erro API: '+_gadsLastError:'🔍 Conecte com o Google Ads acima para ver os dados'):'Nenhuma campanha de vídeo encontrada')+'</td></tr>';
     } else {
       tbYt.innerHTML=yt.campaigns.map(c=>`
         <tr style="border-top:1px solid var(--brd2);">
