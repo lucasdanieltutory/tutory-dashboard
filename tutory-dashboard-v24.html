@@ -1764,11 +1764,20 @@ async function supaInsert(table, body){
 
   <!-- Filtro de período -->
   <div id="yt-filter-bar" style="display:none;margin-bottom:20px;">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="yt-period-btn active" onclick="setYtPeriod('7',this)">7 dias</button>
-      <button class="yt-period-btn" onclick="setYtPeriod('30',this)">30 dias</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="yt-period-btn" onclick="setYtPeriod('7',this)">7 dias</button>
+      <button class="yt-period-btn active" onclick="setYtPeriod('30',this)">30 dias</button>
       <button class="yt-period-btn" onclick="setYtPeriod('90',this)">3 meses</button>
       <button class="yt-period-btn" onclick="setYtPeriod('365',this)">1 ano</button>
+      <button class="yt-period-btn" onclick="setYtPeriod('mes',this)">Mês atual</button>
+      <button class="yt-period-btn" onclick="setYtPeriod('custom',this)">Personalizado</button>
+    </div>
+    <div id="yt-custom-row" style="display:none;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--sub);">De:</label>
+      <input type="date" id="yt-custom-start" style="background:var(--bg2);border:1px solid var(--brd2);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:12px;">
+      <label style="font-size:12px;color:var(--sub);">Até:</label>
+      <input type="date" id="yt-custom-end" style="background:var(--bg2);border:1px solid var(--brd2);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:12px;">
+      <button onclick="applyYtCustom()" style="background:#FF0000;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">Aplicar</button>
     </div>
   </div>
 
@@ -4390,6 +4399,8 @@ const YT_CLIENT_ID='643296373040-6755593vavqq5papfg3uj6e2a0ta7au1.apps.googleuse
 const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
 let _ytTokenClient=null;
 let _ytPeriod='30';
+let _ytCustomStart='';
+let _ytCustomEnd='';
 let _ytChartSubs=null;
 let _ytChartViews=null;
 
@@ -4482,15 +4493,48 @@ function setYtPeriod(p,el){
   _ytPeriod=p;
   document.querySelectorAll('.yt-period-btn').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
+  const customRow=$('yt-custom-row');
+  if(p==='custom'){
+    if(customRow)customRow.style.display='flex';
+    // Pré-preenche com o mês atual
+    const today=new Date();
+    const firstDay=new Date(today.getFullYear(),today.getMonth(),1);
+    const fmt=d=>d.toISOString().split('T')[0];
+    const startEl=document.getElementById('yt-custom-start');
+    const endEl=document.getElementById('yt-custom-end');
+    if(startEl&&!startEl.value)startEl.value=fmt(firstDay);
+    if(endEl&&!endEl.value)endEl.value=fmt(today);
+    return; // aguarda o usuário clicar Aplicar
+  } else {
+    if(customRow)customRow.style.display='none';
+    renderYouTubeData();
+  }
+}
+
+function applyYtCustom(){
+  const s=document.getElementById('yt-custom-start')?.value;
+  const e=document.getElementById('yt-custom-end')?.value;
+  if(!s||!e){alert('Selecione as datas de início e fim.');return;}
+  if(s>e){alert('A data de início não pode ser maior que a data de fim.');return;}
+  _ytCustomStart=s;
+  _ytCustomEnd=e;
   renderYouTubeData();
 }
 
-function getYtDates(days){
-  const end=new Date();
-  const start=new Date();
-  start.setDate(start.getDate()-parseInt(days));
+function getYtDates(period){
   const fmt=d=>d.toISOString().split('T')[0];
-  return{start:fmt(start),end:fmt(end)};
+  const today=new Date();
+  if(period==='mes'){
+    const start=new Date(today.getFullYear(),today.getMonth(),1);
+    return{start:fmt(start),end:fmt(today)};
+  }
+  if(period==='custom'){
+    return{start:_ytCustomStart||fmt(new Date(today.getFullYear(),today.getMonth(),1)),
+           end:_ytCustomEnd||fmt(today)};
+  }
+  const start=new Date();
+  start.setDate(start.getDate()-parseInt(period));
+  return{start:fmt(start),end:fmt(today)};
 }
 
 async function fetchYtChannel(){
@@ -4624,7 +4668,8 @@ async function renderYouTubeData(){
   if($('yt-views'))$('yt-views').textContent=ytFmt(totalViews);
   if($('yt-watchtime'))$('yt-watchtime').textContent=Math.round(totalWatch/60).toLocaleString('pt-BR')+'h';
   if($('yt-subs-gained'))$('yt-subs-gained').textContent=(totalSubsGained>0?'+':'')+ytFmt(totalSubsGained);
-  if($('yt-chart-period-label'))$('yt-chart-period-label').textContent='Últimos '+_ytPeriod+' dias';
+  const periodLabel=_ytPeriod==='mes'?'Mês atual':_ytPeriod==='custom'?(_ytCustomStart+' → '+_ytCustomEnd):'Últimos '+_ytPeriod+' dias';
+  if($('yt-chart-period-label'))$('yt-chart-period-label').textContent=periodLabel;
 
   // KPI Monetização
   const revEl=$('yt-revenue');
