@@ -1723,6 +1723,7 @@ async function supaInsert(table, body){
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <img id="yt-channel-avatar" style="width:44px;height:44px;border-radius:50%;display:none;border:2px solid #FF0000;" src="" alt="">
+      <button id="yt-disconnect-btn" onclick="disconnectYouTube()" style="display:none;background:transparent;color:var(--sub);border:1px solid var(--brd);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;">Desconectar</button>
       <button id="yt-connect-btn" onclick="connectYouTube()" style="background:#FF0000;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
         ▶ Conectar YouTube
       </button>
@@ -4396,9 +4397,29 @@ function scheduleYtTokenRefresh(expiresInSecs){
   },delay);
 }
 
-function connectYouTube(){
-  if(!_ytTokenClient){initYouTubeAuth();setTimeout(connectYouTube,700);return;}
-  _ytTokenClient.requestAccessToken();
+function connectYouTube(forceSwitch){
+  if(!_ytTokenClient){initYouTubeAuth();setTimeout(()=>connectYouTube(forceSwitch),700);return;}
+  const opts={login_hint:'tutory@tutory.com.br'};
+  if(forceSwitch)opts.prompt='select_account';
+  _ytTokenClient.requestAccessToken(opts);
+}
+
+function disconnectYouTube(){
+  localStorage.removeItem('tutory_yt_token');
+  localStorage.removeItem('tutory_yt_token_expiry');
+  // Revogar token no Google
+  const token=localStorage.getItem('tutory_yt_token');
+  if(token&&typeof google!=='undefined'&&google.accounts&&google.accounts.oauth2){
+    try{google.accounts.oauth2.revoke(token,()=>{});}catch(e){}
+  }
+  // Limpar UI
+  const connectBtn=$('yt-connect-btn');
+  const disconnectBtn=$('yt-disconnect-btn');
+  const avatar=$('yt-channel-avatar');
+  if(connectBtn){connectBtn.textContent='▶ Conectar YouTube';connectBtn.style.background='#FF0000';}
+  if(disconnectBtn)disconnectBtn.style.display='none';
+  if(avatar){avatar.style.display='none';avatar.src='';}
+  renderYouTube();
 }
 
 function setYtPeriod(p,el){
@@ -4481,6 +4502,16 @@ async function renderYouTubeData(){
   const{start,end}=getYtDates(_ytPeriod);
   const[analytics,topVideos]=await Promise.all([fetchYtAnalytics(start,end),fetchYtTopVideos()]);
 
+  // Se retornou erro de autorização, mostrar aviso
+  if(analytics&&analytics.error){
+    console.warn('YouTube Analytics erro:',analytics.error);
+    if(analytics.error.code===403||analytics.error.code===401){
+      const tb=$('yt-top-videos');
+      if(tb)tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#f59e0b;">⚠️ Conecte com tutory@tutory.com.br para ver analytics</td></tr>';
+      return;
+    }
+  }
+
   // KPIs do analytics
   let totalViews=0,totalWatch=0,totalSubsGained=0,totalSubsLost=0;
   const labels=[],dataViews=[],dataSubs=[],dataSubsCum=[];
@@ -4554,12 +4585,16 @@ async function renderYouTube(){
   const kpis=$('yt-kpis');
   const filterBar=$('yt-filter-bar');
   const connectBtn=$('yt-connect-btn');
+  const disconnectBtn=$('yt-disconnect-btn');
 
   if(!token){
     if(disconnected)disconnected.style.display='block';
     if(kpis)kpis.style.display='none';
     if(filterBar)filterBar.style.display='none';
-    if(connectBtn)connectBtn.style.display='flex';
+    if(connectBtn){connectBtn.textContent='▶ Conectar YouTube';connectBtn.style.background='#FF0000';connectBtn.style.display='flex';}
+    if(disconnectBtn)disconnectBtn.style.display='none';
+    if($('yt-channel-name'))$('yt-channel-name').textContent='YouTube';
+    if($('yt-channel-sub'))$('yt-channel-sub').textContent='Conecte sua conta para ver os dados';
     return;
   }
 
@@ -4567,20 +4602,34 @@ async function renderYouTube(){
   if(kpis)kpis.style.display='block';
   if(filterBar)filterBar.style.display='flex';
   if(connectBtn){connectBtn.textContent='✅ Conectado';connectBtn.style.background='#16a34a';}
+  if(disconnectBtn)disconnectBtn.style.display='inline-block';
 
   // Info do canal
   const ch=await fetchYtChannel();
   if(ch){
-    if($('yt-channel-name'))$('yt-channel-name').textContent=ch.snippet.title;
+    const channelTitle=ch.snippet.title||'';
+    if($('yt-channel-name'))$('yt-channel-name').textContent=channelTitle;
     if($('yt-channel-sub'))$('yt-channel-sub').textContent=ytFmt(ch.statistics.subscriberCount)+' inscritos · '+ytFmt(ch.statistics.videoCount)+' vídeos';
     if($('yt-subs-total'))$('yt-subs-total').textContent=ytFmt(ch.statistics.subscriberCount);
     if($('yt-video-count'))$('yt-video-count').textContent=ytFmt(ch.statistics.videoCount);
     const avatar=$('yt-channel-avatar');
     if(avatar){avatar.src=ch.snippet.thumbnails?.default?.url||'';avatar.style.display='block';}
+    // Verifica se é o canal certo
+    const lower=(channelTitle||'').toLowerCase();
+    const isTutory=lower.includes('tutory');
+    if(!isTutory){
+      if($('yt-channel-sub'))$('yt-channel-sub').innerHTML=
+        '⚠️ <span style="color:#f59e0b;">Conta errada: <b>'+channelTitle+'</b>. Clique em "Trocar conta" abaixo.</span>';
+      if(connectBtn){connectBtn.textContent='🔄 Trocar conta';connectBtn.style.background='#f59e0b';connectBtn.onclick=()=>connectYouTube(true);}
+    } else {
+      if(connectBtn){connectBtn.textContent='✅ Conectado';connectBtn.style.background='#16a34a';connectBtn.onclick=()=>{};}
+    }
   } else {
-    // Canal não encontrado — conta errada conectada
-    if($('yt-channel-sub'))$('yt-channel-sub').innerHTML='⚠️ <span style="color:#f59e0b;">Conecte com a conta <b>tutory@tutory.com.br</b> para ver os dados do canal</span>';
-    if(connectBtn){connectBtn.textContent='🔄 Trocar conta';connectBtn.style.background='#f59e0b';connectBtn.style.display='flex';}
+    // Canal não encontrado — conta errada ou sem canal
+    if($('yt-channel-name'))$('yt-channel-name').textContent='Conta errada';
+    if($('yt-channel-sub'))$('yt-channel-sub').innerHTML=
+      '⚠️ <span style="color:#f59e0b;">Conecte com <b>tutory@tutory.com.br</b> para ver os dados do canal</span>';
+    if(connectBtn){connectBtn.textContent='🔄 Trocar conta';connectBtn.style.background='#f59e0b';connectBtn.onclick=()=>connectYouTube(true);}
   }
   await renderYouTubeData();
 }
