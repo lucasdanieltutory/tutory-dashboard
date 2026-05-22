@@ -4474,8 +4474,9 @@ async function renderCriativos(){
 // ═══════════════════════════════════════
 // GOOGLE ADS API
 // ═══════════════════════════════════════
-const GADS_CUSTOMER_ID='4301688199';
-let _gadsDevToken=localStorage.getItem('tutory_gads_dev_token')||'';
+const GADS_CUSTOMER_ID='4301688199'; // Conta de Anúncios Tutory (430-168-8199)
+const GADS_LOGIN_CUSTOMER_ID='5041220639'; // MCC TUTORY MCC (504-122-0639)
+let _gadsDevToken=localStorage.getItem('tutory_gads_dev_token')||'yfK8K1bqpXm-V9FrO8UX3Q';
 let _gadsCache={};
 
 // ═══════════════════════════════════════
@@ -4516,7 +4517,7 @@ async function fetchGAdsCampaigns(startDate,endDate){
     const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
     const r=await fetch(`https://googleads.googleapis.com/v17/customers/${GADS_CUSTOMER_ID}/googleAds:search`,{
       method:'POST',
-      headers:{'Authorization':'Bearer '+token,'developer-token':_gadsDevToken,'Content-Type':'application/json'},
+      headers:{'Authorization':'Bearer '+token,'developer-token':_gadsDevToken,'login-customer-id':GADS_LOGIN_CUSTOMER_ID,'Content-Type':'application/json'},
       body:JSON.stringify({query})
     });
     const d=await r.json();
