@@ -1276,9 +1276,9 @@ async function supaInsert(table, body){
       <div class="kpi gn"><div class="ki">👤</div><div class="kl">Leads (UTM)</div><div class="kv" id="ggl-tot">—</div><div class="ks">Leads rastreados</div></div>
     </div>
 
-    <!-- Tabela de campanhas -->
+    <!-- Campanhas Search/Display (Mentoria + Hub) -->
     <div class="card" style="margin-bottom:14px;">
-      <div class="ch"><div class="ct">📋 Campanhas Ativas</div><div class="cs">Dados direto da Google Ads API · campanhas Mentoria e Hub</div></div>
+      <div class="ch"><div class="ct">📋 Campanhas — Mentoria &amp; Hub</div><div class="cs">Search e Display · dados direto da Google Ads API</div></div>
       <div class="cb np">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead><tr style="color:var(--sub);text-align:left;">
@@ -1290,6 +1290,49 @@ async function supaInsert(table, body){
             <th style="padding:8px 12px;text-align:center;">Status</th>
           </tr></thead>
           <tbody id="gads-camp-table"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">Configure o token acima para ver os dados</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KPIs YouTube/Vídeo -->
+    <div style="margin-bottom:10px;font-size:11px;font-weight:700;color:#FF0000;text-transform:uppercase;letter-spacing:1px;">▶ Campanhas YouTube (Vídeo)</div>
+    <div class="kgrid" style="margin-bottom:14px;">
+      <div class="kpi" style="border-color:#FF0000;background:rgba(255,0,0,.06);">
+        <div class="ki">📣</div><div class="kl">Investimento</div>
+        <div class="kv" id="gads-yt-invest" style="color:#FF0000;">—</div>
+        <div class="ks">Campanhas de vídeo</div>
+      </div>
+      <div class="kpi" style="border-color:#FF0000;background:rgba(255,0,0,.06);">
+        <div class="ki">👁️</div><div class="kl">Impressões</div>
+        <div class="kv" id="gads-yt-impr" style="color:#FF0000;">—</div>
+        <div class="ks">No período</div>
+      </div>
+      <div class="kpi" style="border-color:#FF0000;background:rgba(255,0,0,.06);">
+        <div class="ki">▶️</div><div class="kl">Views (pagas)</div>
+        <div class="kv" id="gads-yt-views" style="color:#FF0000;">—</div>
+        <div class="ks">Visualizações de vídeo</div>
+      </div>
+      <div class="kpi" style="border-color:#FF0000;background:rgba(255,0,0,.06);">
+        <div class="ki">🖱️</div><div class="kl">Cliques</div>
+        <div class="kv" id="gads-yt-clk" style="color:#FF0000;">—</div>
+        <div class="ks">No período</div>
+      </div>
+    </div>
+
+    <!-- Tabela campanhas YouTube -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch"><div class="ct">▶ Campanhas YouTube — Detalhamento</div><div class="cs">Campanhas de vídeo rodando no YouTube</div></div>
+      <div class="cb np">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="color:var(--sub);text-align:left;">
+            <th style="padding:8px 12px;">Campanha</th>
+            <th style="padding:8px 12px;text-align:right;">Custo</th>
+            <th style="padding:8px 12px;text-align:right;">Impressões</th>
+            <th style="padding:8px 12px;text-align:right;">Views</th>
+            <th style="padding:8px 12px;text-align:right;">Cliques</th>
+            <th style="padding:8px 12px;text-align:center;">Status</th>
+          </tr></thead>
+          <tbody id="gads-yt-camp-table"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">Configure o token acima para ver os dados</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1847,16 +1890,6 @@ async function supaInsert(table, body){
         <div class="ki">💰</div><div class="kl">Receita Estimada</div>
         <div class="kv" id="yt-revenue" style="color:#f59e0b;">—</div>
         <div class="ks" id="yt-revenue-sub">No período (AdSense)</div>
-      </div>
-      <div class="kpi" style="border-color:#4285F4;background:rgba(66,133,244,.06);">
-        <div class="ki">🔍</div><div class="kl">Invest. Google Ads</div>
-        <div class="kv" id="yt-gads-invest" style="color:#4285F4;">—</div>
-        <div class="ks">Campanhas de vídeo YouTube</div>
-      </div>
-      <div class="kpi" style="border-color:#4285F4;background:rgba(66,133,244,.06);">
-        <div class="ki">▶️</div><div class="kl">Views (Google Ads)</div>
-        <div class="kv" id="yt-gads-views" style="color:#4285F4;">—</div>
-        <div class="ks">Views pagas no período</div>
       </div>
     </div>
 
@@ -4550,10 +4583,29 @@ async function renderGoogleAdsMetrics(){
         </tr>`).join('');
     }
   }
-  // YouTube investimento
+  // KPIs YouTube/Vídeo na aba Google Ads
   const yt=sums.youtube;
-  if($('yt-gads-invest'))$('yt-gads-invest').textContent='R$ '+fmt(yt.cost);
-  if($('yt-gads-views'))$('yt-gads-views').textContent=fmtN(yt.videoViews);
+  if($('gads-yt-invest'))$('gads-yt-invest').textContent=yt.cost>0?'R$ '+fmt(yt.cost):'R$ 0,00';
+  if($('gads-yt-impr'))$('gads-yt-impr').textContent=fmtN(yt.impressions);
+  if($('gads-yt-views'))$('gads-yt-views').textContent=fmtN(yt.videoViews);
+  if($('gads-yt-clk'))$('gads-yt-clk').textContent=fmtN(yt.clicks);
+  // Tabela YouTube
+  const tbYt=$('gads-yt-camp-table');
+  if(tbYt){
+    if(!yt.campaigns.length){
+      tbYt.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!_gadsDevToken?'⚙️ Configure o token acima':'Nenhuma campanha de vídeo encontrada')+'</td></tr>';
+    } else {
+      tbYt.innerHTML=yt.campaigns.map(c=>`
+        <tr style="border-top:1px solid var(--brd2);">
+          <td style="padding:8px 12px;font-size:11px;color:var(--txt);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.name}">${c.name}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;color:#FF0000;">R$ ${c.cost.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${fmtN(c.impressions)}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${fmtN(c.videoViews)}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${fmtN(c.clicks)}</td>
+          <td style="padding:8px 12px;text-align:center;"><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${c.status==='ENABLED'?'rgba(34,197,94,.15)':'rgba(156,163,175,.15)'};color:${c.status==='ENABLED'?'#22c55e':'#6b7280'};">${c.status==='ENABLED'?'Ativa':'Pausada'}</span></td>
+        </tr>`).join('');
+    }
+  }
 }
 
 function saveGadsDevToken(){
@@ -4905,15 +4957,6 @@ async function renderYouTubeData(){
       }).join('');
     }
   }
-  // Investimento Google Ads (campanhas YouTube)
-  fetchGAdsCampaigns(start,end).then(results=>{
-    const sums=gadsSumByType(results);
-    const yt=sums.youtube;
-    const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    const fmtN=n=>n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);
-    if($('yt-gads-invest'))$('yt-gads-invest').textContent=yt.cost>0?'R$ '+fmt(yt.cost):(_gadsDevToken?'R$ 0,00':'—');
-    if($('yt-gads-views'))$('yt-gads-views').textContent=yt.videoViews>0?fmtN(yt.videoViews):(_gadsDevToken?'0':'—');
-  });
 }
 
 async function renderYouTube(){
