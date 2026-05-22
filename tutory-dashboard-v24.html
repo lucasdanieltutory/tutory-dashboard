@@ -1252,12 +1252,46 @@ async function supaInsert(table, body){
       </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- Token de Desenvolvedor -->
+    <div class="card" style="border-left:3px solid #4285F4;margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">🔑 Token de Desenvolvedor — Google Ads API</div><div class="cs">Admin → Central de API → Token de desenvolvedor</div></div>
+        <span id="gads-token-status" style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:700;background:rgba(234,67,53,.12);color:#EA4335;">Não configurado</span>
+      </div>
+      <div class="cb" style="display:flex;gap:8px;align-items:center;padding-top:0;">
+        <input id="gads-dev-token-inp" type="password" placeholder="Cole aqui o token de desenvolvedor..." style="flex:1;background:var(--bg2);border:1px solid var(--brd2);border-radius:8px;padding:8px 12px;color:var(--txt);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
+        <button onclick="saveGadsDevToken()" style="background:#4285F4;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar e Carregar</button>
+      </div>
+    </div>
+
+    <!-- KPIs Google Ads -->
     <div class="kgrid" style="margin-bottom:14px;">
-      <div class="kpi mn"><div class="ki">👤</div><div class="kl">Total Leads</div><div class="kv" id="ggl-tot">—</div><div class="ks">Leads via Google Ads</div></div>
-      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="ggl-hot">—</div><div class="ks">Classificação manual</div></div>
-      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL</div><div class="kv" id="ggl-cpl-kpi">—</div><div class="ks">Futuro: API Google Ads</div></div>
-      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="ggl-inv-kpi">—</div><div class="ks">Futuro: API Google Ads</div></div>
+      <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="ggl-inv-kpi" style="color:#4285F4;">—</div><div class="ks">Campanhas search/display</div></div>
+      <div class="kpi mn"><div class="ki">👁️</div><div class="kl">Impressões</div><div class="kv" id="ggl-impr-kpi" style="color:#4285F4;">—</div><div class="ks">No período</div></div>
+      <div class="kpi mn"><div class="ki">🖱️</div><div class="kl">Cliques</div><div class="kv" id="ggl-clk-kpi" style="color:#4285F4;">—</div><div class="ks">No período</div></div>
+      <div class="kpi mn"><div class="ki">✅</div><div class="kl">Conversões</div><div class="kv" id="ggl-conv-kpi" style="color:#22c55e;">—</div><div class="ks">Google Ads</div></div>
+      <div class="kpi mn"><div class="ki">📊</div><div class="kl">CTR</div><div class="kv" id="ggl-ctr-kpi" style="color:#4285F4;">—</div><div class="ks">Taxa de clique</div></div>
+      <div class="kpi mn"><div class="ki">💸</div><div class="kl">CPC Médio</div><div class="kv" id="ggl-cpc-kpi" style="color:#4285F4;">—</div><div class="ks">Custo por clique</div></div>
+      <div class="kpi mn"><div class="ki">🎯</div><div class="kl">CPL</div><div class="kv" id="ggl-cpl-kpi" style="color:#4285F4;">—</div><div class="ks">Custo por lead</div></div>
+      <div class="kpi gn"><div class="ki">👤</div><div class="kl">Leads (UTM)</div><div class="kv" id="ggl-tot">—</div><div class="ks">Leads rastreados</div></div>
+    </div>
+
+    <!-- Tabela de campanhas -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch"><div class="ct">📋 Campanhas Ativas</div><div class="cs">Dados direto da Google Ads API · campanhas Mentoria e Hub</div></div>
+      <div class="cb np">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="color:var(--sub);text-align:left;">
+            <th style="padding:8px 12px;">Campanha</th>
+            <th style="padding:8px 12px;text-align:right;">Custo</th>
+            <th style="padding:8px 12px;text-align:right;">Impressões</th>
+            <th style="padding:8px 12px;text-align:right;">Cliques</th>
+            <th style="padding:8px 12px;text-align:right;">Conversões</th>
+            <th style="padding:8px 12px;text-align:center;">Status</th>
+          </tr></thead>
+          <tbody id="gads-camp-table"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">Configure o token acima para ver os dados</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Aeroporto Google -->
@@ -1814,6 +1848,16 @@ async function supaInsert(table, body){
         <div class="kv" id="yt-revenue" style="color:#f59e0b;">—</div>
         <div class="ks" id="yt-revenue-sub">No período (AdSense)</div>
       </div>
+      <div class="kpi" style="border-color:#4285F4;background:rgba(66,133,244,.06);">
+        <div class="ki">🔍</div><div class="kl">Invest. Google Ads</div>
+        <div class="kv" id="yt-gads-invest" style="color:#4285F4;">—</div>
+        <div class="ks">Campanhas de vídeo YouTube</div>
+      </div>
+      <div class="kpi" style="border-color:#4285F4;background:rgba(66,133,244,.06);">
+        <div class="ki">▶️</div><div class="kl">Views (Google Ads)</div>
+        <div class="kv" id="yt-gads-views" style="color:#4285F4;">—</div>
+        <div class="ks">Views pagas no período</div>
+      </div>
     </div>
 
     <!-- Gráfico Inscritos -->
@@ -2358,6 +2402,7 @@ function switchMnTab(tab,el){
   const t=document.getElementById('mn-sub-'+tab);
   if(t)t.style.display='';
   if(el)el.classList.add('on');
+  if(tab==='google'){renderGoogleAdsMetrics();initGadsTokenUI();}
 }
 function stBand(el,ok,okT,wT){if(!el)return;const sdot=`<span style="width:6px;height:6px;border-radius:50%;background:${ok?'var(--gn)':'#FF8C55'};display:inline-block;"></span>`;el.className='pb-st '+(ok?'ok':'warn');el.innerHTML=sdot+' '+(ok?okT:wT);}
 function setRef(id){const e=$(id);if(e)e.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
@@ -4393,10 +4438,17 @@ async function renderCriativos(){
 }
 
 // ═══════════════════════════════════════
+// GOOGLE ADS API
+// ═══════════════════════════════════════
+const GADS_CUSTOMER_ID='4301688199';
+let _gadsDevToken=localStorage.getItem('tutory_gads_dev_token')||'';
+let _gadsCache={};
+
+// ═══════════════════════════════════════
 // YOUTUBE INTEGRATION
 // ═══════════════════════════════════════
 const YT_CLIENT_ID='643296373040-6755593vavqq5papfg3uj6e2a0ta7au1.apps.googleusercontent.com';
-const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
+const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly https://www.googleapis.com/auth/adwords';
 let _ytTokenClient=null;
 let _ytPeriod='30';
 let _ytCustomStart='';
@@ -4409,6 +4461,118 @@ function getYtToken(){
   const exp=parseInt(localStorage.getItem('tutory_yt_token_expiry')||'0');
   if(t&&exp&&Date.now()<exp-60000)return t;
   return null;
+}
+
+// ═══════════════════════════════════════
+// GOOGLE ADS FUNCTIONS
+// ═══════════════════════════════════════
+function gadsClassify(name){
+  const n=(name||'').toUpperCase();
+  if(n.includes('[VIDEO]')||n.includes('[YOUTUBE]'))return'youtube';
+  if(n.includes('[HUB]'))return'hub';
+  return'mentoria';
+}
+
+async function fetchGAdsCampaigns(startDate,endDate){
+  const token=getYtToken();
+  if(!token||!_gadsDevToken)return null;
+  const cacheKey=startDate+'_'+endDate;
+  if(_gadsCache[cacheKey])return _gadsCache[cacheKey];
+  try{
+    const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
+    const r=await fetch(`https://googleads.googleapis.com/v17/customers/${GADS_CUSTOMER_ID}/googleAds:search`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'developer-token':_gadsDevToken,'Content-Type':'application/json'},
+      body:JSON.stringify({query})
+    });
+    const d=await r.json();
+    if(d.error){console.warn('Google Ads API erro:',d.error);return null;}
+    _gadsCache[cacheKey]=d;
+    setTimeout(()=>{delete _gadsCache[cacheKey];},300000);
+    return d;
+  }catch(e){console.warn('Google Ads fetch erro:',e);return null;}
+}
+
+function gadsSumByType(results){
+  const r={mentoria:{cost:0,impressions:0,clicks:0,conversions:0,campaigns:[]},
+            youtube:{cost:0,impressions:0,clicks:0,videoViews:0,campaigns:[]},
+            hub:{cost:0,impressions:0,clicks:0,conversions:0,campaigns:[]}};
+  if(!results||!results.results)return r;
+  results.results.forEach(row=>{
+    const name=row.campaign?.name||'';
+    const type=gadsClassify(name);
+    const cost=(parseInt(row.metrics?.costMicros||0))/1000000;
+    const imp=parseInt(row.metrics?.impressions||0);
+    const clk=parseInt(row.metrics?.clicks||0);
+    const conv=parseFloat(row.metrics?.conversions||0);
+    const vviews=parseInt(row.metrics?.videoViews||0);
+    r[type].cost+=cost;
+    r[type].impressions+=imp;
+    r[type].clicks+=clk;
+    r[type].conversions+=conv;
+    if(type==='youtube')r[type].videoViews+=vviews;
+    r[type].campaigns.push({name,cost,impressions:imp,clicks:clk,conversions:conv,videoViews:vviews,status:row.campaign?.status});
+  });
+  return r;
+}
+
+async function renderGoogleAdsMetrics(){
+  const{ini,fim}=getDates('mentoria');
+  const results=await fetchGAdsCampaigns(ini,fim);
+  const sums=gadsSumByType(results);
+  const mn=sums.mentoria;
+  const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtN=n=>n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);
+  // KPIs
+  if($('ggl-inv-kpi'))$('ggl-inv-kpi').textContent='R$ '+fmt(mn.cost);
+  if($('ggl-impr-kpi'))$('ggl-impr-kpi').textContent=fmtN(mn.impressions);
+  if($('ggl-clk-kpi'))$('ggl-clk-kpi').textContent=fmtN(mn.clicks);
+  if($('ggl-conv-kpi'))$('ggl-conv-kpi').textContent=mn.conversions.toFixed(0);
+  if($('ggl-ctr-kpi')){const ctr=mn.impressions>0?(mn.clicks/mn.impressions*100):0;$('ggl-ctr-kpi').textContent=ctr.toFixed(2)+'%';}
+  if($('ggl-cpc-kpi')){const cpc=mn.clicks>0?mn.cost/mn.clicks:0;$('ggl-cpc-kpi').textContent='R$ '+fmt(cpc);}
+  if($('ggl-cpl-kpi')){const cpl=mn.conversions>0?mn.cost/mn.conversions:0;$('ggl-cpl-kpi').textContent=mn.conversions>0?'R$ '+fmt(cpl):'—';}
+  // Tabela de campanhas
+  const tb=$('gads-camp-table');
+  if(tb){
+    const allCamps=[...sums.mentoria.campaigns,...sums.hub.campaigns];
+    if(!allCamps.length){
+      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!_gadsDevToken?'⚙️ Configure o Token de Desenvolvedor acima para ver os dados':'Nenhuma campanha encontrada')+'</td></tr>';
+    } else {
+      tb.innerHTML=allCamps.map(c=>`
+        <tr style="border-top:1px solid var(--brd2);">
+          <td style="padding:8px 12px;font-size:11px;color:var(--txt);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;color:#4285F4;">R$ ${c.cost.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${fmtN(c.impressions)}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${fmtN(c.clicks)}</td>
+          <td style="padding:8px 12px;text-align:right;color:#22c55e;">${c.conversions.toFixed(0)}</td>
+          <td style="padding:8px 12px;text-align:center;"><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;background:${c.status==='ENABLED'?'rgba(34,197,94,.15)':'rgba(156,163,175,.15)'};color:${c.status==='ENABLED'?'#22c55e':'#6b7280'};">${c.status==='ENABLED'?'Ativa':'Pausada'}</span></td>
+        </tr>`).join('');
+    }
+  }
+  // YouTube investimento
+  const yt=sums.youtube;
+  if($('yt-gads-invest'))$('yt-gads-invest').textContent='R$ '+fmt(yt.cost);
+  if($('yt-gads-views'))$('yt-gads-views').textContent=fmtN(yt.videoViews);
+}
+
+function saveGadsDevToken(){
+  const inp=document.getElementById('gads-dev-token-inp');
+  if(!inp||!inp.value.trim()){alert('Cole o token de desenvolvedor primeiro.');return;}
+  _gadsDevToken=inp.value.trim();
+  localStorage.setItem('tutory_gads_dev_token',_gadsDevToken);
+  _gadsCache={};
+  const status=$('gads-token-status');
+  if(status){status.textContent='✅ Configurado';status.style.background='rgba(34,197,94,.12)';status.style.color='#22c55e';}
+  renderGoogleAdsMetrics();
+}
+
+function initGadsTokenUI(){
+  const inp=document.getElementById('gads-dev-token-inp');
+  const status=$('gads-token-status');
+  if(_gadsDevToken){
+    if(inp)inp.value=_gadsDevToken;
+    if(status){status.textContent='✅ Configurado';status.style.background='rgba(34,197,94,.12)';status.style.color='#22c55e';}
+  }
 }
 
 async function initYouTubeAuth(){
@@ -4740,6 +4904,15 @@ async function renderYouTubeData(){
       }).join('');
     }
   }
+  // Investimento Google Ads (campanhas YouTube)
+  fetchGAdsCampaigns(start,end).then(results=>{
+    const sums=gadsSumByType(results);
+    const yt=sums.youtube;
+    const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmtN=n=>n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);
+    if($('yt-gads-invest'))$('yt-gads-invest').textContent=yt.cost>0?'R$ '+fmt(yt.cost):(_gadsDevToken?'R$ 0,00':'—');
+    if($('yt-gads-views'))$('yt-gads-views').textContent=yt.videoViews>0?fmtN(yt.videoViews):(_gadsDevToken?'0':'—');
+  });
 }
 
 async function renderYouTube(){
