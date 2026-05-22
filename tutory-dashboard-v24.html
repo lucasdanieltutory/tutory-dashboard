@@ -1252,15 +1252,15 @@ async function supaInsert(table, body){
       </div>
     </div>
 
-    <!-- Token de Desenvolvedor -->
+    <!-- Conexão Google Ads -->
     <div class="card" style="border-left:3px solid #4285F4;margin-bottom:14px;">
       <div class="ch">
-        <div><div class="ct">🔑 Token de Desenvolvedor — Google Ads API</div><div class="cs">Admin → Central de API → Token de desenvolvedor</div></div>
-        <span id="gads-token-status" style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:700;background:rgba(234,67,53,.12);color:#EA4335;">Não configurado</span>
+        <div><div class="ct">🔍 Conexão Google Ads — lucas.daniel@tutory.com.br</div><div class="cs">Conecte com a conta admin do Google Ads para carregar os dados</div></div>
+        <span id="gads-auth-status" style="font-size:11px;padding:3px 10px;border-radius:8px;font-weight:700;background:rgba(234,67,53,.12);color:#EA4335;">Não conectado</span>
       </div>
-      <div class="cb" style="display:flex;gap:8px;align-items:center;padding-top:0;">
-        <input id="gads-dev-token-inp" type="password" placeholder="Cole aqui o token de desenvolvedor..." style="flex:1;background:var(--bg2);border:1px solid var(--brd2);border-radius:8px;padding:8px 12px;color:var(--txt);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
-        <button onclick="saveGadsDevToken()" style="background:#4285F4;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar e Carregar</button>
+      <div class="cb" style="padding-top:0;">
+        <button id="gads-connect-btn" onclick="connectGoogleAds()" style="background:#4285F4;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;">🔍 Conectar com Google Ads</button>
+        <button id="gads-disconnect-btn" onclick="disconnectGoogleAds()" style="display:none;background:transparent;color:var(--sub);border:1px solid var(--brd2);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;margin-left:8px;">Desconectar</button>
       </div>
     </div>
 
@@ -2436,7 +2436,7 @@ function switchMnTab(tab,el){
   const t=document.getElementById('mn-sub-'+tab);
   if(t)t.style.display='';
   if(el)el.classList.add('on');
-  if(tab==='google'){renderGoogleAdsMetrics();initGadsTokenUI();}
+  if(tab==='google'){initGoogleAdsAuth();renderGoogleAdsMetrics();}
 }
 function stBand(el,ok,okT,wT){if(!el)return;const sdot=`<span style="width:6px;height:6px;border-radius:50%;background:${ok?'var(--gn)':'#FF8C55'};display:inline-block;"></span>`;el.className='pb-st '+(ok?'ok':'warn');el.innerHTML=sdot+' '+(ok?okT:wT);}
 function setRef(id){const e=$(id);if(e)e.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
@@ -4476,14 +4476,66 @@ async function renderCriativos(){
 // ═══════════════════════════════════════
 const GADS_CUSTOMER_ID='4301688199'; // Conta de Anúncios Tutory (430-168-8199)
 const GADS_LOGIN_CUSTOMER_ID='5041220639'; // MCC TUTORY MCC (504-122-0639)
-let _gadsDevToken=localStorage.getItem('tutory_gads_dev_token')||'yfK8K1bqpXm-V9FrO8UX3Q';
+const GADS_DEV_TOKEN='yfK8K1bqpXm-V9FrO8UX3Q';
+let _gadsToken=localStorage.getItem('tutory_gads_token')||'';
+let _gadsTokenExpiry=parseInt(localStorage.getItem('tutory_gads_token_expiry')||'0');
+let _gadsTokenClient=null;
 let _gadsCache={};
+
+function getGadsToken(){
+  if(_gadsToken&&_gadsTokenExpiry&&Date.now()<_gadsTokenExpiry-60000)return _gadsToken;
+  return null;
+}
+
+function initGoogleAdsAuth(){
+  if(typeof google==='undefined'||!google.accounts){setTimeout(initGoogleAdsAuth,500);return;}
+  _gadsTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:YT_CLIENT_ID,
+    scope:'https://www.googleapis.com/auth/adwords',
+    login_hint:'lucas.daniel@tutory.com.br',
+    callback:async(response)=>{
+      if(response.error){console.warn('Google Ads OAuth erro:',response.error);return;}
+      const expiry=Date.now()+(response.expires_in||3600)*1000;
+      _gadsToken=response.access_token;
+      _gadsTokenExpiry=expiry;
+      localStorage.setItem('tutory_gads_token',_gadsToken);
+      localStorage.setItem('tutory_gads_token_expiry',String(expiry));
+      _gadsCache={};
+      updateGadsAuthUI(true);
+      renderGoogleAdsMetrics();
+    }
+  });
+  // Verifica se já tem token válido
+  if(getGadsToken()){updateGadsAuthUI(true);}
+}
+
+function connectGoogleAds(){
+  if(!_gadsTokenClient){initGoogleAdsAuth();setTimeout(connectGoogleAds,700);return;}
+  _gadsTokenClient.requestAccessToken({prompt:'select_account',login_hint:'lucas.daniel@tutory.com.br'});
+}
+
+function disconnectGoogleAds(){
+  _gadsToken='';_gadsTokenExpiry=0;
+  localStorage.removeItem('tutory_gads_token');
+  localStorage.removeItem('tutory_gads_token_expiry');
+  _gadsCache={};
+  updateGadsAuthUI(false);
+}
+
+function updateGadsAuthUI(connected){
+  const status=document.getElementById('gads-auth-status');
+  const connectBtn=document.getElementById('gads-connect-btn');
+  const disconnectBtn=document.getElementById('gads-disconnect-btn');
+  if(status){status.textContent=connected?'✅ Conectado':'Não conectado';status.style.background=connected?'rgba(34,197,94,.12)':'rgba(234,67,53,.12)';status.style.color=connected?'#22c55e':'#EA4335';}
+  if(connectBtn)connectBtn.style.display=connected?'none':'inline-block';
+  if(disconnectBtn)disconnectBtn.style.display=connected?'inline-block':'none';
+}
 
 // ═══════════════════════════════════════
 // YOUTUBE INTEGRATION
 // ═══════════════════════════════════════
 const YT_CLIENT_ID='643296373040-6755593vavqq5papfg3uj6e2a0ta7au1.apps.googleusercontent.com';
-const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly https://www.googleapis.com/auth/adwords';
+const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
 let _ytTokenClient=null;
 let _ytPeriod='30';
 let _ytCustomStart='';
@@ -4509,15 +4561,15 @@ function gadsClassify(name){
 }
 
 async function fetchGAdsCampaigns(startDate,endDate){
-  const token=getYtToken();
-  if(!token||!_gadsDevToken)return null;
+  const token=getGadsToken();
+  if(!token)return null;
   const cacheKey=startDate+'_'+endDate;
   if(_gadsCache[cacheKey])return _gadsCache[cacheKey];
   try{
     const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
     const r=await fetch(`https://googleads.googleapis.com/v17/customers/${GADS_CUSTOMER_ID}/googleAds:search`,{
       method:'POST',
-      headers:{'Authorization':'Bearer '+token,'developer-token':_gadsDevToken,'login-customer-id':GADS_LOGIN_CUSTOMER_ID,'Content-Type':'application/json'},
+      headers:{'Authorization':'Bearer '+token,'developer-token':GADS_DEV_TOKEN,'login-customer-id':GADS_LOGIN_CUSTOMER_ID,'Content-Type':'application/json'},
       body:JSON.stringify({query})
     });
     const d=await r.json();
@@ -4571,7 +4623,7 @@ async function renderGoogleAdsMetrics(){
   if(tb){
     const allCamps=[...sums.mentoria.campaigns,...sums.hub.campaigns];
     if(!allCamps.length){
-      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!_gadsDevToken?'⚙️ Configure o Token de Desenvolvedor acima para ver os dados':'Nenhuma campanha encontrada')+'</td></tr>';
+      tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!getGadsToken()?'🔍 Conecte com o Google Ads acima para ver os dados':'Nenhuma campanha encontrada')+'</td></tr>';
     } else {
       tb.innerHTML=allCamps.map(c=>`
         <tr style="border-top:1px solid var(--brd2);">
@@ -4594,7 +4646,7 @@ async function renderGoogleAdsMetrics(){
   const tbYt=$('gads-yt-camp-table');
   if(tbYt){
     if(!yt.campaigns.length){
-      tbYt.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!_gadsDevToken?'⚙️ Configure o token acima':'Nenhuma campanha de vídeo encontrada')+'</td></tr>';
+      tbYt.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--sub);">'+(results===null&&!getGadsToken()?'🔍 Conecte com o Google Ads acima para ver os dados':'Nenhuma campanha de vídeo encontrada')+'</td></tr>';
     } else {
       tbYt.innerHTML=yt.campaigns.map(c=>`
         <tr style="border-top:1px solid var(--brd2);">
@@ -4609,25 +4661,6 @@ async function renderGoogleAdsMetrics(){
   }
 }
 
-function saveGadsDevToken(){
-  const inp=document.getElementById('gads-dev-token-inp');
-  if(!inp||!inp.value.trim()){alert('Cole o token de desenvolvedor primeiro.');return;}
-  _gadsDevToken=inp.value.trim();
-  localStorage.setItem('tutory_gads_dev_token',_gadsDevToken);
-  _gadsCache={};
-  const status=$('gads-token-status');
-  if(status){status.textContent='✅ Configurado';status.style.background='rgba(34,197,94,.12)';status.style.color='#22c55e';}
-  renderGoogleAdsMetrics();
-}
-
-function initGadsTokenUI(){
-  const inp=document.getElementById('gads-dev-token-inp');
-  const status=$('gads-token-status');
-  if(_gadsDevToken){
-    if(inp)inp.value=_gadsDevToken;
-    if(status){status.textContent='✅ Configurado';status.style.background='rgba(34,197,94,.12)';status.style.color='#22c55e';}
-  }
-}
 
 async function initYouTubeAuth(){
   if(typeof google==='undefined'||!google.accounts){setTimeout(initYouTubeAuth,500);return;}
@@ -5028,6 +5061,7 @@ document.addEventListener('DOMContentLoaded',async ()=>{
   // Inicializa token Meta (troca para longa duração se necessário)
   await initMetaToken();
   initYouTubeAuth();
+  initGoogleAdsAuth();
   renderGeral();updateFab('geral');
 });
 
