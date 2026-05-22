@@ -1768,6 +1768,11 @@ async function supaInsert(table, body){
         <div class="kv" id="yt-video-count" style="color:#FF0000;">—</div>
         <div class="ks">Total publicados</div>
       </div>
+      <div class="kpi" style="border-color:#f59e0b;background:rgba(245,158,11,.06);">
+        <div class="ki">💰</div><div class="kl">Receita Estimada</div>
+        <div class="kv" id="yt-revenue" style="color:#f59e0b;">—</div>
+        <div class="ks" id="yt-revenue-sub">No período (AdSense)</div>
+      </div>
     </div>
 
     <!-- Gráfico Inscritos -->
@@ -1792,16 +1797,17 @@ async function supaInsert(table, body){
 
     <!-- Top Vídeos -->
     <div class="card" style="margin-bottom:20px;">
-      <div class="ch"><div class="ct">🎬 Top Vídeos do Canal</div><div class="cs">Por visualizações</div></div>
+      <div class="ch"><div class="ct">🏆 Top 10 Vídeos — Mais Assistidos</div><div class="cs">Todos os tempos · por visualizações</div></div>
       <div class="cb np">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead><tr style="color:var(--sub);text-align:left;">
+            <th style="padding:8px 12px;">#</th>
             <th style="padding:8px 12px;">Título</th>
             <th style="padding:8px 12px;text-align:right;">Views</th>
+            <th style="padding:8px 12px;text-align:right;">Watch Time</th>
             <th style="padding:8px 12px;text-align:right;">Likes</th>
-            <th style="padding:8px 12px;text-align:right;">Comentários</th>
           </tr></thead>
-          <tbody id="yt-top-videos"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--sub);">Carregando...</td></tr></tbody>
+          <tbody id="yt-top-videos"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--sub);">Carregando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4349,7 +4355,7 @@ async function renderCriativos(){
 // YOUTUBE INTEGRATION
 // ═══════════════════════════════════════
 const YT_CLIENT_ID='643296373040-6755593vavqq5papfg3uj6e2a0ta7au1.apps.googleusercontent.com';
-const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly';
+const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
 let _ytTokenClient=null;
 let _ytPeriod='30';
 let _ytChartSubs=null;
@@ -4459,33 +4465,66 @@ async function fetchYtAnalytics(startDate,endDate){
   }catch(e){return null;}
 }
 
-async function fetchYtUploadsPlaylistId(){
+async function fetchYtRevenue(startDate,endDate){
   const token=getYtToken();if(!token)return null;
   try{
-    const r=await fetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true',
+    const p=new URLSearchParams({ids:'channel==MINE',startDate,endDate,
+      metrics:'estimatedRevenue,adImpressions,monetizedPlaybacks',
+      dimensions:'day',sort:'day'});
+    const r=await fetch('https://youtubeanalytics.googleapis.com/v2/reports?'+p,
       {headers:{Authorization:'Bearer '+token}});
     const d=await r.json();
-    return d.items&&d.items[0]?d.items[0].contentDetails.relatedPlaylists.uploads:null;
+    if(d.error)return null; // canal não monetizado ou sem permissão
+    return d;
   }catch(e){return null;}
 }
 
 async function fetchYtTopVideos(){
   const token=getYtToken();if(!token)return[];
   try{
-    // Busca playlist de uploads do canal conectado
-    const uploadsId=await fetchYtUploadsPlaylistId();
+    // Busca top 10 vídeos por views de todos os tempos via Analytics API
+    const today=new Date().toISOString().split('T')[0];
+    const p=new URLSearchParams({ids:'channel==MINE',startDate:'2015-01-01',endDate:today,
+      metrics:'views,estimatedMinutesWatched',dimensions:'video',sort:'-views',maxResults:'10'});
+    const ra=await fetch('https://youtubeanalytics.googleapis.com/v2/reports?'+p,
+      {headers:{Authorization:'Bearer '+token}});
+    const da=await ra.json();
+    if(da.rows&&da.rows.length){
+      const videoIds=da.rows.map(row=>row[0]).join(',');
+      const rd=await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id='+videoIds,
+        {headers:{Authorization:'Bearer '+token}});
+      const dd=await rd.json();
+      if(dd.items&&dd.items.length){
+        return da.rows.map(row=>{
+          const vid=dd.items.find(v=>v.id===row[0]);
+          if(!vid)return null;
+          return{...vid,_analyticsViews:row[1],_analyticsWatchMin:row[2]};
+        }).filter(Boolean);
+      }
+    }
+    // Fallback: uploads recentes ordenados por views
+    return await fetchYtRecentVideos(token);
+  }catch(e){return await fetchYtRecentVideos(null);}
+}
+
+async function fetchYtRecentVideos(token){
+  if(!token)token=getYtToken();
+  if(!token)return[];
+  try{
+    const rc=await fetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true',
+      {headers:{Authorization:'Bearer '+token}});
+    const dc=await rc.json();
+    const uploadsId=dc.items&&dc.items[0]?dc.items[0].contentDetails.relatedPlaylists.uploads:null;
     if(!uploadsId)return[];
-    // Busca últimos vídeos
-    const r=await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId='+uploadsId+'&maxResults=10',
+    const rp=await fetch('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId='+uploadsId+'&maxResults=20',
       {headers:{Authorization:'Bearer '+token}});
-    const d=await r.json();
-    if(!d.items||!d.items.length)return[];
-    // Busca estatísticas dos vídeos
-    const ids=d.items.map(i=>i.snippet.resourceId.videoId).join(',');
-    const r2=await fetch('https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id='+ids,
+    const dp=await rp.json();
+    if(!dp.items||!dp.items.length)return[];
+    const ids=dp.items.map(i=>i.snippet.resourceId.videoId).join(',');
+    const rv=await fetch('https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id='+ids,
       {headers:{Authorization:'Bearer '+token}});
-    const d2=await r2.json();
-    return d2.items||[];
+    const dv=await rv.json();
+    return(dv.items||[]).sort((a,b)=>parseInt(b.statistics?.viewCount||0)-parseInt(a.statistics?.viewCount||0)).slice(0,10);
   }catch(e){return[];}
 }
 
@@ -4500,14 +4539,19 @@ async function renderYouTubeData(){
   const token=getYtToken();
   if(!token)return;
   const{start,end}=getYtDates(_ytPeriod);
-  const[analytics,topVideos]=await Promise.all([fetchYtAnalytics(start,end),fetchYtTopVideos()]);
+  // Busca tudo em paralelo
+  const[analytics,topVideos,revenueData]=await Promise.all([
+    fetchYtAnalytics(start,end),
+    fetchYtTopVideos(),
+    fetchYtRevenue(start,end)
+  ]);
 
   // Se retornou erro de autorização, mostrar aviso
   if(analytics&&analytics.error){
     console.warn('YouTube Analytics erro:',analytics.error);
     if(analytics.error.code===403||analytics.error.code===401){
       const tb=$('yt-top-videos');
-      if(tb)tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#f59e0b;">⚠️ Conecte com tutory@tutory.com.br para ver analytics</td></tr>';
+      if(tb)tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#f59e0b;">⚠️ Conecte com tutory@tutory.com.br para ver analytics</td></tr>';
       return;
     }
   }
@@ -4520,11 +4564,10 @@ async function renderYouTubeData(){
       const[day,views,watch,gained,lost]=row;
       totalViews+=views;totalWatch+=watch;
       totalSubsGained+=gained;totalSubsLost+=lost;
-      labels.push(day.slice(5));// MM-DD
+      labels.push(day.slice(5));
       dataViews.push(views);
       dataSubs.push(gained-lost);
     });
-    // Acumulado de inscritos
     let cum=0;dataSubs.forEach(v=>{cum+=v;dataSubsCum.push(cum);});
   }
 
@@ -4532,6 +4575,23 @@ async function renderYouTubeData(){
   if($('yt-watchtime'))$('yt-watchtime').textContent=Math.round(totalWatch/60).toLocaleString('pt-BR')+'h';
   if($('yt-subs-gained'))$('yt-subs-gained').textContent=(totalSubsGained>0?'+':'')+ytFmt(totalSubsGained);
   if($('yt-chart-period-label'))$('yt-chart-period-label').textContent='Últimos '+_ytPeriod+' dias';
+
+  // KPI Monetização
+  const revEl=$('yt-revenue');
+  const revSub=$('yt-revenue-sub');
+  if(revEl){
+    if(revenueData&&revenueData.rows&&revenueData.rows.length){
+      let totalRev=0;
+      revenueData.rows.forEach(row=>{totalRev+=parseFloat(row[1]||0);});
+      // Converte USD → BRL (aproximado)
+      const brl=totalRev*5.7;
+      revEl.textContent='R$ '+brl.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(revSub)revSub.textContent='Receita AdSense no período';
+    } else {
+      revEl.textContent='—';
+      if(revSub)revSub.textContent=revenueData===null?'Canal não monetizado':'No período (AdSense)';
+    }
+  }
 
   // Gráfico inscritos (área)
   const ctxS=document.getElementById('yt-chart-subs');
@@ -4563,19 +4623,27 @@ async function renderYouTubeData(){
   // Top vídeos
   const tb=$('yt-top-videos');
   if(tb){
-    if(!topVideos.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--sub);">Nenhum vídeo encontrado</td></tr>';}
-    else{tb.innerHTML=topVideos.map(v=>`
-      <tr style="border-top:1px solid var(--brd2);">
-        <td style="padding:8px 12px;max-width:320px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <img src="${v.snippet.thumbnails?.default?.url||''}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0;">
-            <span style="font-size:11px;color:var(--txt);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${v.snippet.title}</span>
-          </div>
-        </td>
-        <td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--txt);">${ytFmt(v.statistics?.viewCount)}</td>
-        <td style="padding:8px 12px;text-align:right;color:#22c55e;">❤️ ${ytFmt(v.statistics?.likeCount)}</td>
-        <td style="padding:8px 12px;text-align:right;color:var(--sub);">💬 ${ytFmt(v.statistics?.commentCount)}</td>
-      </tr>`).join('');}
+    if(!topVideos.length){
+      tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--sub);">Nenhum vídeo encontrado</td></tr>';
+    } else {
+      tb.innerHTML=topVideos.map((v,i)=>{
+        const views=v._analyticsViews!=null?ytFmt(v._analyticsViews):ytFmt(v.statistics?.viewCount);
+        const watchH=v._analyticsWatchMin!=null?Math.round(v._analyticsWatchMin/60).toLocaleString('pt-BR')+'h':'—';
+        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="color:var(--sub);font-size:11px;">${i+1}</span>`;
+        return`<tr style="border-top:1px solid var(--brd2);">
+          <td style="padding:8px 12px;text-align:center;width:36px;">${medal}</td>
+          <td style="padding:8px 12px;max-width:300px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <img src="${v.snippet.thumbnails?.default?.url||''}" style="width:52px;height:38px;object-fit:cover;border-radius:4px;flex-shrink:0;">
+              <a href="https://youtube.com/watch?v=${v.id}" target="_blank" style="font-size:11px;color:var(--txt);line-height:1.4;text-decoration:none;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${v.snippet.title}</a>
+            </div>
+          </td>
+          <td style="padding:8px 12px;text-align:right;font-weight:800;color:#FF0000;">${views}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--sub);">${watchH}</td>
+          <td style="padding:8px 12px;text-align:right;color:#22c55e;">❤️ ${ytFmt(v.statistics?.likeCount)}</td>
+        </tr>`;
+      }).join('');
+    }
   }
 }
 
