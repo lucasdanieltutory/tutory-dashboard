@@ -4371,9 +4371,29 @@ function initYouTubeAuth(){
       const expiry=Date.now()+(response.expires_in||3600)*1000;
       localStorage.setItem('tutory_yt_token',response.access_token);
       localStorage.setItem('tutory_yt_token_expiry',String(expiry));
+      // Agenda renovação automática 5 min antes de expirar
+      scheduleYtTokenRefresh(response.expires_in||3600);
       await renderYouTube();
     }
   });
+  // Se já tem token válido, agenda renovação
+  const exp=parseInt(localStorage.getItem('tutory_yt_token_expiry')||'0');
+  if(exp>Date.now()){
+    const secsLeft=Math.floor((exp-Date.now())/1000);
+    scheduleYtTokenRefresh(secsLeft);
+  }
+}
+
+function scheduleYtTokenRefresh(expiresInSecs){
+  const delay=Math.max((expiresInSecs-300)*1000,5000); // 5 min antes
+  setTimeout(()=>{
+    console.log('🔄 Renovando token YouTube silenciosamente...');
+    if(_ytTokenClient){
+      try{
+        _ytTokenClient.requestAccessToken({prompt:''});// Silent — sem popup
+      }catch(e){console.warn('Renovação silenciosa falhou:',e);}
+    }
+  },delay);
 }
 
 function connectYouTube(){
