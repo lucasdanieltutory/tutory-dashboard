@@ -4607,9 +4607,10 @@ async function fetchGAdsCampaigns(startDate,endDate){
   _gadsLastError='';
   try{
     const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
-    const r=await fetch(`https://googleads.googleapis.com/v17/customers/${GADS_CUSTOMER_ID}/googleAds:search`,{
+    // Usa proxy serverless (/api/gads) para evitar CORS — Google Ads API não suporta chamadas do navegador
+    const r=await fetch('/api/gads',{
       method:'POST',
-      headers:{'Authorization':'Bearer '+token,'developer-token':GADS_DEV_TOKEN,'login-customer-id':GADS_LOGIN_CUSTOMER_ID,'Content-Type':'application/json'},
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
       body:JSON.stringify({query})
     });
     const d=await r.json();
