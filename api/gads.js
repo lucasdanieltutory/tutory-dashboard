@@ -1,7 +1,8 @@
 // Vercel Serverless Function — Proxy para Google Ads API
-// A Google Ads API não suporta chamadas CORS do navegador — este proxy resolve isso
+// Usa https nativo (sem fetch) para compatibilidade com qualquer versão Node.js
+const https = require('https');
+
 module.exports = async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -18,32 +19,50 @@ module.exports = async function handler(req, res) {
   const query = body.query;
   if (!query) return res.status(400).json({ error: 'Missing query' });
 
-  // Credenciais Google Ads — mantidas server-side
+  // Credenciais Google Ads — server-side apenas
   const CUSTOMER_ID    = '4301688199';
   const LOGIN_CUSTOMER = '5041220639';
   const DEV_TOKEN      = process.env.GADS_DEV_TOKEN ||
     [121,102,75,56,75,49,98,113,112,88,109,45,86,57,70,114,79,56,85,88,51,81]
       .map(c => String.fromCharCode(c)).join('');
 
-  try {
-    const gaRes = await fetch(
-      `https://googleads.googleapis.com/v17/customers/${CUSTOMER_ID}/googleAds:search`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization':     authHeader,
-          'developer-token':   DEV_TOKEN,
-          'login-customer-id': LOGIN_CUSTOMER,
-          'Content-Type':      'application/json',
-        },
-        body: JSON.stringify({ query }),
-      }
-    );
+  const postBody = JSON.stringify({ query });
 
-    const data = await gaRes.json();
-    return res.status(gaRes.status).json(data);
-  } catch (err) {
-    console.error('gads proxy error:', err);
-    return res.status(500).json({ error: err.message });
-  }
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'googleads.googleapis.com',
+      path: `/v17/customers/${CUSTOMER_ID}/googleAds:search`,
+      method: 'POST',
+      headers: {
+        'Authorization':     authHeader,
+        'developer-token':   DEV_TOKEN,
+        'login-customer-id': LOGIN_CUSTOMER,
+        'Content-Type':      'application/json',
+        'Content-Length':    Buffer.byteLength(postBody),
+      },
+    };
+
+    const gaReq = https.request(options, (gaRes) => {
+      let data = '';
+      gaRes.on('data', (chunk) => { data += chunk; });
+      gaRes.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          res.status(gaRes.statusCode).json(parsed);
+        } catch (e) {
+          res.status(500).json({ error: 'Parse error', raw: data.substring(0, 300) });
+        }
+        resolve();
+      });
+    });
+
+    gaReq.on('error', (err) => {
+      console.error('https error:', err);
+      res.status(500).json({ error: err.message });
+      resolve();
+    });
+
+    gaReq.write(postBody);
+    gaReq.end();
+  });
 };
