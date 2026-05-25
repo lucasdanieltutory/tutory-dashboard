@@ -1,74 +1,75 @@
-// Vercel Serverless Function — Proxy para Google Ads API
-// Usa https nativo (sem fetch) para compatibilidade com qualquer versão Node.js
 const https = require('https');
+
+function gadsRequest(version, customerId, devToken, loginCustomer, authHeader, query) {
+  return new Promise((resolve) => {
+    const postBody = JSON.stringify({ query });
+    const options = {
+      hostname: 'googleads.googleapis.com',
+      path: `/${version}/customers/${customerId}/googleAds:search`,
+      method: 'POST',
+      headers: {
+        'Authorization':     authHeader,
+        'developer-token':   devToken,
+        'login-customer-id': loginCustomer,
+        'Content-Type':      'application/json',
+        'Content-Length':    Buffer.byteLength(postBody),
+      },
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve({ status: res.status || res.statusCode, headers: res.headers, body: data }));
+    });
+    req.on('error', e => resolve({ status: 0, body: e.message }));
+    req.write(postBody);
+    req.end();
+  });
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing Authorization header' });
-  }
+  if (!authHeader || !authHeader.startsWith('Bearer '))
+    return res.status(401).json({ error: 'Missing Authorization' });
 
-  const body = req.body || {};
-  const query = body.query;
+  const query = (req.body || {}).query;
   if (!query) return res.status(400).json({ error: 'Missing query' });
 
-  // Credenciais Google Ads — server-side apenas
   const CUSTOMER_ID    = '4301688199';
   const LOGIN_CUSTOMER = '5041220639';
   const DEV_TOKEN      = process.env.GADS_DEV_TOKEN ||
     [121,102,75,56,75,49,98,113,112,88,109,45,86,57,70,114,79,56,85,88,51,81]
       .map(c => String.fromCharCode(c)).join('');
 
-  const postBody = JSON.stringify({ query });
+  // Tenta versões de mais recente para mais antiga até achar uma que responda JSON
+  const VERSIONS = ['v20', 'v21', 'v22', 'v19', 'v18', 'v17', 'v16'];
+  let lastError = '';
 
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'googleads.googleapis.com',
-      path: `/v19/customers/${CUSTOMER_ID}/googleAds:search`,
-      method: 'POST',
-      headers: {
-        'Authorization':     authHeader,
-        'developer-token':   DEV_TOKEN,
-        'login-customer-id': LOGIN_CUSTOMER,
-        'Content-Type':      'application/json',
-        'Content-Length':    Buffer.byteLength(postBody),
-      },
-    };
+  for (const version of VERSIONS) {
+    const r = await gadsRequest(version, CUSTOMER_ID, DEV_TOKEN, LOGIN_CUSTOMER, authHeader, query);
+    const isJson = (r.headers && r.headers['content-type'] || '').includes('json') ||
+                   (r.body && r.body.trim().startsWith('{'));
+    if (isJson) {
+      try {
+        const parsed = JSON.parse(r.body);
+        return res.status(r.status || 200).json(parsed);
+      } catch(e) {
+        lastError = `${version}: parse error - ${r.body.substring(0, 200)}`;
+        continue;
+      }
+    }
+    // Não foi JSON (404 HTML etc) — tenta próxima versão
+    lastError = `${version}: HTTP ${r.status} não-JSON`;
+    console.log(`Google Ads ${version} returned non-JSON (${r.status}), trying next...`);
+  }
 
-    const gaReq = https.request(options, (gaRes) => {
-      let data = '';
-      gaRes.on('data', (chunk) => { data += chunk; });
-      gaRes.on('end', () => {
-        // Se não for JSON (ex: HTML de erro), devolve diagnóstico
-        if (!gaRes.headers['content-type']?.includes('json')) {
-          return res.status(502).json({
-            error: { message: 'Google Ads HTTP ' + gaRes.statusCode + ' — resposta não-JSON: ' + data.substring(0, 400) }
-          }) && resolve();
-        }
-        try {
-          const parsed = JSON.parse(data);
-          res.status(gaRes.statusCode).json(parsed);
-        } catch (e) {
-          res.status(502).json({ error: { message: 'Parse error: ' + data.substring(0, 400) } });
-        }
-        resolve();
-      });
-    });
-
-    gaReq.on('error', (err) => {
-      console.error('https error:', err);
-      res.status(500).json({ error: err.message });
-      resolve();
-    });
-
-    gaReq.write(postBody);
-    gaReq.end();
+  // Nenhuma versão funcionou
+  return res.status(502).json({
+    error: { message: 'Nenhuma versão da API funcionou. Último erro: ' + lastError }
   });
 };
