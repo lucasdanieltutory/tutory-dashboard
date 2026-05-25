@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
   return new Promise((resolve) => {
     const options = {
       hostname: 'googleads.googleapis.com',
-      path: `/v17/customers/${CUSTOMER_ID}/googleAds:search`,
+      path: `/v19/customers/${CUSTOMER_ID}/googleAds:search`,
       method: 'POST',
       headers: {
         'Authorization':     authHeader,
@@ -46,11 +46,17 @@ module.exports = async function handler(req, res) {
       let data = '';
       gaRes.on('data', (chunk) => { data += chunk; });
       gaRes.on('end', () => {
+        // Se não for JSON (ex: HTML de erro), devolve diagnóstico
+        if (!gaRes.headers['content-type']?.includes('json')) {
+          return res.status(502).json({
+            error: { message: 'Google Ads HTTP ' + gaRes.statusCode + ' — resposta não-JSON: ' + data.substring(0, 400) }
+          }) && resolve();
+        }
         try {
           const parsed = JSON.parse(data);
           res.status(gaRes.statusCode).json(parsed);
         } catch (e) {
-          res.status(500).json({ error: 'Parse error', raw: data.substring(0, 300) });
+          res.status(502).json({ error: { message: 'Parse error: ' + data.substring(0, 400) } });
         }
         resolve();
       });
