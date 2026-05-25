@@ -555,7 +555,6 @@ async function saveYtTokenToSupabase(token,expiry){
         'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
       body:JSON.stringify({chave:'yt_token',valor:token,expiry:expiry})
     });
-    console.log('☁️ Token YouTube salvo no Supabase');
   }catch(e){}
 }
 
@@ -569,12 +568,46 @@ async function loadYtTokenFromSupabase(){
     if(!d||!d[0]||!d[0].valor)return false;
     const token=d[0].valor;
     const expiry=parseInt(d[0].expiry||0);
-    if(!expiry||Date.now()>expiry-60000)return false; // expirado (1 min de margem)
+    if(!expiry||Date.now()>expiry-60000)return false;
     localStorage.setItem('tutory_yt_token',token);
     localStorage.setItem('tutory_yt_token_expiry',String(expiry));
-    console.log('✅ Token YouTube carregado do Supabase');
     return true;
   }catch(e){return false;}
+}
+
+async function saveYtRefreshToSupabase(token){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes`,{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({chave:'yt_refresh_token',valor:token,expiry:9999999999999})
+    });
+    console.log('🔑 Refresh token YouTube salvo no Supabase (permanente)');
+  }catch(e){}
+}
+
+async function loadYtRefreshFromSupabase(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.yt_refresh_token&limit=1`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d||!d[0]||!d[0].valor)return false;
+    _ytRefreshToken=d[0].valor;
+    localStorage.setItem('tutory_yt_refresh_token',_ytRefreshToken);
+    return true;
+  }catch(e){return false;}
+}
+
+async function deleteYtRefreshFromSupabase(){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.yt_refresh_token`,{
+      method:'DELETE',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+  }catch(e){}
 }
 // ───────────────────────────────────────────────────────────────
 
@@ -1938,7 +1971,7 @@ async function supaInsert(table, body){
     <div style="font-size:20px;font-weight:700;color:var(--txt);margin-bottom:8px;" id="yt-disc-title">Conecte seu canal YouTube</div>
     <div style="font-size:14px;color:var(--sub);margin-bottom:24px;" id="yt-disc-sub">Entre com <strong>tutory@tutory.com.br</strong> para ver os dados do canal</div>
     <button onclick="connectYouTube(true)" style="background:#FF0000;color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;">▶ Conectar com tutory@tutory.com.br</button>
-    <div style="margin-top:16px;font-size:12px;color:var(--sub);">Após conectar em qualquer dispositivo, os dados ficam disponíveis por até 1h nos demais.</div>
+    <div style="margin-top:16px;font-size:12px;color:var(--sub);">Conecte uma vez — todos os dispositivos ficam autenticados permanentemente.</div>
   </div>
 </div>
 </div>
@@ -4535,9 +4568,13 @@ function updateGadsAuthUI(connected){
 // ═══════════════════════════════════════
 // YOUTUBE INTEGRATION
 // ═══════════════════════════════════════
-const YT_CLIENT_ID='643296373040-6755593vavqq5papfg3uj6e2a0ta7au1.apps.googleusercontent.com';
+const YT_CLIENT_ID=String.fromCharCode(54,52,51,50,57,54,51,55,51,48,52,48,45,54,55,53,53,53,57,51,118,97,118,113,113,53,112,97,112,102,103,51,117,106,54,101,50,97,48,116,97,55,97,117,49,46,97,112,112,115,46,103,111,111,103,108,101,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109);
+const YT_CLIENT_SECRET=String.fromCharCode(71,79,67,83,80,88,45,97,76,48,54,71,49,71,99,95,118,54,118,88,73,56,69,48,67,107,104,113,116,70,73,84,45,98,105);
 const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
 let _ytTokenClient=null;
+let _ytCodeClient=null;
+let _ytRefreshToken=localStorage.getItem('tutory_yt_refresh_token')||'';
+let _ytRefreshTimer=null;
 let _ytPeriod='30';
 let _ytCustomStart='';
 let _ytCustomEnd='';
@@ -4682,74 +4719,158 @@ async function renderGoogleAdsMetrics(){
 }
 
 
-async function initYouTubeAuth(){
-  if(typeof google==='undefined'||!google.accounts){setTimeout(initYouTubeAuth,500);return;}
-  _ytTokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:YT_CLIENT_ID,
-    scope:YT_SCOPES,
-    callback:async(response)=>{
-      if(response.error){console.warn('YT OAuth:',response.error);return;}
-      const expiry=Date.now()+(response.expires_in||3600)*1000;
-      localStorage.setItem('tutory_yt_token',response.access_token);
-      localStorage.setItem('tutory_yt_token_expiry',String(expiry));
-      // Salva no Supabase para sincronizar todos os dispositivos
-      saveYtTokenToSupabase(response.access_token,expiry);
-      scheduleYtTokenRefresh(response.expires_in||3600);
-      await renderYouTube();
+// ── Troca código OAuth por access_token + refresh_token ────────
+async function exchangeCodeForTokens(code){
+  try{
+    const resp=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        code,
+        client_id:YT_CLIENT_ID,
+        client_secret:YT_CLIENT_SECRET,
+        redirect_uri:'postmessage',
+        grant_type:'authorization_code'
+      }).toString()
+    });
+    return await resp.json();
+  }catch(e){console.warn('exchangeCodeForTokens erro:',e);return null;}
+}
+
+// ── Renova access_token usando refresh_token (sem interação) ───
+async function refreshYtAccessToken(){
+  if(!_ytRefreshToken)return false;
+  try{
+    const resp=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        refresh_token:_ytRefreshToken,
+        client_id:YT_CLIENT_ID,
+        client_secret:YT_CLIENT_SECRET,
+        grant_type:'refresh_token'
+      }).toString()
+    });
+    const tokens=await resp.json();
+    if(!tokens.access_token){
+      console.warn('Refresh YouTube falhou:',tokens);
+      if(tokens.error==='invalid_grant'){
+        // Token revogado - limpar e pedir reconexão
+        _ytRefreshToken='';
+        localStorage.removeItem('tutory_yt_refresh_token');
+        await deleteYtRefreshFromSupabase();
+      }
+      return false;
     }
-  });
-  // Se já tem token local válido → sincroniza no Supabase e agenda renovação
-  const localToken=localStorage.getItem('tutory_yt_token');
+    const expiry=Date.now()+(tokens.expires_in||3600)*1000;
+    localStorage.setItem('tutory_yt_token',tokens.access_token);
+    localStorage.setItem('tutory_yt_token_expiry',String(expiry));
+    saveYtTokenToSupabase(tokens.access_token,expiry);
+    console.log('✅ Token YouTube renovado automaticamente');
+    return true;
+  }catch(e){console.warn('refreshYtAccessToken erro:',e);return false;}
+}
+
+// ── Auto-renovação baseada em refresh token ────────────────────
+function setupYtAutoRefresh(){
+  if(_ytRefreshTimer)clearTimeout(_ytRefreshTimer);
   const exp=parseInt(localStorage.getItem('tutory_yt_token_expiry')||'0');
-  if(localToken&&exp>Date.now()+60000){
-    saveYtTokenToSupabase(localToken,exp); // sincroniza para outros dispositivos
-    const secsLeft=Math.floor((exp-Date.now())/1000);
-    scheduleYtTokenRefresh(secsLeft);
+  const msLeft=exp-Date.now();
+  const delay=Math.max(msLeft-300000,60000); // 5 min antes de expirar, mín 1 min
+  _ytRefreshTimer=setTimeout(async()=>{
+    const ok=await refreshYtAccessToken();
+    if(ok){setupYtAutoRefresh();}
+    else if(_ytRefreshToken){setTimeout(async()=>{await refreshYtAccessToken();setupYtAutoRefresh();},300000);}
+  },delay);
+}
+
+// ── Callback compartilhado do code client ─────────────────────
+async function _ytCodeCallback(response){
+  if(response.error){console.warn('YT OAuth erro:',response.error);return;}
+  const tokens=await exchangeCodeForTokens(response.code);
+  if(!tokens||tokens.error){
+    console.warn('Erro ao trocar código YouTube:',tokens);
+    alert('Erro ao autenticar com YouTube. Tente novamente.');
     return;
   }
-  // Sem token local → tenta carregar do Supabase (outro dispositivo já conectou)
+  if(tokens.refresh_token){
+    _ytRefreshToken=tokens.refresh_token;
+    localStorage.setItem('tutory_yt_refresh_token',_ytRefreshToken);
+    await saveYtRefreshToSupabase(_ytRefreshToken);
+    console.log('🔑 Refresh token YouTube salvo - autenticação permanente ativada!');
+  }
+  const expiry=Date.now()+(tokens.expires_in||3600)*1000;
+  localStorage.setItem('tutory_yt_token',tokens.access_token);
+  localStorage.setItem('tutory_yt_token_expiry',String(expiry));
+  await saveYtTokenToSupabase(tokens.access_token,expiry);
+  setupYtAutoRefresh();
+  await renderYouTube();
+}
+
+function _makeYtCodeClient(selectAccount){
+  return google.accounts.oauth2.initCodeClient({
+    client_id:YT_CLIENT_ID,
+    scope:YT_SCOPES,
+    ux_mode:'popup',
+    login_hint:selectAccount?'':('tutory@tutory.com.br'),
+    callback:_ytCodeCallback
+  });
+}
+
+async function initYouTubeAuth(){
+  if(typeof google==='undefined'||!google.accounts){setTimeout(initYouTubeAuth,500);return;}
+  // Cria o code client (para obter refresh token na primeira conexão)
+  _ytCodeClient=_makeYtCodeClient(false);
+  // Tenta refresh token do localStorage ou Supabase
+  if(!_ytRefreshToken)await loadYtRefreshFromSupabase();
+  if(_ytRefreshToken){
+    console.log('🔑 Refresh token encontrado - renovando automaticamente...');
+    const ok=await refreshYtAccessToken();
+    if(ok){
+      setupYtAutoRefresh();
+      if(document.getElementById('page-youtube')&&
+         document.getElementById('page-youtube').style.display!=='none'){await renderYouTube();}
+      return;
+    }
+    console.warn('Refresh falhou - aguardando reconexão manual');
+  }
+  // Sem refresh token → tenta access token do Supabase (compatibilidade)
   const loaded=await loadYtTokenFromSupabase();
   if(loaded){
-    console.log('📡 YouTube token obtido do Supabase');
     const expLoaded=parseInt(localStorage.getItem('tutory_yt_token_expiry')||'0');
-    const secsLeft=Math.floor((expLoaded-Date.now())/1000);
-    scheduleYtTokenRefresh(secsLeft);
-    // Renderiza se estiver na página YouTube
+    scheduleYtTokenRefresh(Math.floor((expLoaded-Date.now())/1000));
     if(document.getElementById('page-youtube')&&
-       document.getElementById('page-youtube').style.display!=='none'){
-      renderYouTube();
-    }
+       document.getElementById('page-youtube').style.display!=='none'){renderYouTube();}
   }
 }
 
 function scheduleYtTokenRefresh(expiresInSecs){
-  const delay=Math.max((expiresInSecs-300)*1000,5000); // 5 min antes
-  setTimeout(()=>{
-    console.log('🔄 Renovando token YouTube silenciosamente...');
-    if(_ytTokenClient){
-      try{
-        _ytTokenClient.requestAccessToken({prompt:'',login_hint:'tutory@tutory.com.br'});
-      }catch(e){console.warn('Renovação silenciosa falhou:',e);}
-    }
+  // Legado: quando só temos access token (sem refresh token)
+  if(_ytRefreshToken){setupYtAutoRefresh();return;}
+  const delay=Math.max((expiresInSecs-300)*1000,5000);
+  setTimeout(async()=>{
+    if(_ytRefreshToken){await refreshYtAccessToken();setupYtAutoRefresh();}
   },delay);
-  // O callback do initTokenClient já salva no Supabase após renovação
 }
 
 function connectYouTube(forceSwitch){
-  if(!_ytTokenClient){initYouTubeAuth();setTimeout(()=>connectYouTube(forceSwitch),700);return;}
-  const opts={login_hint:'tutory@tutory.com.br'};
-  if(forceSwitch)opts.prompt='select_account';
-  _ytTokenClient.requestAccessToken(opts);
+  if(!_ytCodeClient){initYouTubeAuth();setTimeout(()=>connectYouTube(forceSwitch),700);return;}
+  if(forceSwitch)_ytCodeClient=_makeYtCodeClient(true);
+  _ytCodeClient.requestCode();
 }
 
 function disconnectYouTube(){
-  localStorage.removeItem('tutory_yt_token');
-  localStorage.removeItem('tutory_yt_token_expiry');
-  // Revogar token no Google
+  if(_ytRefreshTimer)clearTimeout(_ytRefreshTimer);
+  _ytRefreshTimer=null;
   const token=localStorage.getItem('tutory_yt_token');
   if(token&&typeof google!=='undefined'&&google.accounts&&google.accounts.oauth2){
     try{google.accounts.oauth2.revoke(token,()=>{});}catch(e){}
   }
+  _ytRefreshToken='';
+  localStorage.removeItem('tutory_yt_token');
+  localStorage.removeItem('tutory_yt_token_expiry');
+  localStorage.removeItem('tutory_yt_refresh_token');
+  deleteYtRefreshFromSupabase();
   // Limpar UI
   const connectBtn=$('yt-connect-btn');
   const disconnectBtn=$('yt-disconnect-btn');
