@@ -4613,10 +4613,17 @@ async function fetchGAdsCampaigns(startDate,endDate){
       headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
       body:JSON.stringify({query})
     });
-    const d=await r.json();
+    let d;
+    try{d=await r.json();}catch(je){
+      // Resposta não era JSON — captura texto para diagnóstico
+      const txt=await r.clone().text().catch(()=>'(sem resposta)');
+      _gadsLastError='HTTP '+r.status+' — resposta não-JSON: '+txt.substring(0,300);
+      console.warn('Google Ads resposta não-JSON:',txt);
+      return null;
+    }
     if(d.error){
-      const msg=d.error.message||JSON.stringify(d.error);
-      console.warn('Google Ads API erro:',d.error);
+      const msg=d.error.message||(d.raw?'Parse error — Google retornou: '+d.raw:JSON.stringify(d.error));
+      console.warn('Google Ads API erro:',d.error,d.raw||'');
       _gadsLastError=msg;
       return null;
     }
