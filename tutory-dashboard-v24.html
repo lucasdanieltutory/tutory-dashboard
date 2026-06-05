@@ -2980,7 +2980,7 @@ function go(id,el){
   else if(id==='criativos')renderCriativos();
   else if(id==='prospeccoes')renderProspeccoes(true);
   else if(id==='youtube')renderYouTube();
-  else if(id==='beijamim')renderBeijamim();
+  else if(id==='beijamim')initBeijamim();
 }
 function updateFab(id){
   const fa=$('fab-area');
@@ -2997,7 +2997,7 @@ function reload(m=false){
   else if(cur==='criativos')renderCriativos();
   else if(cur==='prospeccoes')renderProspeccoes(false);
   else if(cur==='youtube')renderYouTube();
-  else if(cur==='beijamim')renderBeijamim();
+  else if(cur==='beijamim')renderBeijamim(); // refresh manual não precisa seed
   setTimeout(()=>{if(b)b.classList.remove('spin');},700);
 }
 setInterval(()=>reload(),5*60*1000);
@@ -5275,44 +5275,59 @@ function doLogout(){
 }
 
 /* ════════════════════════════════════════════════════════
-   PROSPECÇÕES BEIJAMIM — localStorage engine
+   PROSPECÇÕES BEIJAMIM — Supabase engine (real-time)
+   Tabela: prospeccoes_beijamim
    ════════════════════════════════════════════════════════ */
-var BJ_KEY='tutory_bj_leads_v1';
+var BJ_TABLE='prospeccoes_beijamim';
 var _bjPieChart=null;
 var _bjModal_tipo='hub';
+var _bjRefreshTimer=null;
 
-/* Leads iniciais da planilha Excel do Beijamim (todos HUB) */
+/* Leads iniciais (seed na 1ª vez que a tabela estiver vazia) */
 var BJ_INITIAL=[
-  {id:'bj1',  tipo:'hub', nome:'Deltamat Curso de Matemática',        instagram:'cursodeltamat',               plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj2',  tipo:'hub', nome:'Maria Helena Alves | Inglês Militar', instagram:'teachermariahelena',          plataforma:'Kiwify',    obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj3',  tipo:'hub', nome:'Rodrigo Rodrigues',                   instagram:'profrodrigoues',              plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj4',  tipo:'hub', nome:'Gabriel Tersi',                       instagram:'delegadotersi',               plataforma:'Eduzz',     obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj5',  tipo:'hub', nome:'GPS da Aprovação',                    instagram:'gpsdaaprovacao.oficial',      plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj6',  tipo:'hub', nome:'CURSO PRESSÃO',                       instagram:'cursopressao',                plataforma:'Herospark', obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj7',  tipo:'hub', nome:'Professor Rudi',                      instagram:'professor_rudi',              plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj8',  tipo:'hub', nome:'Elite Policial',                      instagram:'elitepolicialofc',            plataforma:'Hubla',     obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj9',  tipo:'hub', nome:'Polícia Penal',                       instagram:'policiapenal_ppmg',           plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj10', tipo:'hub', nome:'Santiago',                            instagram:'_wandersonsantiago',          plataforma:'Kiwify',    obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj11', tipo:'hub', nome:'Carreiras Policiais',                 instagram:'carreirapolicial190',         plataforma:'Kiwify',    obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj12', tipo:'hub', nome:'Aprovação Tribunais',                 instagram:'aprovacao.tribunais',         plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj13', tipo:'hub', nome:'Fabrício Guimarães',                  instagram:'prof.fabricioguimaraes',      plataforma:'Hotmart',   obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
-  {id:'bj14', tipo:'hub', nome:'Preparatório Roberto Quintino',       instagram:'preparatorio_robertoquintino',plataforma:'Eduzz',     obs:'', classificacao:'Pré-qualificado', criado:new Date(2026,4,1).toISOString()},
+  {tipo:'hub',nome:'Deltamat Curso de Matemática',        instagram:'cursodeltamat',               plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Maria Helena Alves | Inglês Militar', instagram:'teachermariahelena',          plataforma:'Kiwify',    obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Rodrigo Rodrigues',                   instagram:'profrodrigoues',              plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Gabriel Tersi',                       instagram:'delegadotersi',               plataforma:'Eduzz',     obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'GPS da Aprovação',                    instagram:'gpsdaaprovacao.oficial',      plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'CURSO PRESSÃO',                       instagram:'cursopressao',                plataforma:'Herospark', obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Professor Rudi',                      instagram:'professor_rudi',              plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Elite Policial',                      instagram:'elitepolicialofc',            plataforma:'Hubla',     obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Polícia Penal',                       instagram:'policiapenal_ppmg',           plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Santiago',                            instagram:'_wandersonsantiago',          plataforma:'Kiwify',    obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Carreiras Policiais',                 instagram:'carreirapolicial190',         plataforma:'Kiwify',    obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Aprovação Tribunais',                 instagram:'aprovacao.tribunais',         plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Fabrício Guimarães',                  instagram:'prof.fabricioguimaraes',      plataforma:'Hotmart',   obs:'',classificacao:'Pré-qualificado'},
+  {tipo:'hub',nome:'Preparatório Roberto Quintino',       instagram:'preparatorio_robertoquintino',plataforma:'Eduzz',     obs:'',classificacao:'Pré-qualificado'},
 ];
 
-function bjLoadLeads(){
-  var raw=localStorage.getItem(BJ_KEY);
-  if(raw){
-    try{ return JSON.parse(raw); }catch(e){}
-  }
-  /* primeira vez: seeder com dados da planilha */
-  localStorage.setItem(BJ_KEY,JSON.stringify(BJ_INITIAL));
-  return JSON.parse(JSON.stringify(BJ_INITIAL));
+/* ── SUPABASE HELPERS ── */
+async function bjFetch(){
+  return supaFetch(BJ_TABLE,'select=*&order=criado.asc');
 }
-function bjSaveLeads(leads){
-  localStorage.setItem(BJ_KEY,JSON.stringify(leads));
+async function bjInsert(body){
+  return supaInsert(BJ_TABLE,body);
 }
-function bjGenId(){
-  return 'bj_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+async function bjPatch(id,dados){
+  return supaUpdate(BJ_TABLE,id,dados);
+}
+async function bjDelete(id){
+  await fetch(SUPA_URL+'/rest/v1/'+BJ_TABLE+'?id=eq.'+id,{
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'}
+  });
+}
+
+/* Seed automático: se tabela vazia insere os 14 leads iniciais */
+async function bjSeedIfEmpty(){
+  try{
+    var r=await supaFetch(BJ_TABLE,'select=id&limit=1');
+    if(r&&r.length===0){
+      for(var i=0;i<BJ_INITIAL.length;i++){
+        await bjInsert(BJ_INITIAL[i]);
+      }
+    }
+  }catch(e){ console.warn('bjSeed:',e); }
 }
 
 /* ── MODAL ── */
@@ -5324,7 +5339,6 @@ function bjOpenModal(tipo){
   document.getElementById('bj-modal-sub').textContent=(tipo==='hub'?'Parceiro para o HUB':'Lead prospectado para Mentoria');
   var btn=document.getElementById('bj-modal-tipo');
   btn.style.background=tipo==='hub'?'linear-gradient(135deg,#7C3AED,#A78BFA)':'linear-gradient(135deg,#2563EB,#60A5FA)';
-  /* limpar campos */
   ['bj-inp-nome','bj-inp-insta','bj-inp-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('bj-inp-plat').value='';
   document.getElementById('bj-inp-class').value='Pré-qualificado';
@@ -5335,41 +5349,47 @@ function bjCloseModal(){
   var m=document.getElementById('bj-modal');
   if(m)m.style.display='none';
 }
-function bjSaveLead(){
+async function bjSaveLead(){
   var nome=document.getElementById('bj-inp-nome').value.trim();
   var insta=document.getElementById('bj-inp-insta').value.trim().replace(/^@/,'');
   var plat=document.getElementById('bj-inp-plat').value;
   var cls=document.getElementById('bj-inp-class').value;
   var obs=document.getElementById('bj-inp-obs').value.trim();
   if(!nome){alert('Preencha o nome do lead.');return;}
-  var leads=bjLoadLeads();
-  var novo={id:bjGenId(),tipo:_bjModal_tipo,nome:nome,instagram:insta,plataforma:plat,obs:obs,classificacao:cls,criado:new Date().toISOString()};
-  leads.unshift(novo);
-  bjSaveLeads(leads);
-  bjCloseModal();
-  renderBeijamim();
+  var btn=document.getElementById('bj-modal-tipo');
+  if(btn){btn.textContent='⏳ Salvando...';btn.disabled=true;}
+  try{
+    await bjInsert({tipo:_bjModal_tipo,nome:nome,instagram:insta,plataforma:plat,obs:obs,classificacao:cls});
+    bjCloseModal();
+    await renderBeijamim();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+  finally{if(btn){btn.textContent='💾 Salvar Lead';btn.disabled=false;}}
 }
 
 /* ── CLASSIFICAÇÃO INLINE ── */
-function bjSetClass(id,cls){
-  var leads=bjLoadLeads();
-  var lead=leads.find(function(l){return l.id===id;});
-  if(lead){lead.classificacao=cls;bjSaveLeads(leads);renderBeijamim();}
+async function bjSetClass(id,cls){
+  try{
+    await bjPatch(id,{classificacao:cls});
+    await renderBeijamim();
+  }catch(e){console.error('bjSetClass:',e);}
 }
 
-/* ── OBSERVAÇÃO INLINE ── */
+/* ── OBSERVAÇÃO INLINE (debounce 1s) ── */
+var _bjObsTimer={};
 function bjSetObs(id,val){
-  var leads=bjLoadLeads();
-  var lead=leads.find(function(l){return l.id===id;});
-  if(lead){lead.obs=val;bjSaveLeads(leads);}
+  clearTimeout(_bjObsTimer[id]);
+  _bjObsTimer[id]=setTimeout(async function(){
+    try{ await bjPatch(id,{obs:val}); }catch(e){ console.error('bjSetObs:',e); }
+  },1000);
 }
 
 /* ── REMOVER LEAD ── */
-function bjDeleteLead(id){
+async function bjDeleteLead(id){
   if(!confirm('Remover este lead?'))return;
-  var leads=bjLoadLeads().filter(function(l){return l.id!==id;});
-  bjSaveLeads(leads);
-  renderBeijamim();
+  try{
+    await bjDelete(id);
+    await renderBeijamim();
+  }catch(e){alert('Erro ao remover: '+e.message);}
 }
 
 /* ── BADGE CLASSIFICAÇÃO ── */
@@ -5431,63 +5451,81 @@ function bjDrawPie(qual,pre,desq){
 }
 
 /* ── EXPORT CSV ── */
-function bjExportCSV(tipo){
-  var leads=bjLoadLeads().filter(function(l){return l.tipo===tipo;});
-  if(!leads.length){alert('Nenhum lead para exportar.');return;}
-  var header='Nome,Instagram,Plataforma,Classificação,Observação,Data\n';
-  var rows=leads.map(function(l){
-    return ['"'+l.nome+'"','@'+l.instagram,l.plataforma,l.classificacao,'"'+(l.obs||'')+'"',l.criado?l.criado.slice(0,10):''].join(',');
-  }).join('\n');
-  var blob=new Blob(['﻿'+header+rows],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='prosp_'+tipo+'_beijamim.csv';a.click();
-  URL.revokeObjectURL(url);
+async function bjExportCSV(tipo){
+  try{
+    var leads=(await bjFetch()).filter(function(l){return l.tipo===tipo;});
+    if(!leads.length){alert('Nenhum lead para exportar.');return;}
+    var header='Nome,Instagram,Plataforma,Classificação,Observação,Data\n';
+    var rows=leads.map(function(l){
+      return ['"'+l.nome+'"','@'+l.instagram,l.plataforma,l.classificacao,'"'+(l.obs||'')+'"',l.criado?l.criado.slice(0,10):''].join(',');
+    }).join('\n');
+    var blob=new Blob(['﻿'+header+rows],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='prosp_'+tipo+'_beijamim.csv';a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){alert('Erro ao exportar: '+e.message);}
 }
 
-/* ── RENDER PRINCIPAL ── */
-function renderBeijamim(){
-  var leads=bjLoadLeads();
-  var hub=leads.filter(function(l){return l.tipo==='hub';});
-  var mn=leads.filter(function(l){return l.tipo==='mentoria';});
+/* ── RENDER PRINCIPAL (async — busca do Supabase) ── */
+async function renderBeijamim(){
+  /* Auto-refresh a cada 30s enquanto a aba estiver ativa */
+  if(_bjRefreshTimer)clearInterval(_bjRefreshTimer);
+  _bjRefreshTimer=setInterval(function(){
+    if(document.getElementById('page-beijamim')&&
+       document.getElementById('page-beijamim').style.display!=='none'){
+      renderBeijamim();
+    } else {
+      clearInterval(_bjRefreshTimer);
+    }
+  },30000);
 
-  /* contagens */
-  var total=leads.length;
-  var totalHub=hub.length;
-  var totalMn=mn.length;
-  var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
-  var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
-  var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
-  var qualHub=hub.filter(function(l){return l.classificacao==='Qualificado';}).length;
-  var qualMn=mn.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  try{
+    var leads=await bjFetch();
+    var hub=leads.filter(function(l){return l.tipo==='hub';});
+    var mn=leads.filter(function(l){return l.tipo==='mentoria';});
+    var total=leads.length;
+    var totalHub=hub.length;
+    var totalMn=mn.length;
+    var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+    var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
+    var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
+    var qualHub=hub.filter(function(l){return l.classificacao==='Qualificado';}).length;
+    var qualMn=mn.filter(function(l){return l.classificacao==='Qualificado';}).length;
 
-  /* KPIs */
-  function setKpi(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-  setKpi('bj-total',total);
-  setKpi('bj-hub-total',totalHub);
-  setKpi('bj-mn-total',totalMn);
-  setKpi('bj-qual',qual);
-  setKpi('bj-pre',pre);
-  setKpi('bj-desq',desq);
-  setKpi('bj-pts-total',qual*20+' pts');
-  setKpi('bj-pts-hub',qualHub*20+' pts');
-  setKpi('bj-pts-mn',qualMn*20+' pts');
-  setKpi('bj-hub-count',totalHub+' leads');
-  setKpi('bj-mn-count',totalMn+' leads');
+    function setKpi(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+    setKpi('bj-total',total);
+    setKpi('bj-hub-total',totalHub);
+    setKpi('bj-mn-total',totalMn);
+    setKpi('bj-qual',qual);
+    setKpi('bj-pre',pre);
+    setKpi('bj-desq',desq);
+    setKpi('bj-pts-total',qual*20+' pts');
+    setKpi('bj-pts-hub',qualHub*20+' pts');
+    setKpi('bj-pts-mn',qualMn*20+' pts');
+    setKpi('bj-hub-count',totalHub+' leads');
+    setKpi('bj-mn-count',totalMn+' leads');
 
-  /* Gráfico */
-  bjDrawPie(qual,pre,desq);
+    bjDrawPie(qual,pre,desq);
 
-  /* Tabelas */
-  var hubTbody=document.getElementById('bj-hub-tbody');
-  var mnTbody=document.getElementById('bj-mn-tbody');
-  if(hubTbody){
-    if(hub.length){hubTbody.innerHTML=hub.map(bjRow).join('');}
-    else{hubTbody.innerHTML='<tr class="er"><td colspan="6">Nenhum lead HUB adicionado. Clique em "+ Adicionar Lead HUB".</td></tr>';}
+    var hubTbody=document.getElementById('bj-hub-tbody');
+    var mnTbody=document.getElementById('bj-mn-tbody');
+    if(hubTbody){
+      hubTbody.innerHTML=hub.length?hub.map(bjRow).join(''):'<tr class="er"><td colspan="6">Nenhum lead HUB. Clique em "+ Adicionar Lead HUB".</td></tr>';
+    }
+    if(mnTbody){
+      mnTbody.innerHTML=mn.length?mn.map(bjRow).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria. Clique em "+ Adicionar Lead Mentoria".</td></tr>';
+    }
+  }catch(e){
+    console.error('renderBeijamim:',e);
+    var hubTbody=document.getElementById('bj-hub-tbody');
+    if(hubTbody)hubTbody.innerHTML='<tr class="er"><td colspan="6">⚠️ Erro ao carregar. Verifique a tabela no Supabase.</td></tr>';
   }
-  if(mnTbody){
-    if(mn.length){mnTbody.innerHTML=mn.map(bjRow).join('');}
-    else{mnTbody.innerHTML='<tr class="er"><td colspan="6">Nenhum lead Mentoria adicionado. Clique em "+ Adicionar Lead Mentoria".</td></tr>';}
-  }
+}
+
+/* Seed + render no primeiro acesso */
+async function initBeijamim(){
+  await bjSeedIfEmpty();
+  await renderBeijamim();
 }
 </script>
 
