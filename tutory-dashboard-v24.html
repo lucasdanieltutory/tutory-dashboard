@@ -497,11 +497,11 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 </div>
 
 <script>
-const _CREDS={'admin@tutory.com':'tutory@admin2026','beatriz.vasconcelos@tutory.com.br':'tutory@sdr2026'};
+const _CREDS={'admin@tutory.com':'tutory@admin2026','beatriz.vasconcelos@tutory.com.br':'tutory@sdr2026','beijamim@tutory.com.br':'tutory@beijamim2026'};
 function doLogin(){
   const u=(document.getElementById('usr')||{value:''}).value.trim().toLowerCase();
   const v=document.getElementById('pwd').value;
-  const role=_CREDS[u]===v?(u.startsWith('admin')?'admin':'sdr'):'';
+  const role=_CREDS[u]===v?(u.startsWith('admin')?'admin':u.startsWith('beijamim')?'beijamim':'sdr'):'';
   if(role){
     sessionStorage.setItem('tutory_auth','1');
     sessionStorage.setItem('tutory_role',role);
@@ -517,6 +517,13 @@ function _applyRole(role){
     document.querySelectorAll('.sb-item').forEach(t=>{
       if(!t.textContent.includes('Prospec'))t.style.display='none';
     });
+  } else if(role==='beijamim'){
+    document.querySelectorAll('.sb-item').forEach(t=>{
+      if(!t.textContent.includes('Beijamim'))t.style.display='none';
+    });
+    // Vai direto para a aba Beijamim
+    const bj=document.querySelector('.sb-item[onclick*="beijamim"]');
+    if(bj)bj.click();
   }
 }
 if(sessionStorage.getItem('tutory_auth')==='1'){
