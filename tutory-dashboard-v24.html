@@ -954,7 +954,7 @@ async function supaInsert(table, body){
     </div>
     <div class="sb-item" onclick="go('beijamim',this)">
       <span class="sb-icon">✈️</span><span>Prospecções Beijamim</span>
-      <div class="sb-bdot" style="background:#A78BFA;box-shadow:0 0 5px #A78BFA;opacity:0;margin-left:auto;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
+      <div class="sb-bdot" style="background:#FB923C;box-shadow:0 0 5px #FB923C;opacity:0;margin-left:auto;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
     </div>
     <div class="sb-item" onclick="go('youtube',this)">
       <span class="sb-icon">▶️</span><span>YouTube</span>
@@ -5338,7 +5338,7 @@ function bjOpenModal(tipo){
   document.getElementById('bj-modal-title').textContent=(tipo==='hub'?'➕ Adicionar Lead HUB':'➕ Adicionar Lead Mentoria');
   document.getElementById('bj-modal-sub').textContent=(tipo==='hub'?'Parceiro para o HUB':'Lead prospectado para Mentoria');
   var btn=document.getElementById('bj-modal-tipo');
-  btn.style.background=tipo==='hub'?'linear-gradient(135deg,#7C3AED,#A78BFA)':'linear-gradient(135deg,#2563EB,#60A5FA)';
+  btn.style.background=tipo==='hub'?'linear-gradient(135deg,#EA580C,#FB923C)':'linear-gradient(135deg,#2563EB,#60A5FA)';
   ['bj-inp-nome','bj-inp-insta','bj-inp-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('bj-inp-plat').value='';
   document.getElementById('bj-inp-class').value='Pré-qualificado';
@@ -5666,18 +5666,18 @@ async function initBeijamim(){
 
   <!-- HEADER -->
   <div class="ph">
-    <div class="ph-ey" style="color:#A78BFA">PROSPECÇÕES BEIJAMIM · TUTORY</div>
+    <div class="ph-ey" style="color:#FB923C">PROSPECÇÕES BEIJAMIM · TUTORY</div>
     <div class="ph-t">Aeroporto de Prospecções</div>
     <div class="ph-s">Prospecção manual de parceiros · HUB & Mentoria · Qualifique e pontue cada lead ✈️</div>
   </div>
 
   <!-- KPIs -->
   <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
-    <div class="kpi" style="border-top:3px solid #A78BFA;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="bj-total">—</div><div class="ks">Todos os aeroportos</div></div>
+    <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="bj-total">—</div><div class="ks">Todos os aeroportos</div></div>
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="bj-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="bj-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
     <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="bj-qual">—</div><div class="ks">Ambos aeroportos</div></div>
-    <div class="kpi" style="border-top:3px solid #A78BFA;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="bj-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
+    <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="bj-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
     <div class="kpi hb"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="bj-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
     <div class="kpi mn"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="bj-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
   </div>
@@ -5686,7 +5686,7 @@ async function initBeijamim(){
   <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
 
     <!-- Gráfico pizza -->
-    <div class="card" style="border-left:3px solid #A78BFA;">
+    <div class="card" style="border-left:3px solid #FB923C;">
       <div class="ch"><div><div class="ct">📊 Distribuição de Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
       <div class="cb" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
         <canvas id="bj-pie" width="160" height="160" style="flex-shrink:0;"></canvas>
@@ -5696,7 +5696,7 @@ async function initBeijamim(){
 
     <!-- Botão adicionar -->
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="bjOpenModal('hub')" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(124,58,237,.35);">
+      <button onclick="bjOpenModal('hub')" style="background:linear-gradient(135deg,#EA580C,#FB923C);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(234,88,12,.35);">
         + Adicionar Lead HUB
       </button>
       <button onclick="bjOpenModal('mentoria')" style="background:linear-gradient(135deg,#2563EB,#60A5FA);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(37,99,235,.35);">
@@ -5706,10 +5706,10 @@ async function initBeijamim(){
   </div>
 
   <!-- AEROPORTO HUB -->
-  <div class="card" style="border-left:4px solid #7C3AED;margin-bottom:18px;">
+  <div class="card" style="border-left:4px solid #FB923C;margin-bottom:18px;">
     <div class="ch">
       <div>
-        <div class="ct" style="color:#A78BFA;">🏪 Aeroporto HUB — <span id="bj-hub-count">0 leads</span></div>
+        <div class="ct" style="color:#FB923C;">🏪 Aeroporto HUB — <span id="bj-hub-count">0 leads</span></div>
         <div class="cs">Parceiros e criadores de conteúdo prospectados para o HUB</div>
       </div>
       <button onclick="bjExportCSV('hub')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
@@ -5762,28 +5762,28 @@ async function initBeijamim(){
   <div style="margin-top:32px;border-top:2px solid var(--brd);padding-top:28px;display:flex;flex-direction:column;gap:20px;">
 
     <!-- QUALIFICADOS HUB -->
-    <div style="background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(167,139,250,.04));border:1px solid rgba(167,139,250,.25);border-left:4px solid #A78BFA;border-radius:14px;overflow:hidden;">
-      <div style="padding:18px 22px;border-bottom:1px solid rgba(167,139,250,.2);display:flex;align-items:center;justify-content:space-between;">
+    <div style="background:linear-gradient(135deg,rgba(234,88,12,.08),rgba(251,146,60,.04));border:1px solid rgba(251,146,60,.25);border-left:4px solid #FB923C;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(251,146,60,.2);display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <div style="font-size:15px;font-weight:800;color:#A78BFA;display:flex;align-items:center;gap:8px;">
-            <span style="background:#A78BFA;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+          <div style="font-size:15px;font-weight:800;color:#FB923C;display:flex;align-items:center;gap:8px;">
+            <span style="background:#FB923C;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
             🏪 HUB — <span id="bj-qhub-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
           </div>
           <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados no Aeroporto HUB · prontos para abordagem</div>
         </div>
-        <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:8px 16px;text-align:center;">
-          <div style="font-size:20px;font-weight:800;color:#A78BFA;" id="bj-qhub-pts">0 pts</div>
+        <div style="background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#FB923C;" id="bj-qhub-pts">0 pts</div>
           <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
         </div>
       </div>
       <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:5;background:#0E0D1F;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:200px;color:#A78BFA;">Nome</th>
-              <th style="width:160px;color:#A78BFA;">Instagram</th>
-              <th style="width:120px;color:#A78BFA;">Plataforma</th>
-              <th style="color:#A78BFA;">Observação</th>
+              <th style="width:200px;color:#FB923C;">Nome</th>
+              <th style="width:160px;color:#FB923C;">Instagram</th>
+              <th style="width:120px;color:#FB923C;">Plataforma</th>
+              <th style="color:#FB923C;">Observação</th>
             </tr>
           </thead>
           <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="4">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
