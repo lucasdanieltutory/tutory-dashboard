@@ -5342,6 +5342,9 @@ function bjOpenModal(tipo){
   ['bj-inp-nome','bj-inp-insta','bj-inp-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('bj-inp-plat').value='';
   document.getElementById('bj-inp-class').value='Pré-qualificado';
+  /* Plataforma só aparece no modal HUB */
+  var pf=document.getElementById('bj-plat-field');
+  if(pf)pf.style.display=tipo==='hub'?'block':'none';
   m.style.display='flex';
   setTimeout(function(){var el=document.getElementById('bj-inp-nome');if(el)el.focus();},120);
 }
@@ -5408,16 +5411,33 @@ function bjBadge(cls,id){
   return '<div style="display:flex;flex-direction:column;gap:4px;">'+btns+'</div>';
 }
 
-/* ── RENDER ROW ── */
-function bjRow(lead){
-  var instaLink=lead.instagram?'<a href="https://instagram.com/'+lead.instagram+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;">@'+lead.instagram+'</a>':'-';
-  var platColors={Hotmart:'#FF6B35',Kiwify:'#8B5CF6',Eduzz:'#3B82F6',Herospark:'#F59E0B',Hubla:'#10B981',Monetizze:'#EF4444',Braip:'#6366F1',Outro:'var(--sub)'};
-  var pc=platColors[lead.plataforma]||'var(--sub)';
-  var platBadge=lead.plataforma?'<span style="background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">'+lead.plataforma+'</span>':'-';
-  var obsHtml='<textarea onchange="bjSetObs(\''+lead.id+'\',this.value)" style="width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;color:var(--txt);font-size:11px;resize:none;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;min-height:36px;" rows="2" placeholder="Observação..." onfocus="this.style.borderColor=\'var(--brd2)\'" onblur="this.style.borderColor=\'transparent\'">'+escHtml(lead.obs||'')+'</textarea>';
-  return '<tr><td style="font-size:12px;font-weight:600;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+instaLink+'</td><td>'+platBadge+'</td><td>'+obsHtml+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;"><button onclick="bjDeleteLead(\''+lead.id+'\')" title="Remover" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#EF4444;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:\'Plus Jakarta Sans\',sans-serif;">✕</button></td></tr>';
-}
+/* ── HELPERS ── */
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function bjInstaLink(ig){return ig?'<a href="https://instagram.com/'+ig+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;">@'+escHtml(ig)+'</a>':'-';}
+function bjPlatBadge(plat){
+  var c={Hotmart:'#FF6B35',Kiwify:'#8B5CF6',Eduzz:'#3B82F6',Herospark:'#F59E0B',Hubla:'#10B981',Monetizze:'#EF4444',Braip:'#6366F1',Outro:'#6B7280'};
+  var pc=c[plat]||'var(--sub)';
+  return plat?'<span style="background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;">'+escHtml(plat)+'</span>':'-';
+}
+function bjObsTd(id,val){return '<textarea onchange="bjSetObs(\''+id+'\',this.value)" style="width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;color:var(--txt);font-size:11px;resize:none;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;min-height:36px;" rows="2" placeholder="Observação..." onfocus="this.style.borderColor=\'var(--brd2)\'" onblur="this.style.borderColor=\'transparent\'">'+escHtml(val||'')+'</textarea>';}
+function bjDelBtn(id){return '<button onclick="bjDeleteLead(\''+id+'\')" title="Remover" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#EF4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button>';}
+
+/* ── ROW HUB (com Plataforma — 6 colunas) ── */
+function bjRowHub(lead){
+  return '<tr><td style="font-size:12px;font-weight:600;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+}
+/* ── ROW MENTORIA (sem Plataforma — 5 colunas) ── */
+function bjRowMn(lead){
+  return '<tr><td style="font-size:12px;font-weight:600;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+}
+/* ── ROW QUALIFICADOS HUB (somente leitura — 4 colunas) ── */
+function bjRowQHub(lead){
+  return '<tr><td style="font-size:12px;font-weight:700;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td style="font-size:11px;color:var(--sub);">'+escHtml(lead.obs||'—')+'</td></tr>';
+}
+/* ── ROW QUALIFICADOS MENTORIA (somente leitura — 3 colunas) ── */
+function bjRowQMn(lead){
+  return '<tr><td style="font-size:12px;font-weight:700;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td style="font-size:11px;color:var(--sub);">'+escHtml(lead.obs||'—')+'</td></tr>';
+}
 
 /* ── PIE CHART ── */
 function bjDrawPie(qual,pre,desq){
@@ -5497,8 +5517,6 @@ async function renderBeijamim(){
     setKpi('bj-hub-total',totalHub);
     setKpi('bj-mn-total',totalMn);
     setKpi('bj-qual',qual);
-    setKpi('bj-pre',pre);
-    setKpi('bj-desq',desq);
     setKpi('bj-pts-total',qual*20+' pts');
     setKpi('bj-pts-hub',qualHub*20+' pts');
     setKpi('bj-pts-mn',qualMn*20+' pts');
@@ -5507,14 +5525,23 @@ async function renderBeijamim(){
 
     bjDrawPie(qual,pre,desq);
 
+    /* Aeroportos */
     var hubTbody=document.getElementById('bj-hub-tbody');
     var mnTbody=document.getElementById('bj-mn-tbody');
-    if(hubTbody){
-      hubTbody.innerHTML=hub.length?hub.map(bjRow).join(''):'<tr class="er"><td colspan="6">Nenhum lead HUB. Clique em "+ Adicionar Lead HUB".</td></tr>';
-    }
-    if(mnTbody){
-      mnTbody.innerHTML=mn.length?mn.map(bjRow).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria. Clique em "+ Adicionar Lead Mentoria".</td></tr>';
-    }
+    if(hubTbody) hubTbody.innerHTML=hub.length?hub.map(bjRowHub).join(''):'<tr class="er"><td colspan="6">Nenhum lead HUB. Clique em "+ Adicionar Lead HUB".</td></tr>';
+    if(mnTbody)  mnTbody.innerHTML=mn.length?mn.map(bjRowMn).join(''):'<tr class="er"><td colspan="5">Nenhum lead Mentoria. Clique em "+ Adicionar Lead Mentoria".</td></tr>';
+
+    /* Seções de qualificados */
+    var qualHub=hub.filter(function(l){return l.classificacao==='Qualificado';});
+    var qualMn=mn.filter(function(l){return l.classificacao==='Qualificado';});
+    setKpi('bj-qhub-count',qualHub.length+' leads');
+    setKpi('bj-qmn-count',qualMn.length+' leads');
+    setKpi('bj-qhub-pts',qualHub.length*20+' pts');
+    setKpi('bj-qmn-pts',qualMn.length*20+' pts');
+    var qhubT=document.getElementById('bj-qhub-tbody');
+    var qmnT=document.getElementById('bj-qmn-tbody');
+    if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="4">Nenhum lead HUB qualificado ainda.</td></tr>';
+    if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="3">Nenhum lead Mentoria qualificado ainda.</td></tr>';
   }catch(e){
     console.error('renderBeijamim:',e);
     var hubTbody=document.getElementById('bj-hub-tbody');
@@ -5650,8 +5677,6 @@ async function initBeijamim(){
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="bj-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="bj-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
     <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="bj-qual">—</div><div class="ks">Ambos aeroportos</div></div>
-    <div class="kpi" style="border-top:3px solid #F59E0B;"><div class="ki">⭐</div><div class="kl">Pré-Qualificados</div><div class="kv" id="bj-pre">—</div><div class="ks">Aguardando avaliação</div></div>
-    <div class="kpi" style="border-top:3px solid #EF4444;"><div class="ki">🚫</div><div class="kl">Desqualificados</div><div class="kv" id="bj-desq">—</div><div class="ks">Não avançaram</div></div>
     <div class="kpi" style="border-top:3px solid #A78BFA;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="bj-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
     <div class="kpi hb"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="bj-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
     <div class="kpi mn"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="bj-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
@@ -5719,18 +5744,83 @@ async function initBeijamim(){
       <table class="dt" style="width:100%;table-layout:fixed;">
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
           <tr>
-            <th style="width:200px;">Nome</th>
-            <th style="width:160px;">Instagram</th>
-            <th style="width:120px;">Plataforma</th>
+            <th style="width:220px;">Nome</th>
+            <th style="width:180px;">Instagram</th>
             <th>Observação</th>
-            <th style="width:160px;">Classificação</th>
+            <th style="width:175px;">Classificação</th>
             <th style="width:32px;"></th>
           </tr>
         </thead>
-        <tbody id="bj-mn-tbody"><tr class="er"><td colspan="6">Nenhum lead Mentoria adicionado.</td></tr></tbody>
+        <tbody id="bj-mn-tbody"><tr class="er"><td colspan="5">Nenhum lead Mentoria adicionado.</td></tr></tbody>
       </table>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- SEÇÕES DE QUALIFICADOS                            -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div style="margin-top:32px;border-top:2px solid var(--brd);padding-top:28px;display:flex;flex-direction:column;gap:20px;">
+
+    <!-- QUALIFICADOS HUB -->
+    <div style="background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(167,139,250,.04));border:1px solid rgba(167,139,250,.25);border-left:4px solid #A78BFA;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(167,139,250,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#A78BFA;display:flex;align-items:center;gap:8px;">
+            <span style="background:#A78BFA;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+            🏪 HUB — <span id="bj-qhub-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados no Aeroporto HUB · prontos para abordagem</div>
+        </div>
+        <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#A78BFA;" id="bj-qhub-pts">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:#0E0D1F;">
+            <tr>
+              <th style="width:200px;color:#A78BFA;">Nome</th>
+              <th style="width:160px;color:#A78BFA;">Instagram</th>
+              <th style="width:120px;color:#A78BFA;">Plataforma</th>
+              <th style="color:#A78BFA;">Observação</th>
+            </tr>
+          </thead>
+          <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="4">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QUALIFICADOS MENTORIA -->
+    <div style="background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(96,165,250,.04));border:1px solid rgba(96,165,250,.25);border-left:4px solid #60A5FA;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(96,165,250,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#60A5FA;display:flex;align-items:center;gap:8px;">
+            <span style="background:#60A5FA;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+            🎓 MENTORIA — <span id="bj-qmn-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados no Aeroporto Mentoria · prontos para abordagem</div>
+        </div>
+        <div style="background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#60A5FA;" id="bj-qmn-pts">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:#080F1E;">
+            <tr>
+              <th style="width:220px;color:#60A5FA;">Nome</th>
+              <th style="width:180px;color:#60A5FA;">Instagram</th>
+              <th style="color:#60A5FA;">Observação</th>
+            </tr>
+          </thead>
+          <tbody id="bj-qmn-tbody"><tr class="er"><td colspan="3">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /seções qualificados -->
 
 </div><!-- /wrap -->
 </div><!-- /page-beijamim -->
@@ -5757,7 +5847,7 @@ async function initBeijamim(){
           <input id="bj-inp-insta" type="text" placeholder="usuario.instagram" style="flex:1;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
         </div>
       </div>
-      <div>
+      <div id="bj-plat-field">
         <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Plataforma de Venda</label>
         <select id="bj-inp-plat" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
           <option value="">— Selecionar —</option>
