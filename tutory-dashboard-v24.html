@@ -5706,21 +5706,23 @@ async function initBeijamim(){
     <div class="ph">
       <div class="ph-ey gam-t-color" id="gam-t-eyebrow">EQUIPE · TUTORY GAMIFICAÇÃO</div>
       <div class="ph-t" id="gam-t-title">Aeroporto de Prospecções</div>
-      <div class="ph-s" id="gam-t-sub">Leads da equipe · Qualifique e pontue cada lead 🏆</div>
+      <div class="ph-s" id="gam-t-sub">Leads da equipe · HUB & Mentoria · Qualifique e pontue cada lead ✈️</div>
     </div>
 
-    <!-- KPIs EQUIPE -->
+    <!-- KPIs EQUIPE (7 métricas igual ao Beijamim) -->
     <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
-      <div class="kpi gam-t-kpi-color"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="gam-t-total">—</div><div class="ks">Equipe atual</div></div>
-      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="gam-t-qual">—</div><div class="ks">Prontos p/ abordagem</div></div>
-      <div class="kpi" style="border-top:3px solid #EAB308;"><div class="ki">⭐</div><div class="kl">Pré-qualificados</div><div class="kv" id="gam-t-pre">—</div><div class="ks">Em análise</div></div>
-      <div class="kpi" style="border-top:3px solid #EF4444;"><div class="ki">🚫</div><div class="kl">Desqualificados</div><div class="kv" id="gam-t-desq">—</div><div class="ks">Não avançaram</div></div>
-      <div class="kpi gam-t-kpi-color"><div class="ki">🏆</div><div class="kl">Pontos</div><div class="kv" id="gam-t-pts">—</div><div class="ks">Qualificado = 20 pts</div></div>
+      <div class="kpi gam-t-kpi-color"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="gam-t-total">—</div><div class="ks">Todos os aeroportos</div></div>
+      <div class="kpi gam-t-kpi-color"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="gam-t-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
+      <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="gam-t-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
+      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="gam-t-qual">—</div><div class="ks">Ambos aeroportos</div></div>
+      <div class="kpi gam-t-kpi-color"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="gam-t-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
+      <div class="kpi gam-t-kpi-color"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="gam-t-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
+      <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="gam-t-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
     </div>
 
-    <!-- GRÁFICO + BOTÃO -->
+    <!-- GRÁFICO + BOTÕES ADICIONAR -->
     <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
-      <div class="card gam-t-border-color" id="gam-t-pie-card" style="border-left:3px solid #818CF8;">
+      <div class="card" id="gam-t-pie-card" style="border-left:3px solid #818CF8;">
         <div class="ch"><div><div class="ct">📊 Distribuição de Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
         <div class="cb" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
           <canvas id="gam-t-pie" width="160" height="160" style="flex-shrink:0;"></canvas>
@@ -5728,20 +5730,51 @@ async function initBeijamim(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button id="gam-t-addbtn" onclick="gamOpenModal()" style="background:linear-gradient(135deg,#6D28D9,#818CF8);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(129,140,248,.35);">
-          + Adicionar Lead
+        <button id="gam-t-addbtn-hub" onclick="gamOpenModal('hub')" style="background:linear-gradient(135deg,#6D28D9,#818CF8);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(129,140,248,.35);">
+          + Adicionar Lead HUB
         </button>
-        <button onclick="gamExportCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);border-radius:12px;padding:10px 22px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;">⬇ Exportar CSV</button>
+        <button onclick="gamOpenModal('mentoria')" style="background:linear-gradient(135deg,#2563EB,#60A5FA);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(37,99,235,.35);">
+          + Adicionar Lead Mentoria
+        </button>
       </div>
     </div>
 
-    <!-- TABELA AEROPORTO -->
-    <div class="card gam-t-border-color" id="gam-t-card" style="border-left:4px solid #818CF8;margin-bottom:18px;">
+    <!-- AEROPORTO HUB -->
+    <div class="card" id="gam-t-hub-card" style="border-left:4px solid #818CF8;margin-bottom:18px;">
       <div class="ch">
         <div>
-          <div class="ct"><span id="gam-t-airport-name" class="gam-t-color">✈️ Aeroporto Equipe — </span><span id="gam-t-count">0 leads</span></div>
-          <div class="cs">Todos os leads prospectos pela equipe</div>
+          <div class="ct gam-t-color" id="gam-t-hub-title">🏪 Aeroporto HUB — <span id="gam-t-hub-count">0 leads</span></div>
+          <div class="cs">Parceiros e criadores de conteúdo prospectados para o HUB</div>
         </div>
+        <button onclick="gamExportCSV('hub')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+      </div>
+      <div style="overflow-y:auto;overflow-x:hidden;max-height:700px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+            <tr>
+              <th style="width:68px;">Data</th>
+              <th style="width:14%;">Nome</th>
+              <th style="width:14%;">Instagram</th>
+              <th style="width:90px;">Plataforma</th>
+              <th style="width:115px;">Telefone</th>
+              <th>Observação</th>
+              <th style="width:170px;">Classificação</th>
+              <th style="width:28px;"></th>
+            </tr>
+          </thead>
+          <tbody id="gam-t-hub-tbody"><tr class="er"><td colspan="8">Nenhum lead HUB adicionado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AEROPORTO MENTORIA -->
+    <div class="card" style="border-left:4px solid #2563EB;margin-bottom:18px;">
+      <div class="ch">
+        <div>
+          <div class="ct" style="color:#60A5FA;">🎓 Aeroporto Mentoria — <span id="gam-t-mn-count">0 leads</span></div>
+          <div class="cs">Leads prospectados para o produto Mentoria</div>
+        </div>
+        <button onclick="gamExportCSV('mentoria')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
       </div>
       <div style="overflow-y:auto;overflow-x:hidden;max-height:700px;">
         <table class="dt" style="width:100%;table-layout:fixed;">
@@ -5756,24 +5789,25 @@ async function initBeijamim(){
               <th style="width:28px;"></th>
             </tr>
           </thead>
-          <tbody id="gam-t-tbody"><tr class="er"><td colspan="7">Nenhum lead adicionado ainda.</td></tr></tbody>
+          <tbody id="gam-t-mn-tbody"><tr class="er"><td colspan="7">Nenhum lead Mentoria adicionado ainda.</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- QUALIFICADOS EQUIPE -->
-    <div style="margin-top:28px;border-top:2px solid var(--brd);padding-top:24px;">
-      <div id="gam-t-qual-section" style="background:linear-gradient(135deg,rgba(109,40,217,.08),rgba(129,140,248,.04));border:1px solid rgba(129,140,248,.25);border-left:4px solid #818CF8;border-radius:14px;overflow:hidden;">
+    <!-- QUALIFICADOS HUB -->
+    <div style="margin-top:28px;border-top:2px solid var(--brd);padding-top:24px;display:flex;flex-direction:column;gap:20px;">
+
+      <div id="gam-t-qhub-section" style="background:linear-gradient(135deg,rgba(109,40,217,.08),rgba(129,140,248,.04));border:1px solid rgba(129,140,248,.25);border-left:4px solid #818CF8;border-radius:14px;overflow:hidden;">
         <div style="padding:18px 22px;border-bottom:1px solid rgba(129,140,248,.2);display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;">
-              <span id="gam-t-qual-badge" style="background:#818CF8;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
-              <span id="gam-t-qual-name" class="gam-t-color">🟣 EQUIPE</span> — <span id="gam-t-qcount" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+              <span id="gam-t-qhub-badge" style="background:#818CF8;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+              <span id="gam-t-qhub-name" class="gam-t-color">🏪 HUB</span> — <span id="gam-t-qhub-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
             </div>
-            <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados pela equipe · prontos para abordagem</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados no Aeroporto HUB · prontos para abordagem</div>
           </div>
-          <div id="gam-t-qual-pts-box" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:8px 16px;text-align:center;">
-            <div id="gam-t-qpts" class="gam-t-color" style="font-size:20px;font-weight:800;">0 pts</div>
+          <div id="gam-t-qhub-pts-box" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+            <div id="gam-t-qhub-pts" class="gam-t-color" style="font-size:20px;font-weight:800;">0 pts</div>
             <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
           </div>
         </div>
@@ -5782,17 +5816,50 @@ async function initBeijamim(){
             <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
               <tr>
                 <th class="gam-t-color" style="width:68px;">Data</th>
-                <th class="gam-t-color" style="width:18%;">Nome</th>
-                <th class="gam-t-color" style="width:18%;">Instagram</th>
+                <th class="gam-t-color" style="width:15%;">Nome</th>
+                <th class="gam-t-color" style="width:15%;">Instagram</th>
+                <th class="gam-t-color" style="width:90px;">Plataforma</th>
                 <th class="gam-t-color" style="width:115px;">Telefone</th>
                 <th class="gam-t-color">Observação</th>
               </tr>
             </thead>
-            <tbody id="gam-t-qtbody"><tr class="er"><td colspan="5">Nenhum lead qualificado ainda.</td></tr></tbody>
+            <tbody id="gam-t-qhub-tbody"><tr class="er"><td colspan="6">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
           </table>
         </div>
       </div>
-    </div>
+
+      <!-- QUALIFICADOS MENTORIA -->
+      <div style="background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(96,165,250,.04));border:1px solid rgba(96,165,250,.25);border-left:4px solid #60A5FA;border-radius:14px;overflow:hidden;">
+        <div style="padding:18px 22px;border-bottom:1px solid rgba(96,165,250,.2);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:15px;font-weight:800;color:#60A5FA;display:flex;align-items:center;gap:8px;">
+              <span style="background:#60A5FA;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+              🎓 MENTORIA — <span id="gam-t-qmn-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+            </div>
+            <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados no Aeroporto Mentoria · prontos para abordagem</div>
+          </div>
+          <div style="background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+            <div id="gam-t-qmn-pts" style="font-size:20px;font-weight:800;color:#60A5FA;">0 pts</div>
+            <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+          </div>
+        </div>
+        <div style="overflow-y:auto;overflow-x:hidden;max-height:500px;">
+          <table class="dt" style="width:100%;table-layout:fixed;">
+            <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+              <tr>
+                <th style="width:68px;color:#60A5FA;">Data</th>
+                <th style="width:18%;color:#60A5FA;">Nome</th>
+                <th style="width:18%;color:#60A5FA;">Instagram</th>
+                <th style="width:115px;color:#60A5FA;">Telefone</th>
+                <th style="color:#60A5FA;">Observação</th>
+              </tr>
+            </thead>
+            <tbody id="gam-t-qmn-tbody"><tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /qualificados -->
 
   </div><!-- /gam-view-team -->
 
@@ -5814,7 +5881,6 @@ async function initBeijamim(){
       <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="gaml-qual">—</div><div class="ks">Prontos p/ abordagem</div></div>
       <div class="kpi" style="border-top:3px solid #EAB308;"><div class="ki">⭐</div><div class="kl">Pré-qualificados</div><div class="kv" id="gaml-pre">—</div><div class="ks">Em análise</div></div>
       <div class="kpi" style="border-top:3px solid #EF4444;"><div class="ki">🚫</div><div class="kl">Desqualificados</div><div class="kv" id="gaml-desq">—</div><div class="ks">Não avançaram</div></div>
-      <div class="kpi" style="border-top:3px solid #EAB308;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="gaml-pts">—</div><div class="ks">Qualificado = 20 pts</div></div>
     </div>
 
     <!-- GRÁFICO (sem botão de adicionar) -->
@@ -5892,12 +5958,12 @@ async function initBeijamim(){
 </div><!-- /wrap -->
 </div><!-- /page-gamificacao -->
 
-<!-- MODAL ADICIONAR LEAD (equipe auto pelo role) -->
+<!-- MODAL ADICIONAR LEAD GAM (tipo determinado pelo botão: hub ou mentoria) -->
 <div id="gam-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)gamCloseModal()">
   <div style="background:var(--s1);border:1px solid var(--brd);border-radius:16px;padding:28px;width:min(480px,92vw);box-shadow:0 24px 60px rgba(0,0,0,.5);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <div>
-        <div id="gam-modal-title" style="font-size:16px;font-weight:800;color:var(--txt);">➕ Adicionar Lead</div>
+        <div id="gam-modal-title" style="font-size:16px;font-weight:800;color:var(--txt);">➕ Adicionar Lead HUB</div>
         <div id="gam-modal-sub" style="font-size:11px;color:var(--sub);margin-top:2px;">Preencha os dados do lead</div>
       </div>
       <button onclick="gamCloseModal()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:8px;width:32px;height:32px;color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
@@ -5917,6 +5983,20 @@ async function initBeijamim(){
       <div>
         <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Telefone (opcional)</label>
         <input id="gam-inp-tel" type="text" placeholder="(00) 00000-0000" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+      </div>
+      <!-- Plataforma: visível apenas para HUB -->
+      <div id="gam-plat-field">
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Plataforma</label>
+        <select id="gam-inp-plat" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+          <option value="">— Selecione —</option>
+          <option value="Instagram">📸 Instagram</option>
+          <option value="YouTube">▶️ YouTube</option>
+          <option value="TikTok">🎵 TikTok</option>
+          <option value="Twitter/X">🐦 Twitter/X</option>
+          <option value="LinkedIn">💼 LinkedIn</option>
+          <option value="Indicação">🤝 Indicação</option>
+          <option value="Outros">🔗 Outros</option>
+        </select>
       </div>
       <div>
         <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Classificação</label>
@@ -5954,6 +6034,7 @@ var GAM_COLORS={Judá:'#818CF8',Efraim:'#34D399'};
 var GAM_DARK  ={Judá:'#6D28D9',Efraim:'#059669'};
 var GAM_EMOJIS={Judá:'🟣',Efraim:'🟢'};
 var GAM_RGBA  ={Judá:'109,40,217',Efraim:'5,150,105'};
+var _gamModal_tipo='hub'; // 'hub' | 'mentoria'
 
 /* ── SUPABASE HELPERS ── */
 async function gamFetch(){return supaFetch(GAM_TABLE,'select=*&order=criado.asc');}
@@ -5966,16 +6047,27 @@ async function gamDelete(id){
 }
 
 /* ── MODAL ── */
-function gamOpenModal(){
+function gamOpenModal(tipo){
+  tipo=tipo||'hub';
+  _gamModal_tipo=tipo;
   var m=document.getElementById('gam-modal');if(!m)return;
   ['gam-inp-nome','gam-inp-insta','gam-inp-tel','gam-inp-obs'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+  var platSel=document.getElementById('gam-inp-plat');if(platSel)platSel.value='';
   document.getElementById('gam-inp-class').value='Pré-qualificado';
+  // Plataforma field only for HUB
+  var platField=document.getElementById('gam-plat-field');
+  if(platField)platField.style.display=tipo==='hub'?'block':'none';
+  // Button and title colors
   var c=GAM_COLORS[_gamEquipe]||'#818CF8';
   var cDark=GAM_DARK[_gamEquipe]||'#6D28D9';
+  var isHub=tipo==='hub';
+  var btnColor=isHub?'linear-gradient(135deg,'+cDark+','+c+')':'linear-gradient(135deg,#2563EB,#60A5FA)';
   var saveBtn=document.getElementById('gam-modal-save');
-  if(saveBtn){saveBtn.style.background='linear-gradient(135deg,'+cDark+','+c+')';}
+  if(saveBtn){saveBtn.style.background=btnColor;}
   var titleEl=document.getElementById('gam-modal-title');
-  if(titleEl)titleEl.textContent='➕ Adicionar Lead — '+(_gamEquipe||'');
+  if(titleEl)titleEl.textContent=isHub?'✈️ Adicionar Lead HUB — '+(_gamEquipe||''):'🎓 Adicionar Lead Mentoria — '+(_gamEquipe||'');
+  var subEl=document.getElementById('gam-modal-sub');
+  if(subEl)subEl.textContent=isHub?'Parceiro/criador de conteúdo para o HUB':'Lead para o produto Mentoria';
   m.style.display='flex';
   setTimeout(function(){var e=document.getElementById('gam-inp-nome');if(e)e.focus();},120);
 }
@@ -5986,11 +6078,12 @@ async function gamSaveLead(){
   var tel=document.getElementById('gam-inp-tel').value.trim();
   var cls=document.getElementById('gam-inp-class').value;
   var obs=document.getElementById('gam-inp-obs').value.trim();
+  var plat=_gamModal_tipo==='hub'?(document.getElementById('gam-inp-plat')?document.getElementById('gam-inp-plat').value:''):'';
   if(!nome){alert('Preencha o nome do lead.');return;}
   var btn=document.getElementById('gam-modal-save');
   if(btn){btn.textContent='⏳ Salvando...';btn.disabled=true;}
   try{
-    await gamInsert({nome:nome,instagram:insta,telefone:tel,equipe:_gamEquipe,classificacao:cls,obs:obs});
+    await gamInsert({nome:nome,instagram:insta,telefone:tel,equipe:_gamEquipe,classificacao:cls,obs:obs,tipo:_gamModal_tipo,plataforma:plat});
     gamCloseModal();await renderGamificacao();
   }catch(e){alert('Erro ao salvar: '+e.message);}
   finally{if(btn){btn.textContent='💾 Salvar Lead';btn.disabled=false;}}
@@ -6085,8 +6178,20 @@ function gamBadge(cls,id){
 }
 
 /* ── ROW FUNÇÕES ── */
-/* EQUIPE: Data|Nome|Instagram|Telefone|Obs|Class|Del = 7 cols */
-function gamRowTeam(lead){
+/* HUB: Data|Nome|Instagram|Plataforma|Telefone|Obs|Class|Del = 8 cols */
+function gamRowHub(lead){
+  var platBadge=lead.plataforma?'<span style="background:rgba(99,102,241,.15);color:#818CF8;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;white-space:nowrap;">'+escHtml(lead.plataforma)+'</span>':'<span style="color:var(--sub);font-size:10px;">—</span>';
+  return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;text-align:center;">'+platBadge+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamBadge(lead.classificacao,lead.id)+'</td>'
+    +'<td style="text-align:center;vertical-align:middle;"><button onclick="gamDeleteLead(\''+lead.id+'\')" title="Remover" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#EF4444;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button></td>'
+    +'</tr>';
+}
+/* MENTORIA: Data|Nome|Instagram|Telefone|Obs|Class|Del = 7 cols */
+function gamRowMn(lead){
   return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
     +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
     +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
@@ -6095,8 +6200,18 @@ function gamRowTeam(lead){
     +'<td style="text-align:center;vertical-align:middle;"><button onclick="gamDeleteLead(\''+lead.id+'\')" title="Remover" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#EF4444;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button></td>'
     +'</tr>';
 }
-/* QUALIFICADOS EQUIPE: Data|Nome|Instagram|Telefone|Obs = 5 cols */
-function gamRowTeamQual(lead){
+/* QUAL HUB: Data|Nome|Instagram|Plataforma|Telefone|Obs = 6 cols */
+function gamRowQHub(lead){
+  var platBadge=lead.plataforma?'<span style="background:rgba(99,102,241,.15);color:#818CF8;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;white-space:nowrap;">'+escHtml(lead.plataforma)+'</span>':'<span style="color:var(--sub);font-size:10px;">—</span>';
+  return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;text-align:center;">'+platBadge+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'</tr>';
+}
+/* QUAL MENTORIA: Data|Nome|Instagram|Telefone|Obs = 5 cols */
+function gamRowQMn(lead){
   return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
     +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
     +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
@@ -6142,14 +6257,17 @@ function gamDrawPieOn(canvasId,legendId,qual,pre,desq){
 }
 
 /* ── EXPORT CSV ── */
-async function gamExportCSV(){
+async function gamExportCSV(tipo){
   try{
-    var leads=(await gamFetch()).filter(function(l){return l.equipe===_gamEquipe;});
+    var allLeads=await gamFetch();
+    var leads=allLeads.filter(function(l){return l.equipe===_gamEquipe;});
+    if(tipo)leads=leads.filter(function(l){return (l.tipo||'hub')===tipo;});
     if(!leads.length){alert('Nenhum lead para exportar.');return;}
-    var header='Nome,Instagram,Telefone,Classificação,Observação,Data\n';
-    var rows=leads.map(function(l){return['"'+l.nome+'"','@'+(l.instagram||''),l.telefone||'',l.classificacao,'"'+(l.obs||'')+'"',l.criado?l.criado.slice(0,10):''].join(',');}).join('\n');
+    var header='Nome,Instagram,Telefone,Plataforma,Tipo,Classificação,Observação,Data\n';
+    var rows=leads.map(function(l){return['"'+l.nome+'"','@'+(l.instagram||''),l.telefone||'',l.plataforma||'',l.tipo||'hub',l.classificacao,'"'+(l.obs||'')+'"',l.criado?l.criado.slice(0,10):''].join(',');}).join('\n');
     var blob=new Blob(['﻿'+header+rows],{type:'text/csv;charset=utf-8;'});
-    var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='leads_gam_'+(_gamEquipe||'geral').toLowerCase()+'.csv';a.click();URL.revokeObjectURL(url);
+    var suffix=tipo?'_'+tipo:'';
+    var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='leads_gam_'+(_gamEquipe||'geral').toLowerCase()+suffix+'.csv';a.click();URL.revokeObjectURL(url);
   }catch(e){alert('Erro ao exportar: '+e.message);}
 }
 async function gamExportCSVLider(){
@@ -6167,20 +6285,50 @@ async function gamExportCSVLider(){
 async function renderGamTeam(){
   var allLeads=await gamFetch();
   var leads=gamFilterByDate(allLeads).filter(function(l){return l.equipe===_gamEquipe;});
+  // Split by tipo (fallback to 'hub' for older records without tipo column)
+  var hubLeads=leads.filter(function(l){return (l.tipo||'hub')==='hub';});
+  var mnLeads=leads.filter(function(l){return l.tipo==='mentoria';});
   var total=leads.length;
+  var hubTotal=hubLeads.length;
+  var mnTotal=mnLeads.length;
   var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  var ptsTotal=qual*20;
+  var hubQual=hubLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  var mnQual=mnLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
   var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
   var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
   function sk(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
-  sk('gam-t-total',total);sk('gam-t-qual',qual);sk('gam-t-pre',pre);sk('gam-t-desq',desq);
-  sk('gam-t-pts',qual*20+' pts');sk('gam-t-count',total+' leads');
+  // 7 KPIs
+  sk('gam-t-total',total);
+  sk('gam-t-hub-total',hubTotal);
+  sk('gam-t-mn-total',mnTotal);
+  sk('gam-t-qual',qual);
+  sk('gam-t-pts-total',ptsTotal+' pts');
+  sk('gam-t-pts-hub',hubQual*20+' pts');
+  sk('gam-t-pts-mn',mnQual*20+' pts');
+  // Counts
+  sk('gam-t-hub-count',hubTotal+' leads');
+  sk('gam-t-mn-count',mnTotal+' leads');
+  // Pie chart (total qualifications)
   gamDrawPieOn('gam-t-pie','gam-t-legend',qual,pre,desq);
-  var tbody=document.getElementById('gam-t-tbody');
-  if(tbody)tbody.innerHTML=leads.length?leads.map(gamRowTeam).join(''):'<tr class="er"><td colspan="7">Nenhum lead no período selecionado.</td></tr>';
-  var qLeads=leads.filter(function(l){return l.classificacao==='Qualificado';});
-  sk('gam-t-qcount',qLeads.length+' leads');sk('gam-t-qpts',qLeads.length*20+' pts');
-  var qtb=document.getElementById('gam-t-qtbody');
-  if(qtb)qtb.innerHTML=qLeads.length?qLeads.map(gamRowTeamQual).join(''):'<tr class="er"><td colspan="5">Nenhum lead qualificado no período.</td></tr>';
+  // HUB table
+  var hubTb=document.getElementById('gam-t-hub-tbody');
+  if(hubTb)hubTb.innerHTML=hubLeads.length?hubLeads.map(gamRowHub).join(''):'<tr class="er"><td colspan="8">Nenhum lead HUB no período selecionado.</td></tr>';
+  // Mentoria table
+  var mnTb=document.getElementById('gam-t-mn-tbody');
+  if(mnTb)mnTb.innerHTML=mnLeads.length?mnLeads.map(gamRowMn).join(''):'<tr class="er"><td colspan="7">Nenhum lead Mentoria no período selecionado.</td></tr>';
+  // Qualificados HUB
+  var qHub=hubLeads.filter(function(l){return l.classificacao==='Qualificado';});
+  sk('gam-t-qhub-count',qHub.length+' leads');
+  sk('gam-t-qhub-pts',qHub.length*20+' pts');
+  var qHubTb=document.getElementById('gam-t-qhub-tbody');
+  if(qHubTb)qHubTb.innerHTML=qHub.length?qHub.map(gamRowQHub).join(''):'<tr class="er"><td colspan="6">Nenhum lead HUB qualificado no período.</td></tr>';
+  // Qualificados Mentoria
+  var qMn=mnLeads.filter(function(l){return l.classificacao==='Qualificado';});
+  sk('gam-t-qmn-count',qMn.length+' leads');
+  sk('gam-t-qmn-pts',qMn.length*20+' pts');
+  var qMnTb=document.getElementById('gam-t-qmn-tbody');
+  if(qMnTb)qMnTb.innerHTML=qMn.length?qMn.map(gamRowQMn).join(''):'<tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado no período.</td></tr>';
 }
 
 /* ── RENDER LÍDER ── */
@@ -6193,7 +6341,7 @@ async function renderGamLider(){
   var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
   function sk(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   sk('gaml-total',total);sk('gaml-qual',qual);sk('gaml-pre',pre);sk('gaml-desq',desq);
-  sk('gaml-pts',qual*20+' pts');sk('gaml-count',total+' leads');
+  sk('gaml-count',total+' leads');
   gamDrawPieOn('gaml-pie','gaml-legend',qual,pre,desq);
   var tbody=document.getElementById('gaml-tbody');
   if(tbody)tbody.innerHTML=leads.length?leads.map(gamRowLider).join(''):'<tr class="er"><td colspan="6">Nenhum lead no período selecionado.</td></tr>';
@@ -6234,19 +6382,20 @@ async function initGamificacao(){
     var el;
     el=document.getElementById('gam-t-eyebrow');if(el){el.textContent='EQUIPE '+_gamEquipe.toUpperCase()+' · TUTORY GAMIFICAÇÃO';el.style.color=c;}
     el=document.getElementById('gam-t-title');if(el)el.textContent='Aeroporto de Prospecções — '+_gamEquipe;
-    el=document.getElementById('gam-t-sub');if(el)el.textContent='Leads da equipe '+_gamEquipe+' · Qualifique e pontue cada lead 🏆';
-    // Card borders
-    el=document.getElementById('gam-t-card');if(el)el.style.borderLeftColor=c;
+    el=document.getElementById('gam-t-sub');if(el)el.textContent='Leads da equipe '+_gamEquipe+' · HUB & Mentoria · Qualifique e pontue cada lead ✈️';
+    // Pie card border
     el=document.getElementById('gam-t-pie-card');if(el)el.style.borderLeftColor=c;
-    // Airport name
-    el=document.getElementById('gam-t-airport-name');if(el){el.textContent='✈️ Aeroporto '+_gamEquipe+' — ';el.style.color=c;}
-    // Add button
-    el=document.getElementById('gam-t-addbtn');if(el){el.style.background='linear-gradient(135deg,'+cDark+','+c+')';el.style.boxShadow='0 4px 14px '+c+'55';el.textContent='+ Adicionar Lead — '+_gamEquipe;}
-    // Qualificados section
-    el=document.getElementById('gam-t-qual-section');if(el){el.style.borderLeftColor=c;el.style.borderColor='rgba('+rgb+',.25)';el.style.background='linear-gradient(135deg,rgba('+rgb+',.08),rgba('+rgb+',.03))';}
-    el=document.getElementById('gam-t-qual-badge');if(el)el.style.background=c;
-    el=document.getElementById('gam-t-qual-name');if(el){el.textContent=em+' '+_gamEquipe.toUpperCase();el.style.color=c;}
-    el=document.getElementById('gam-t-qual-pts-box');if(el){el.style.background='rgba('+rgb+',.15)';el.style.borderColor='rgba('+rgb+',.3)';}
+    // HUB airport card border + title
+    el=document.getElementById('gam-t-hub-card');if(el)el.style.borderLeftColor=c;
+    el=document.getElementById('gam-t-hub-title');if(el)el.style.color=c;
+    // HUB add button (team color)
+    el=document.getElementById('gam-t-addbtn-hub');if(el){el.style.background='linear-gradient(135deg,'+cDark+','+c+')';el.style.boxShadow='0 4px 14px '+c+'55';}
+    // Qualificados HUB section
+    el=document.getElementById('gam-t-qhub-section');if(el){el.style.borderLeftColor=c;el.style.borderColor='rgba('+rgb+',.25)';el.style.background='linear-gradient(135deg,rgba('+rgb+',.08),rgba('+rgb+',.03))';}
+    el=document.getElementById('gam-t-qhub-badge');if(el)el.style.background=c;
+    el=document.getElementById('gam-t-qhub-name');if(el){el.textContent=em+' HUB';el.style.color=c;}
+    el=document.getElementById('gam-t-qhub-pts-box');if(el){el.style.background='rgba('+rgb+',.15)';el.style.borderColor='rgba('+rgb+',.3)';}
+    el=document.getElementById('gam-t-qhub-pts');if(el)el.style.color=c;
     // Colors by class
     document.querySelectorAll('.gam-t-color').forEach(function(k){k.style.color=c;});
     document.querySelectorAll('.gam-t-kpi-color').forEach(function(k){k.style.borderTopColor=c;});
