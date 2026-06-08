@@ -5411,32 +5411,118 @@ function bjBadge(cls,id){
   return '<div style="display:flex;flex-direction:column;gap:4px;">'+btns+'</div>';
 }
 
+/* ── FILTRO DE PERÍODO ── */
+var _bjPeriodo='todos';
+var _bjDataDe='';
+var _bjDataAte='';
+function bjSelPeriod(btn,p){
+  document.querySelectorAll('.bj-pb').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  _bjPeriodo=p;
+  var cr=document.getElementById('bj-custom-row');
+  if(cr)cr.style.display=p==='custom'?'flex':'none';
+  var lbl=document.getElementById('bj-period-label');
+  var labels={todos:'Todos os registros',hoje:'Hoje',7:'Últimos 7 dias',30:'Últimos 30 dias',mes:'Mês atual',custom:'Período personalizado'};
+  if(lbl)lbl.textContent=labels[p]||p;
+  if(p!=='custom')renderBeijamim();
+}
+function bjApplyCustom(){
+  _bjDataDe=document.getElementById('bj-df').value;
+  _bjDataAte=document.getElementById('bj-dt').value;
+  renderBeijamim();
+}
+function bjFilterByDate(leads){
+  if(_bjPeriodo==='todos')return leads;
+  var now=new Date();
+  var ini,fim;
+  var pad=function(n){return n<10?'0'+n:n;};
+  var today=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  if(_bjPeriodo==='hoje'){
+    ini=today+'T00:00:00'; fim=today+'T23:59:59';
+  } else if(_bjPeriodo==='7'){
+    var d7=new Date(now);d7.setDate(d7.getDate()-6);
+    ini=d7.getFullYear()+'-'+pad(d7.getMonth()+1)+'-'+pad(d7.getDate())+'T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_bjPeriodo==='30'){
+    var d30=new Date(now);d30.setDate(d30.getDate()-29);
+    ini=d30.getFullYear()+'-'+pad(d30.getMonth()+1)+'-'+pad(d30.getDate())+'T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_bjPeriodo==='mes'){
+    ini=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-01T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_bjPeriodo==='custom'){
+    ini=_bjDataDe?_bjDataDe+'T00:00:00':null;
+    fim=_bjDataAte?_bjDataAte+'T23:59:59':null;
+  }
+  return leads.filter(function(l){
+    if(!l.criado)return true;
+    var d=l.criado.slice(0,19);
+    if(ini&&d<ini)return false;
+    if(fim&&d>fim)return false;
+    return true;
+  });
+}
+
 /* ── HELPERS ── */
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function bjInstaLink(ig){return ig?'<a href="https://instagram.com/'+ig+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;">@'+escHtml(ig)+'</a>':'-';}
+function bjFormatDate(iso){
+  if(!iso)return '—';
+  var d=new Date(iso);
+  var pad=function(n){return n<10?'0'+n:n;};
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(2);
+}
+function bjInstaLink(ig){return ig?'<a href="https://instagram.com/'+ig+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;white-space:nowrap;">@'+escHtml(ig)+'</a>':'-';}
 function bjPlatBadge(plat){
   var c={Hotmart:'#FF6B35',Kiwify:'#8B5CF6',Eduzz:'#3B82F6',Herospark:'#F59E0B',Hubla:'#10B981',Monetizze:'#EF4444',Braip:'#6366F1',Outro:'#6B7280'};
   var pc=c[plat]||'var(--sub)';
-  return plat?'<span style="background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;">'+escHtml(plat)+'</span>':'-';
+  return plat?'<span style="background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">'+escHtml(plat)+'</span>':'-';
 }
-function bjObsTd(id,val){return '<textarea onchange="bjSetObs(\''+id+'\',this.value)" style="width:100%;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;color:var(--txt);font-size:11px;resize:none;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;min-height:36px;" rows="2" placeholder="Observação..." onfocus="this.style.borderColor=\'var(--brd2)\'" onblur="this.style.borderColor=\'transparent\'">'+escHtml(val||'')+'</textarea>';}
+/* Observação com botão Salvar explícito */
+function bjObsTd(id,val){
+  return '<div style="display:flex;flex-direction:column;gap:4px;">'
+    +'<textarea id="bj_obs_'+id+'" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:5px 7px;color:var(--txt);font-size:11px;resize:vertical;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;min-height:40px;" rows="2" placeholder="Escreva uma observação...">'+escHtml(val||'')+'</textarea>'
+    +'<button id="bj_obs_btn_'+id+'" onclick="bjSaveObs(\''+id+'\')" style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;text-align:center;transition:all .15s;">💾 Salvar</button>'
+    +'</div>';
+}
+async function bjSaveObs(id){
+  var ta=document.getElementById('bj_obs_'+id);
+  var btn=document.getElementById('bj_obs_btn_'+id);
+  if(!ta||!btn)return;
+  btn.textContent='⏳ Salvando...';btn.disabled=true;
+  try{
+    await bjPatch(id,{obs:ta.value});
+    btn.textContent='✅ Salvo!';btn.style.color='#22C55E';btn.style.borderColor='rgba(34,197,94,.3)';
+    setTimeout(function(){btn.textContent='💾 Salvar';btn.style.color='';btn.style.borderColor='';btn.disabled=false;},2000);
+  }catch(e){
+    btn.textContent='❌ Erro';btn.style.color='#EF4444';
+    setTimeout(function(){btn.textContent='💾 Salvar';btn.style.color='';btn.disabled=false;},2000);
+  }
+}
+/* Nome com ellipsis fixo */
+function bjNomeTd(nome){
+  return '<td style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;" title="'+escHtml(nome)+'">'+escHtml(nome)+'</td>';
+}
+function bjDateTd(iso){
+  return '<td style="font-size:11px;color:var(--sub);white-space:nowrap;">'+bjFormatDate(iso)+'</td>';
+}
 function bjDelBtn(id){return '<button onclick="bjDeleteLead(\''+id+'\')" title="Remover" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#EF4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button>';}
 
-/* ── ROW HUB (com Plataforma — 6 colunas) ── */
+/* ── ROWS ── */
+/* HUB: Data | Nome | Instagram | Plataforma | Obs | Classificação | Del = 7 colunas */
 function bjRowHub(lead){
-  return '<tr><td style="font-size:12px;font-weight:600;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
 }
-/* ── ROW MENTORIA (sem Plataforma — 5 colunas) ── */
+/* MENTORIA: Data | Nome | Instagram | Obs | Classificação | Del = 6 colunas */
 function bjRowMn(lead){
-  return '<tr><td style="font-size:12px;font-weight:600;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
 }
-/* ── ROW QUALIFICADOS HUB (somente leitura — 4 colunas) ── */
+/* QUALIFICADOS HUB: Data | Nome | Instagram | Plataforma | Obs com salvar = 5 colunas */
 function bjRowQHub(lead){
-  return '<tr><td style="font-size:12px;font-weight:700;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td style="font-size:11px;color:var(--sub);">'+escHtml(lead.obs||'—')+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
 }
-/* ── ROW QUALIFICADOS MENTORIA (somente leitura — 3 colunas) ── */
+/* QUALIFICADOS MENTORIA: Data | Nome | Instagram | Obs com salvar = 4 colunas */
 function bjRowQMn(lead){
-  return '<tr><td style="font-size:12px;font-weight:700;color:var(--txt);">'+escHtml(lead.nome)+'</td><td>'+bjInstaLink(lead.instagram)+'</td><td style="font-size:11px;color:var(--sub);">'+escHtml(lead.obs||'—')+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
 }
 
 /* ── PIE CHART ── */
@@ -5500,7 +5586,8 @@ async function renderBeijamim(){
   },30000);
 
   try{
-    var leads=await bjFetch();
+    var allLeads=await bjFetch();
+    var leads=bjFilterByDate(allLeads);
     var hub=leads.filter(function(l){return l.tipo==='hub';});
     var mn=leads.filter(function(l){return l.tipo==='mentoria';});
     var total=leads.length;
@@ -5528,8 +5615,8 @@ async function renderBeijamim(){
     /* Aeroportos */
     var hubTbody=document.getElementById('bj-hub-tbody');
     var mnTbody=document.getElementById('bj-mn-tbody');
-    if(hubTbody) hubTbody.innerHTML=hub.length?hub.map(bjRowHub).join(''):'<tr class="er"><td colspan="6">Nenhum lead HUB. Clique em "+ Adicionar Lead HUB".</td></tr>';
-    if(mnTbody)  mnTbody.innerHTML=mn.length?mn.map(bjRowMn).join(''):'<tr class="er"><td colspan="5">Nenhum lead Mentoria. Clique em "+ Adicionar Lead Mentoria".</td></tr>';
+    if(hubTbody) hubTbody.innerHTML=hub.length?hub.map(bjRowHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB no período selecionado.</td></tr>';
+    if(mnTbody)  mnTbody.innerHTML=mn.length?mn.map(bjRowMn).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria no período selecionado.</td></tr>';
 
     /* Seções de qualificados */
     var qualHub=hub.filter(function(l){return l.classificacao==='Qualificado';});
@@ -5540,8 +5627,8 @@ async function renderBeijamim(){
     setKpi('bj-qmn-pts',qualMn.length*20+' pts');
     var qhubT=document.getElementById('bj-qhub-tbody');
     var qmnT=document.getElementById('bj-qmn-tbody');
-    if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="4">Nenhum lead HUB qualificado ainda.</td></tr>';
-    if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="3">Nenhum lead Mentoria qualificado ainda.</td></tr>';
+    if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="5">Nenhum lead HUB qualificado no período.</td></tr>';
+    if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="4">Nenhum lead Mentoria qualificado no período.</td></tr>';
   }catch(e){
     console.error('renderBeijamim:',e);
     var hubTbody=document.getElementById('bj-hub-tbody');
@@ -5671,6 +5758,25 @@ async function initBeijamim(){
     <div class="ph-s">Prospecção manual de parceiros · HUB & Mentoria · Qualifique e pontue cada lead ✈️</div>
   </div>
 
+  <!-- FILTRO DE PERÍODO -->
+  <div class="pbar" style="margin-bottom:16px;">
+    <div class="pbar-l">
+      <button class="pb bj-pb on" onclick="bjSelPeriod(this,'todos')">Todos</button>
+      <button class="pb bj-pb" onclick="bjSelPeriod(this,'hoje')">Hoje</button>
+      <button class="pb bj-pb" onclick="bjSelPeriod(this,'7')">7 dias</button>
+      <button class="pb bj-pb" onclick="bjSelPeriod(this,'30')">30 dias</button>
+      <button class="pb bj-pb" onclick="bjSelPeriod(this,'mes')">Mês atual</button>
+      <button class="pb bj-pb" onclick="bjSelPeriod(this,'custom')">Personalizado</button>
+      <span id="bj-custom-row" style="display:none;align-items:center;gap:6px;">
+        <input type="date" id="bj-df" class="di">
+        <span style="color:var(--sub);font-size:12px;">até</span>
+        <input type="date" id="bj-dt" class="di">
+        <button class="pb on" onclick="bjApplyCustom()">Aplicar</button>
+      </span>
+    </div>
+    <div class="pbar-r" id="bj-period-label">Todos os registros</div>
+  </div>
+
   <!-- KPIs -->
   <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
     <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="bj-total">—</div><div class="ks">Todos os aeroportos</div></div>
@@ -5718,15 +5824,16 @@ async function initBeijamim(){
       <table class="dt" style="width:100%;table-layout:fixed;">
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
           <tr>
-            <th style="width:200px;">Nome</th>
-            <th style="width:160px;">Instagram</th>
-            <th style="width:120px;">Plataforma</th>
+            <th style="width:80px;">Data</th>
+            <th style="width:170px;">Nome</th>
+            <th style="width:140px;">Instagram</th>
+            <th style="width:110px;">Plataforma</th>
             <th>Observação</th>
-            <th style="width:160px;">Classificação</th>
+            <th style="width:175px;">Classificação</th>
             <th style="width:32px;"></th>
           </tr>
         </thead>
-        <tbody id="bj-hub-tbody"><tr class="er"><td colspan="6">Nenhum lead HUB adicionado.</td></tr></tbody>
+        <tbody id="bj-hub-tbody"><tr class="er"><td colspan="7">Nenhum lead HUB adicionado.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -5744,14 +5851,15 @@ async function initBeijamim(){
       <table class="dt" style="width:100%;table-layout:fixed;">
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
           <tr>
-            <th style="width:220px;">Nome</th>
-            <th style="width:180px;">Instagram</th>
+            <th style="width:80px;">Data</th>
+            <th style="width:170px;">Nome</th>
+            <th style="width:140px;">Instagram</th>
             <th>Observação</th>
             <th style="width:175px;">Classificação</th>
             <th style="width:32px;"></th>
           </tr>
         </thead>
-        <tbody id="bj-mn-tbody"><tr class="er"><td colspan="5">Nenhum lead Mentoria adicionado.</td></tr></tbody>
+        <tbody id="bj-mn-tbody"><tr class="er"><td colspan="6">Nenhum lead Mentoria adicionado.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -5780,13 +5888,14 @@ async function initBeijamim(){
         <table class="dt" style="width:100%;table-layout:fixed;">
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:200px;color:#FB923C;">Nome</th>
-              <th style="width:160px;color:#FB923C;">Instagram</th>
-              <th style="width:120px;color:#FB923C;">Plataforma</th>
+              <th style="width:80px;color:#FB923C;">Data</th>
+              <th style="width:170px;color:#FB923C;">Nome</th>
+              <th style="width:140px;color:#FB923C;">Instagram</th>
+              <th style="width:110px;color:#FB923C;">Plataforma</th>
               <th style="color:#FB923C;">Observação</th>
             </tr>
           </thead>
-          <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="4">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
+          <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="5">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -5808,14 +5917,15 @@ async function initBeijamim(){
       </div>
       <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
         <table class="dt" style="width:100%;table-layout:fixed;">
-          <thead style="position:sticky;top:0;z-index:5;background:#080F1E;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:220px;color:#60A5FA;">Nome</th>
-              <th style="width:180px;color:#60A5FA;">Instagram</th>
+              <th style="width:80px;color:#60A5FA;">Data</th>
+              <th style="width:170px;color:#60A5FA;">Nome</th>
+              <th style="width:140px;color:#60A5FA;">Instagram</th>
               <th style="color:#60A5FA;">Observação</th>
             </tr>
           </thead>
-          <tbody id="bj-qmn-tbody"><tr class="er"><td colspan="3">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
+          <tbody id="bj-qmn-tbody"><tr class="er"><td colspan="4">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
         </table>
       </div>
     </div>
