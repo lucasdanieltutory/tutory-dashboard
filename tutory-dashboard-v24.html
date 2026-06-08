@@ -956,6 +956,10 @@ async function supaInsert(table, body){
       <span class="sb-icon">✈️</span><span>Prospecções Beijamim</span>
       <div class="sb-bdot" style="background:#FB923C;box-shadow:0 0 5px #FB923C;opacity:0;margin-left:auto;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
     </div>
+    <div class="sb-item" onclick="go('gamificacao',this)">
+      <span class="sb-icon">🏆</span><span>Leads Gamificação</span>
+      <div class="sb-bdot" style="background:#818CF8;box-shadow:0 0 5px #818CF8;opacity:0;margin-left:auto;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
+    </div>
     <div class="sb-item" onclick="go('youtube',this)">
       <span class="sb-icon">▶️</span><span>YouTube</span>
       <div class="sb-bdot" style="background:#FF0000;box-shadow:0 0 5px #FF0000;opacity:0;margin-left:auto;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></div>
@@ -2949,8 +2953,8 @@ const fabMap={
   experience:[],
   chat:[]
 };
-var PAGE_TITLES={geral:'Visão Geral',mentoria:'Tutory Mentoria',hub:'TutoryHub',experience:'Experience',criativos:'Criativos',prospeccoes:'Prospecções',youtube:'YouTube',beijamim:'Prospecções Beijamim'};
-var PAGE_IDS=['geral','mentoria','hub','experience','criativos','prospeccoes','youtube','beijamim'];
+var PAGE_TITLES={geral:'Visão Geral',mentoria:'Tutory Mentoria',hub:'TutoryHub',experience:'Experience',criativos:'Criativos',prospeccoes:'Prospecções',youtube:'YouTube',beijamim:'Prospecções Beijamim',gamificacao:'Leads Gamificação'};
+var PAGE_IDS=['geral','mentoria','hub','experience','criativos','prospeccoes','youtube','beijamim','gamificacao'];
 function go(id,el){
   // Esconder TODAS as páginas via style direto
   PAGE_IDS.forEach(function(pid){
@@ -2981,6 +2985,7 @@ function go(id,el){
   else if(id==='prospeccoes')renderProspeccoes(true);
   else if(id==='youtube')renderYouTube();
   else if(id==='beijamim')initBeijamim();
+  else if(id==='gamificacao')initGamificacao();
 }
 function updateFab(id){
   const fa=$('fab-area');
@@ -2997,7 +3002,8 @@ function reload(m=false){
   else if(cur==='criativos')renderCriativos();
   else if(cur==='prospeccoes')renderProspeccoes(false);
   else if(cur==='youtube')renderYouTube();
-  else if(cur==='beijamim')renderBeijamim(); // refresh manual não precisa seed
+  else if(cur==='beijamim')renderBeijamim();
+  else if(cur==='gamificacao')renderGamificacao();
   setTimeout(()=>{if(b)b.classList.remove('spin');},700);
 }
 setInterval(()=>reload(),5*60*1000);
@@ -5658,6 +5664,667 @@ async function renderBeijamim(){
 async function initBeijamim(){
   await bjSeedIfEmpty();
   await renderBeijamim();
+}
+</script>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- PAGE: LEADS GAMIFICAÇÃO                            -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="page" id="page-gamificacao" style="display:none">
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="ph">
+    <div class="ph-ey" style="color:#818CF8">LEADS GAMIFICAÇÃO · TUTORY</div>
+    <div class="ph-t">Aeroporto de Gamificação por Equipes</div>
+    <div class="ph-s">Prospecção gamificada · Equipes Benjamim, Judá & Efraim · Qualifique e pontue 🏆</div>
+  </div>
+
+  <!-- FILTRO DE PERÍODO -->
+  <div class="pbar" style="margin-bottom:12px;">
+    <div class="pbar-l">
+      <button class="pb gam-pb on" onclick="gamSelPeriod(this,'todos')">Todos</button>
+      <button class="pb gam-pb" onclick="gamSelPeriod(this,'hoje')">Hoje</button>
+      <button class="pb gam-pb" onclick="gamSelPeriod(this,'7')">7 dias</button>
+      <button class="pb gam-pb" onclick="gamSelPeriod(this,'30')">30 dias</button>
+      <button class="pb gam-pb" onclick="gamSelPeriod(this,'mes')">Mês atual</button>
+      <button class="pb gam-pb" onclick="gamSelPeriod(this,'custom')">Personalizado</button>
+      <span id="gam-custom-row" style="display:none;align-items:center;gap:6px;">
+        <input type="date" id="gam-df" class="di">
+        <span style="color:var(--sub);font-size:12px;">até</span>
+        <input type="date" id="gam-dt" class="di">
+        <button class="pb on" onclick="gamApplyCustom()">Aplicar</button>
+      </span>
+    </div>
+    <div class="pbar-r" id="gam-period-label">Todos os registros</div>
+  </div>
+
+  <!-- FILTRO DE EQUIPES -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <span style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">Filtrar equipe:</span>
+    <button id="gam-eq-btn-todos" class="gam-eq-btn on" onclick="gamToggleEquipe('todos')" style="background:#818CF8;color:#fff;border:1px solid #818CF8;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">Todos</button>
+    <button id="gam-eq-btn-Benjamim" class="gam-eq-btn" onclick="gamToggleEquipe('Benjamim')" style="background:transparent;color:#FB923C;border:1px solid #FB923C;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟠 Benjamim</button>
+    <button id="gam-eq-btn-Judá" class="gam-eq-btn" onclick="gamToggleEquipe('Judá')" style="background:transparent;color:#818CF8;border:1px solid #818CF8;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟣 Judá</button>
+    <button id="gam-eq-btn-Efraim" class="gam-eq-btn" onclick="gamToggleEquipe('Efraim')" style="background:transparent;color:#34D399;border:1px solid #34D399;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟢 Efraim</button>
+    <span id="gam-eq-label" style="font-size:11px;color:var(--sub);margin-left:4px;"></span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+    <div class="kpi" style="border-top:3px solid #818CF8;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="gam-total">—</div><div class="ks">Todas as equipes</div></div>
+    <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🟠</div><div class="kl">Benjamim</div><div class="kv" id="gam-kpi-benjamim">—</div><div class="ks">Leads da equipe</div></div>
+    <div class="kpi" style="border-top:3px solid #818CF8;"><div class="ki">🟣</div><div class="kl">Judá</div><div class="kv" id="gam-kpi-juda">—</div><div class="ks">Leads da equipe</div></div>
+    <div class="kpi" style="border-top:3px solid #34D399;"><div class="ki">🟢</div><div class="kl">Efraim</div><div class="kv" id="gam-kpi-efraim">—</div><div class="ks">Leads da equipe</div></div>
+    <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="gam-qual">—</div><div class="ks">Total qualificados</div></div>
+    <div class="kpi" style="border-top:3px solid #EAB308;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="gam-pts">—</div><div class="ks">Qualificado = 20 pts</div></div>
+  </div>
+
+  <!-- GRÁFICO + BOTÃO ADICIONAR -->
+  <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
+    <div class="card" style="border-left:3px solid #818CF8;">
+      <div class="ch"><div><div class="ct">📊 Distribuição de Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
+      <div class="cb" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+        <canvas id="gam-pie" width="160" height="160" style="flex-shrink:0;"></canvas>
+        <div id="gam-legend" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="gamOpenModal()" style="background:linear-gradient(135deg,#6D28D9,#818CF8);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(129,140,248,.35);">
+        + Adicionar Lead
+      </button>
+      <button onclick="gamExportCSV()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);border-radius:12px;padding:10px 22px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;">
+        ⬇ Exportar CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- TABELA PRINCIPAL — TODOS OS LEADS -->
+  <div class="card" style="border-left:4px solid #818CF8;margin-bottom:18px;">
+    <div class="ch">
+      <div>
+        <div class="ct" style="color:#818CF8;">🏆 Aeroporto de Gamificação — <span id="gam-count">0 leads</span></div>
+        <div class="cs">Todos os leads das equipes Benjamim, Judá e Efraim</div>
+      </div>
+    </div>
+    <div style="overflow-y:auto;overflow-x:hidden;max-height:700px;">
+      <table class="dt" style="width:100%;table-layout:fixed;">
+        <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+          <tr>
+            <th style="width:68px;">Data</th>
+            <th style="width:100px;">Equipe</th>
+            <th style="width:15%;">Nome</th>
+            <th style="width:15%;">Instagram</th>
+            <th style="width:110px;">Telefone</th>
+            <th>Observação</th>
+            <th style="width:170px;">Classificação</th>
+            <th style="width:28px;"></th>
+          </tr>
+        </thead>
+        <tbody id="gam-tbody"><tr class="er"><td colspan="8">Nenhum lead adicionado ainda.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SEÇÕES DE QUALIFICADOS POR EQUIPE -->
+  <div style="margin-top:32px;border-top:2px solid var(--brd);padding-top:28px;display:flex;flex-direction:column;gap:20px;">
+
+    <!-- QUALIFICADOS BENJAMIM -->
+    <div style="background:linear-gradient(135deg,rgba(234,88,12,.08),rgba(251,146,60,.04));border:1px solid rgba(251,146,60,.25);border-left:4px solid #FB923C;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(251,146,60,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#FB923C;display:flex;align-items:center;gap:8px;">
+            <span style="background:#FB923C;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+            🟠 BENJAMIM — <span id="gam-qbenjamim-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados da equipe Benjamim · prontos para abordagem</div>
+        </div>
+        <div style="background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#FB923C;" id="gam-qbenjamim-pts">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;overflow-x:hidden;max-height:500px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+            <tr>
+              <th style="width:68px;color:#FB923C;">Data</th>
+              <th style="width:18%;color:#FB923C;">Nome</th>
+              <th style="width:18%;color:#FB923C;">Instagram</th>
+              <th style="width:115px;color:#FB923C;">Telefone</th>
+              <th style="color:#FB923C;">Observação</th>
+            </tr>
+          </thead>
+          <tbody id="gam-qbenjamim-tbody"><tr class="er"><td colspan="5">Nenhum lead Benjamim qualificado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QUALIFICADOS JUDÁ -->
+    <div style="background:linear-gradient(135deg,rgba(109,40,217,.08),rgba(129,140,248,.04));border:1px solid rgba(129,140,248,.25);border-left:4px solid #818CF8;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(129,140,248,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#818CF8;display:flex;align-items:center;gap:8px;">
+            <span style="background:#818CF8;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+            🟣 JUDÁ — <span id="gam-qjuda-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados da equipe Judá · prontos para abordagem</div>
+        </div>
+        <div style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#818CF8;" id="gam-qjuda-pts">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;overflow-x:hidden;max-height:500px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+            <tr>
+              <th style="width:68px;color:#818CF8;">Data</th>
+              <th style="width:18%;color:#818CF8;">Nome</th>
+              <th style="width:18%;color:#818CF8;">Instagram</th>
+              <th style="width:115px;color:#818CF8;">Telefone</th>
+              <th style="color:#818CF8;">Observação</th>
+            </tr>
+          </thead>
+          <tbody id="gam-qjuda-tbody"><tr class="er"><td colspan="5">Nenhum lead Judá qualificado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QUALIFICADOS EFRAIM -->
+    <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(52,211,153,.04));border:1px solid rgba(52,211,153,.25);border-left:4px solid #34D399;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(52,211,153,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#34D399;display:flex;align-items:center;gap:8px;">
+            <span style="background:#34D399;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">✅ QUALIFICADOS</span>
+            🟢 EFRAIM — <span id="gam-qefraim-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 leads</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads aprovados da equipe Efraim · prontos para abordagem</div>
+        </div>
+        <div style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#34D399;" id="gam-qefraim-pts">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;overflow-x:hidden;max-height:500px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+            <tr>
+              <th style="width:68px;color:#34D399;">Data</th>
+              <th style="width:18%;color:#34D399;">Nome</th>
+              <th style="width:18%;color:#34D399;">Instagram</th>
+              <th style="width:115px;color:#34D399;">Telefone</th>
+              <th style="color:#34D399;">Observação</th>
+            </tr>
+          </thead>
+          <tbody id="gam-qefraim-tbody"><tr class="er"><td colspan="5">Nenhum lead Efraim qualificado ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /qualificados -->
+
+</div><!-- /wrap -->
+</div><!-- /page-gamificacao -->
+
+<!-- MODAL ADICIONAR LEAD GAMIFICAÇÃO -->
+<div id="gam-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)gamCloseModal()">
+  <div style="background:var(--s1);border:1px solid var(--brd);border-radius:16px;padding:28px;width:min(480px,92vw);box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--txt);">➕ Adicionar Lead — Gamificação</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px;">Preencha os dados e selecione a equipe</div>
+      </div>
+      <button onclick="gamCloseModal()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:8px;width:32px;height:32px;color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Equipe * (obrigatório)</label>
+        <div style="display:flex;gap:8px;">
+          <button id="gam-eq-opt-Benjamim" onclick="gamSelectEquipe('Benjamim')" style="flex:1;background:transparent;border:2px solid #FB923C;border-radius:9px;padding:9px 6px;color:#FB923C;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟠 Benjamim</button>
+          <button id="gam-eq-opt-Judá" onclick="gamSelectEquipe('Judá')" style="flex:1;background:transparent;border:2px solid #818CF8;border-radius:9px;padding:9px 6px;color:#818CF8;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟣 Judá</button>
+          <button id="gam-eq-opt-Efraim" onclick="gamSelectEquipe('Efraim')" style="flex:1;background:transparent;border:2px solid #34D399;border-radius:9px;padding:9px 6px;color:#34D399;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">🟢 Efraim</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Nome *</label>
+        <input id="gam-inp-nome" type="text" placeholder="Nome completo ou nome do curso" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Instagram</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--sub);font-size:14px;">@</span>
+          <input id="gam-inp-insta" type="text" placeholder="usuario.instagram" style="flex:1;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Telefone (opcional)</label>
+        <input id="gam-inp-tel" type="text" placeholder="(00) 00000-0000" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Classificação</label>
+        <select id="gam-inp-class" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+          <option value="Pré-qualificado">⭐ Pré-qualificado</option>
+          <option value="Qualificado">✅ Qualificado</option>
+          <option value="Desqualificado">🚫 Desqualificado</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Observação</label>
+        <textarea id="gam-inp-obs" rows="3" placeholder="Anotações livres sobre o lead..." style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:'Plus Jakarta Sans',sans-serif;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="gamCloseModal()" style="flex:1;background:var(--s2);border:1px solid var(--brd2);border-radius:10px;padding:11px;color:var(--sub);font-size:13px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Cancelar</button>
+      <button onclick="gamSaveLead()" id="gam-modal-save" style="flex:2;background:linear-gradient(135deg,#6D28D9,#818CF8);border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">💾 Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════ */
+/*  LEADS GAMIFICAÇÃO — JS                             */
+/* ════════════════════════════════════════════════════ */
+var GAM_TABLE='leads_gamificacao';
+var _gamPieChart=null;
+var _gamRefreshTimer=null;
+var _gamPeriodo='todos';
+var _gamDataDe='';
+var _gamDataAte='';
+var _gamEquipes=[]; // [] = todos; ['Benjamim'] = só Benjamim; etc
+var _gamModalEquipe=''; // equipe selecionada no modal
+
+var GAM_COLORS={Benjamim:'#FB923C',Judá:'#818CF8',Efraim:'#34D399'};
+var GAM_EMOJIS={Benjamim:'🟠',Judá:'🟣',Efraim:'🟢'};
+
+/* ── SUPABASE HELPERS ── */
+async function gamFetch(){
+  return supaFetch(GAM_TABLE,'select=*&order=criado.asc');
+}
+async function gamInsert(body){
+  return supaInsert(GAM_TABLE,body);
+}
+async function gamPatch(id,dados){
+  return supaUpdate(GAM_TABLE,id,dados);
+}
+async function gamDelete(id){
+  await fetch(SUPA_URL+'/rest/v1/'+GAM_TABLE+'?id=eq.'+id,{
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'}
+  });
+}
+
+/* ── MODAL ── */
+function gamOpenModal(){
+  _gamModalEquipe='';
+  var m=document.getElementById('gam-modal');
+  if(!m)return;
+  ['gam-inp-nome','gam-inp-insta','gam-inp-tel','gam-inp-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('gam-inp-class').value='Pré-qualificado';
+  // Reset equipe buttons
+  ['Benjamim','Judá','Efraim'].forEach(function(eq){
+    var btn=document.getElementById('gam-eq-opt-'+eq);
+    if(btn){btn.style.background='transparent';btn.style.color=GAM_COLORS[eq];btn.style.borderColor=GAM_COLORS[eq];btn.style.borderWidth='2px';}
+  });
+  m.style.display='flex';
+  setTimeout(function(){var el=document.getElementById('gam-inp-nome');if(el)el.focus();},120);
+}
+function gamCloseModal(){
+  var m=document.getElementById('gam-modal');
+  if(m)m.style.display='none';
+}
+function gamSelectEquipe(eq){
+  _gamModalEquipe=eq;
+  ['Benjamim','Judá','Efraim'].forEach(function(e){
+    var btn=document.getElementById('gam-eq-opt-'+e);
+    if(!btn)return;
+    if(e===eq){
+      btn.style.background=GAM_COLORS[e];
+      btn.style.color='#fff';
+      btn.style.borderColor=GAM_COLORS[e];
+    } else {
+      btn.style.background='transparent';
+      btn.style.color=GAM_COLORS[e];
+      btn.style.borderColor=GAM_COLORS[e];
+    }
+  });
+}
+async function gamSaveLead(){
+  if(!_gamModalEquipe){alert('Selecione a equipe antes de salvar.');return;}
+  var nome=document.getElementById('gam-inp-nome').value.trim();
+  var insta=document.getElementById('gam-inp-insta').value.trim().replace(/^@/,'');
+  var tel=document.getElementById('gam-inp-tel').value.trim();
+  var cls=document.getElementById('gam-inp-class').value;
+  var obs=document.getElementById('gam-inp-obs').value.trim();
+  if(!nome){alert('Preencha o nome do lead.');return;}
+  var btn=document.getElementById('gam-modal-save');
+  if(btn){btn.textContent='⏳ Salvando...';btn.disabled=true;}
+  try{
+    await gamInsert({nome:nome,instagram:insta,telefone:tel,equipe:_gamModalEquipe,classificacao:cls,obs:obs});
+    gamCloseModal();
+    await renderGamificacao();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+  finally{if(btn){btn.textContent='💾 Salvar Lead';btn.disabled=false;}}
+}
+
+/* ── CLASSIFICAÇÃO INLINE ── */
+async function gamSetClass(id,cls){
+  try{
+    await gamPatch(id,{classificacao:cls});
+    await renderGamificacao();
+  }catch(e){console.error('gamSetClass:',e);}
+}
+
+/* ── REMOVER LEAD ── */
+async function gamDeleteLead(id){
+  if(!confirm('Remover este lead?'))return;
+  try{
+    await gamDelete(id);
+    await renderGamificacao();
+  }catch(e){alert('Erro ao remover: '+e.message);}
+}
+
+/* ── FILTRO PERÍODO ── */
+function gamSelPeriod(btn,p){
+  document.querySelectorAll('.gam-pb').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  _gamPeriodo=p;
+  var cr=document.getElementById('gam-custom-row');
+  if(cr)cr.style.display=p==='custom'?'flex':'none';
+  var lbl=document.getElementById('gam-period-label');
+  var labels={todos:'Todos os registros',hoje:'Hoje',7:'Últimos 7 dias',30:'Últimos 30 dias',mes:'Mês atual',custom:'Período personalizado'};
+  if(lbl)lbl.textContent=labels[p]||p;
+  if(p!=='custom')renderGamificacao();
+}
+function gamApplyCustom(){
+  _gamDataDe=document.getElementById('gam-df').value;
+  _gamDataAte=document.getElementById('gam-dt').value;
+  renderGamificacao();
+}
+function gamFilterByDate(leads){
+  if(_gamPeriodo==='todos')return leads;
+  var now=new Date();
+  var ini,fim;
+  var pad=function(n){return n<10?'0'+n:n;};
+  var today=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  if(_gamPeriodo==='hoje'){
+    ini=today+'T00:00:00';fim=today+'T23:59:59';
+  } else if(_gamPeriodo==='7'){
+    var d7=new Date(now);d7.setDate(d7.getDate()-6);
+    ini=d7.getFullYear()+'-'+pad(d7.getMonth()+1)+'-'+pad(d7.getDate())+'T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_gamPeriodo==='30'){
+    var d30=new Date(now);d30.setDate(d30.getDate()-29);
+    ini=d30.getFullYear()+'-'+pad(d30.getMonth()+1)+'-'+pad(d30.getDate())+'T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_gamPeriodo==='mes'){
+    ini=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-01T00:00:00';
+    fim=today+'T23:59:59';
+  } else if(_gamPeriodo==='custom'){
+    ini=_gamDataDe?_gamDataDe+'T00:00:00':null;
+    fim=_gamDataAte?_gamDataAte+'T23:59:59':null;
+  }
+  return leads.filter(function(l){
+    if(!l.criado)return true;
+    var d=l.criado.slice(0,19);
+    if(ini&&d<ini)return false;
+    if(fim&&d>fim)return false;
+    return true;
+  });
+}
+
+/* ── FILTRO EQUIPE (multi-select) ── */
+function gamToggleEquipe(eq){
+  if(eq==='todos'){
+    _gamEquipes=[];
+  } else {
+    var idx=_gamEquipes.indexOf(eq);
+    if(idx>=0){ _gamEquipes.splice(idx,1); }
+    else { _gamEquipes.push(eq); }
+  }
+  // Update button styles
+  var todosBtn=document.getElementById('gam-eq-btn-todos');
+  var isAll=_gamEquipes.length===0;
+  if(todosBtn){
+    todosBtn.style.background=isAll?'#818CF8':'transparent';
+    todosBtn.style.color=isAll?'#fff':'#818CF8';
+    todosBtn.classList.toggle('on',isAll);
+  }
+  ['Benjamim','Judá','Efraim'].forEach(function(e){
+    var btn=document.getElementById('gam-eq-btn-'+e);
+    if(!btn)return;
+    var sel=_gamEquipes.indexOf(e)>=0;
+    btn.style.background=sel?GAM_COLORS[e]:'transparent';
+    btn.style.color=sel?'#fff':GAM_COLORS[e];
+  });
+  // Update label
+  var lbl=document.getElementById('gam-eq-label');
+  if(lbl){
+    if(isAll) lbl.textContent='';
+    else lbl.textContent='Mostrando: '+_gamEquipes.map(function(e){return GAM_EMOJIS[e]+' '+e;}).join(' + ');
+  }
+  renderGamificacao();
+}
+function gamFilterByEquipe(leads){
+  if(_gamEquipes.length===0)return leads;
+  return leads.filter(function(l){return _gamEquipes.indexOf(l.equipe)>=0;});
+}
+
+/* ── BADGE EQUIPE ── */
+function gamEquipeBadge(eq){
+  var c=GAM_COLORS[eq]||'#6B7280';
+  var em=GAM_EMOJIS[eq]||'';
+  return '<span style="display:inline-block;background:'+c+'22;color:'+c+';border:1px solid '+c+'55;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;">'+em+' '+escHtml(eq)+'</span>';
+}
+
+/* ── BADGE CLASSIFICAÇÃO ── */
+function gamBadge(cls,id){
+  var opts=['Qualificado','Pré-qualificado','Desqualificado'];
+  var colors={Qualificado:'#22C55E','Pré-qualificado':'#EAB308',Desqualificado:'#EF4444'};
+  var emoji={Qualificado:'✅','Pré-qualificado':'⭐',Desqualificado:'🚫'};
+  var btns=opts.map(function(o){
+    var active=o===cls;
+    var bg=active?colors[o]:'transparent';
+    var border=active?colors[o]:'var(--brd2)';
+    var color=active?'#fff':'var(--sub)';
+    var fw=active?'700':'500';
+    return '<button onclick="gamSetClass(\''+id+'\',\''+o+'\')" style="background:'+bg+';border:1px solid '+border+';color:'+color+';border-radius:7px;padding:3px 8px;font-size:10px;font-weight:'+fw+';cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;white-space:nowrap;">'+emoji[o]+' '+o+'</button>';
+  }).join('');
+  return '<div style="display:flex;flex-direction:column;gap:4px;">'+btns+'</div>';
+}
+
+/* ── OBSERVAÇÃO COMPACTA ── */
+function gamObsTd(id,val){
+  return '<div style="position:relative;">'
+    +'<textarea id="gam_obs_'+id+'" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:6px 8px 22px 8px;color:var(--txt);font-size:11px;resize:none;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;height:52px;box-sizing:border-box;transition:border-color .15s;" placeholder="Observação..." onfocus="this.style.borderColor=\'var(--mn)\'" onblur="this.style.borderColor=\'var(--brd2)\'">'+escHtml(val||'')+'</textarea>'
+    +'<button id="gam_obs_btn_'+id+'" onclick="gamSaveObs(\''+id+'\')" style="position:absolute;bottom:5px;right:6px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#22C55E;border-radius:5px;padding:1px 8px;font-size:9px;font-weight:700;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:.3px;" onmouseover="this.style.background=\'rgba(34,197,94,.22)\'" onmouseout="this.style.background=\'rgba(34,197,94,.12)\'">💾 salvar</button>'
+    +'</div>';
+}
+async function gamSaveObs(id){
+  var ta=document.getElementById('gam_obs_'+id);
+  var btn=document.getElementById('gam_obs_btn_'+id);
+  if(!ta||!btn)return;
+  btn.textContent='⏳...';btn.disabled=true;
+  try{
+    await gamPatch(id,{obs:ta.value});
+    btn.textContent='✅';btn.style.color='#22C55E';
+    setTimeout(function(){btn.textContent='💾 salvar';btn.style.color='';btn.disabled=false;},2000);
+  }catch(e){
+    btn.textContent='❌';btn.style.color='#EF4444';
+    setTimeout(function(){btn.textContent='💾 salvar';btn.style.color='';btn.disabled=false;},2000);
+  }
+}
+
+/* ── TELEFONE INLINE ── */
+function gamTelTd(id,val){
+  return '<div style="position:relative;">'
+    +'<input id="gam_tel_'+id+'" type="text" value="'+escHtml(val||'')+'" placeholder="📞 adicionar" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:5px 30px 5px 7px;color:var(--txt);font-size:11px;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;box-sizing:border-box;transition:border-color .15s;" onfocus="this.style.borderColor=\'var(--mn)\'" onblur="this.style.borderColor=\'var(--brd2)\'" onkeydown="if(event.key===\'Enter\')gamSaveTel(\''+id+'\')">'
+    +'<button id="gam_tel_btn_'+id+'" onclick="gamSaveTel(\''+id+'\')" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--sub);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;" title="Salvar telefone">💾</button>'
+    +'</div>';
+}
+async function gamSaveTel(id){
+  var inp=document.getElementById('gam_tel_'+id);
+  var btn=document.getElementById('gam_tel_btn_'+id);
+  if(!inp||!btn)return;
+  btn.textContent='⏳';btn.disabled=true;
+  try{
+    await gamPatch(id,{telefone:inp.value.trim()});
+    btn.textContent='✅';
+    setTimeout(function(){btn.textContent='💾';btn.disabled=false;},1500);
+  }catch(e){
+    btn.textContent='❌';
+    setTimeout(function(){btn.textContent='💾';btn.disabled=false;},1500);
+  }
+}
+
+/* ── HELPERS COMUNS ── */
+function gamNomeTd(nome){
+  return '<td style="overflow:hidden;" title="'+escHtml(nome)+'"><div style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(nome)+'</div></td>';
+}
+function gamDateTd(iso){
+  return '<td style="font-size:11px;color:var(--sub);white-space:nowrap;vertical-align:middle;">'+bjFormatDate(iso)+'</td>';
+}
+var _gamTdOvf='style="overflow:hidden;vertical-align:middle;"';
+
+/* ── ROW FUNÇÕES ── */
+/* MAIN: Data | Equipe | Nome | Instagram | Telefone | Obs | Class | Del = 8 cols */
+function gamRowMain(lead){
+  return '<tr>'
+    +gamDateTd(lead.criado)
+    +'<td style="vertical-align:middle;">'+gamEquipeBadge(lead.equipe)+'</td>'
+    +gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamBadge(lead.classificacao,lead.id)+'</td>'
+    +'<td style="text-align:center;vertical-align:middle;"><button onclick="gamDeleteLead(\''+lead.id+'\')" title="Remover" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#EF4444;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button></td>'
+    +'</tr>';
+}
+/* QUALIFICADOS: Data | Nome | Instagram | Telefone | Obs = 5 cols */
+function gamRowQual(lead){
+  return '<tr>'
+    +gamDateTd(lead.criado)
+    +gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'</tr>';
+}
+
+/* ── PIE CHART ── */
+function gamDrawPie(qual,pre,desq){
+  var canvas=document.getElementById('gam-pie');
+  if(!canvas)return;
+  if(_gamPieChart){_gamPieChart.destroy();_gamPieChart=null;}
+  var total=qual+pre+desq;
+  if(!total){
+    var ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='var(--brd2)';
+    ctx.beginPath();ctx.arc(80,80,70,0,Math.PI*2);ctx.fill();
+    document.getElementById('gam-legend').innerHTML='<span style="color:var(--sub);font-size:11px;">Nenhum lead ainda</span>';
+    return;
+  }
+  if(typeof Chart!=='undefined'){
+    _gamPieChart=new Chart(canvas,{
+      type:'doughnut',
+      data:{
+        labels:['Qualificados','Pré-qualificados','Desqualificados'],
+        datasets:[{data:[qual,pre,desq],backgroundColor:['#22C55E','#EAB308','#EF4444'],borderWidth:2,borderColor:'var(--s1)',hoverOffset:6}]
+      },
+      options:{responsive:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var pct=total?Math.round(ctx.raw/total*100):0;return ' '+ctx.raw+' ('+pct+'%)';}}}}}
+    });
+    document.getElementById('gam-legend').innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;background:#22C55E;border-radius:3px;display:inline-block;flex-shrink:0;"></span><span style="color:var(--txt);font-weight:600;">Qualificados</span><span style="color:var(--sub);">'+qual+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;background:#EAB308;border-radius:3px;display:inline-block;flex-shrink:0;"></span><span style="color:var(--txt);font-weight:600;">Pré-qualificados</span><span style="color:var(--sub);">'+pre+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><span style="width:12px;height:12px;background:#EF4444;border-radius:3px;display:inline-block;flex-shrink:0;"></span><span style="color:var(--txt);font-weight:600;">Desqualificados</span><span style="color:var(--sub);">'+desq+'</span></div>'+
+      '<div style="border-top:1px solid var(--brd);margin-top:4px;padding-top:4px;color:var(--sub);font-size:11px;">Total: '+total+' leads</div>';
+  }
+}
+
+/* ── EXPORT CSV ── */
+async function gamExportCSV(){
+  try{
+    var leads=await gamFetch();
+    if(!leads.length){alert('Nenhum lead para exportar.');return;}
+    var header='Equipe,Nome,Instagram,Telefone,Classificação,Observação,Data\n';
+    var rows=leads.map(function(l){
+      return [l.equipe,'"'+l.nome+'"','@'+(l.instagram||''),l.telefone||'',l.classificacao,'"'+(l.obs||'')+'"',l.criado?l.criado.slice(0,10):''].join(',');
+    }).join('\n');
+    var blob=new Blob(['﻿'+header+rows],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='leads_gamificacao.csv';a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){alert('Erro ao exportar: '+e.message);}
+}
+
+/* ── RENDER PRINCIPAL ── */
+async function renderGamificacao(){
+  if(_gamRefreshTimer)clearInterval(_gamRefreshTimer);
+  _gamRefreshTimer=setInterval(function(){
+    if(document.getElementById('page-gamificacao')&&
+       document.getElementById('page-gamificacao').style.display!=='none'){
+      renderGamificacao();
+    } else {
+      clearInterval(_gamRefreshTimer);
+    }
+  },30000);
+
+  try{
+    var allLeads=await gamFetch();
+    var leads=gamFilterByDate(allLeads);
+    var filtered=gamFilterByEquipe(leads);
+
+    var benjamim=filtered.filter(function(l){return l.equipe==='Benjamim';});
+    var juda=filtered.filter(function(l){return l.equipe==='Judá';});
+    var efraim=filtered.filter(function(l){return l.equipe==='Efraim';});
+    var total=filtered.length;
+    var qual=filtered.filter(function(l){return l.classificacao==='Qualificado';}).length;
+    var pre=filtered.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
+    var desq=filtered.filter(function(l){return l.classificacao==='Desqualificado';}).length;
+
+    function setKpi(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+    setKpi('gam-total',total);
+    setKpi('gam-kpi-benjamim',benjamim.length);
+    setKpi('gam-kpi-juda',juda.length);
+    setKpi('gam-kpi-efraim',efraim.length);
+    setKpi('gam-qual',qual);
+    setKpi('gam-pts',qual*20+' pts');
+    setKpi('gam-count',total+' leads');
+
+    gamDrawPie(qual,pre,desq);
+
+    /* Tabela principal */
+    var tbody=document.getElementById('gam-tbody');
+    if(tbody)tbody.innerHTML=filtered.length?filtered.map(gamRowMain).join(''):'<tr class="er"><td colspan="8">Nenhum lead no período/filtro selecionado.</td></tr>';
+
+    /* Qualificados por equipe */
+    var qBenj=benjamim.filter(function(l){return l.classificacao==='Qualificado';});
+    var qJuda=juda.filter(function(l){return l.classificacao==='Qualificado';});
+    var qEfraim=efraim.filter(function(l){return l.classificacao==='Qualificado';});
+
+    setKpi('gam-qbenjamim-count',qBenj.length+' leads');
+    setKpi('gam-qjuda-count',qJuda.length+' leads');
+    setKpi('gam-qefraim-count',qEfraim.length+' leads');
+    setKpi('gam-qbenjamim-pts',qBenj.length*20+' pts');
+    setKpi('gam-qjuda-pts',qJuda.length*20+' pts');
+    setKpi('gam-qefraim-pts',qEfraim.length*20+' pts');
+
+    var tb1=document.getElementById('gam-qbenjamim-tbody');
+    var tb2=document.getElementById('gam-qjuda-tbody');
+    var tb3=document.getElementById('gam-qefraim-tbody');
+    if(tb1)tb1.innerHTML=qBenj.length?qBenj.map(gamRowQual).join(''):'<tr class="er"><td colspan="5">Nenhum lead Benjamim qualificado no período.</td></tr>';
+    if(tb2)tb2.innerHTML=qJuda.length?qJuda.map(gamRowQual).join(''):'<tr class="er"><td colspan="5">Nenhum lead Judá qualificado no período.</td></tr>';
+    if(tb3)tb3.innerHTML=qEfraim.length?qEfraim.map(gamRowQual).join(''):'<tr class="er"><td colspan="5">Nenhum lead Efraim qualificado no período.</td></tr>';
+
+  }catch(e){
+    console.error('renderGamificacao:',e);
+    var tbody=document.getElementById('gam-tbody');
+    if(tbody)tbody.innerHTML='<tr class="er"><td colspan="8">⚠️ Erro ao carregar. Verifique a tabela no Supabase.</td></tr>';
+  }
+}
+
+async function initGamificacao(){
+  await renderGamificacao();
 }
 </script>
 
