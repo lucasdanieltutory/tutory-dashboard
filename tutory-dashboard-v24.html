@@ -5471,17 +5471,20 @@ function bjFormatDate(iso){
   var pad=function(n){return n<10?'0'+n:n;};
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(2);
 }
-function bjInstaLink(ig){return ig?'<a href="https://instagram.com/'+ig+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;white-space:nowrap;">@'+escHtml(ig)+'</a>':'-';}
+function bjInstaLink(ig){
+  if(!ig)return '<span style="color:var(--dim);">—</span>';
+  return '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="https://instagram.com/'+encodeURIComponent(ig)+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;font-size:12px;" title="@'+escHtml(ig)+'">@'+escHtml(ig)+'</a></div>';
+}
 function bjPlatBadge(plat){
   var c={Hotmart:'#FF6B35',Kiwify:'#8B5CF6',Eduzz:'#3B82F6',Herospark:'#F59E0B',Hubla:'#10B981',Monetizze:'#EF4444',Braip:'#6366F1',Outro:'#6B7280'};
-  var pc=c[plat]||'var(--sub)';
-  return plat?'<span style="background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">'+escHtml(plat)+'</span>':'-';
+  var pc=c[plat]||'#6B7280';
+  return plat?'<span style="display:inline-block;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'55;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+escHtml(plat)+'</span>':'<span style="color:var(--dim);">—</span>';
 }
-/* Observação com botão Salvar explícito */
+/* Observação compacta com botão Salvar */
 function bjObsTd(id,val){
-  return '<div style="display:flex;flex-direction:column;gap:4px;">'
-    +'<textarea id="bj_obs_'+id+'" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:5px 7px;color:var(--txt);font-size:11px;resize:vertical;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;min-height:40px;" rows="2" placeholder="Escreva uma observação...">'+escHtml(val||'')+'</textarea>'
-    +'<button id="bj_obs_btn_'+id+'" onclick="bjSaveObs(\''+id+'\')" style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;text-align:center;transition:all .15s;">💾 Salvar</button>'
+  return '<div style="position:relative;">'
+    +'<textarea id="bj_obs_'+id+'" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:6px 8px 22px 8px;color:var(--txt);font-size:11px;resize:none;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;height:52px;box-sizing:border-box;transition:border-color .15s;" placeholder="Observação..." onfocus="this.style.borderColor=\'var(--mn)\'" onblur="this.style.borderColor=\'var(--brd2)\'">'+escHtml(val||'')+'</textarea>'
+    +'<button id="bj_obs_btn_'+id+'" onclick="bjSaveObs(\''+id+'\')" style="position:absolute;bottom:5px;right:6px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#22C55E;border-radius:5px;padding:1px 8px;font-size:9px;font-weight:700;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:.3px;transition:all .15s;" onmouseover="this.style.background=\'rgba(34,197,94,.22)\'" onmouseout="this.style.background=\'rgba(34,197,94,.12)\'">💾 salvar</button>'
     +'</div>';
 }
 async function bjSaveObs(id){
@@ -5500,29 +5503,44 @@ async function bjSaveObs(id){
 }
 /* Nome com ellipsis fixo */
 function bjNomeTd(nome){
-  return '<td style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;" title="'+escHtml(nome)+'">'+escHtml(nome)+'</td>';
+  return '<td style="overflow:hidden;" title="'+escHtml(nome)+'"><div style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(nome)+'</div></td>';
 }
 function bjDateTd(iso){
-  return '<td style="font-size:11px;color:var(--sub);white-space:nowrap;">'+bjFormatDate(iso)+'</td>';
+  return '<td style="font-size:11px;color:var(--sub);white-space:nowrap;vertical-align:middle;">'+bjFormatDate(iso)+'</td>';
 }
-function bjDelBtn(id){return '<button onclick="bjDeleteLead(\''+id+'\')" title="Remover" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#EF4444;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button>';}
+function bjDelBtn(id){return '<button onclick="bjDeleteLead(\''+id+'\')" title="Remover" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#EF4444;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button>';}
 
+var _bjTdOvf='style="overflow:hidden;vertical-align:middle;"';
 /* ── ROWS ── */
 /* HUB: Data | Nome | Instagram | Plataforma | Obs | Classificação | Del = 7 colunas */
 function bjRowHub(lead){
-  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
+    +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td '+_bjTdOvf+'>'+bjPlatBadge(lead.plataforma)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjBadge(lead.classificacao,lead.id)+'</td>'
+    +'<td style="text-align:center;vertical-align:middle;">'+bjDelBtn(lead.id)+'</td></tr>';
 }
 /* MENTORIA: Data | Nome | Instagram | Obs | Classificação | Del = 6 colunas */
 function bjRowMn(lead){
-  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td><td>'+bjBadge(lead.classificacao,lead.id)+'</td><td style="text-align:center;">'+bjDelBtn(lead.id)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
+    +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjBadge(lead.classificacao,lead.id)+'</td>'
+    +'<td style="text-align:center;vertical-align:middle;">'+bjDelBtn(lead.id)+'</td></tr>';
 }
-/* QUALIFICADOS HUB: Data | Nome | Instagram | Plataforma | Obs com salvar = 5 colunas */
+/* QUALIFICADOS HUB: Data | Nome | Instagram | Plataforma | Obs = 5 colunas */
 function bjRowQHub(lead){
-  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjPlatBadge(lead.plataforma)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
+    +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td '+_bjTdOvf+'>'+bjPlatBadge(lead.plataforma)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
 }
-/* QUALIFICADOS MENTORIA: Data | Nome | Instagram | Obs com salvar = 4 colunas */
+/* QUALIFICADOS MENTORIA: Data | Nome | Instagram | Obs = 4 colunas */
 function bjRowQMn(lead){
-  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)+'<td>'+bjInstaLink(lead.instagram)+'</td><td>'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
+  return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
+    +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
 }
 
 /* ── PIE CHART ── */
@@ -5820,17 +5838,17 @@ async function initBeijamim(){
       </div>
       <button onclick="bjExportCSV('hub')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
     </div>
-    <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+    <div style="overflow-y:auto;max-height:700px;">
       <table class="dt" style="width:100%;table-layout:fixed;">
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
           <tr>
-            <th style="width:80px;">Data</th>
-            <th style="width:170px;">Nome</th>
-            <th style="width:140px;">Instagram</th>
-            <th style="width:110px;">Plataforma</th>
+            <th style="width:68px;">Data</th>
+            <th style="width:15%;">Nome</th>
+            <th style="width:15%;">Instagram</th>
+            <th style="width:96px;">Plataforma</th>
             <th>Observação</th>
-            <th style="width:175px;">Classificação</th>
-            <th style="width:32px;"></th>
+            <th style="width:170px;">Classificação</th>
+            <th style="width:28px;"></th>
           </tr>
         </thead>
         <tbody id="bj-hub-tbody"><tr class="er"><td colspan="7">Nenhum lead HUB adicionado.</td></tr></tbody>
@@ -5847,16 +5865,16 @@ async function initBeijamim(){
       </div>
       <button onclick="bjExportCSV('mentoria')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
     </div>
-    <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+    <div style="overflow-y:auto;max-height:700px;">
       <table class="dt" style="width:100%;table-layout:fixed;">
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
           <tr>
-            <th style="width:80px;">Data</th>
-            <th style="width:170px;">Nome</th>
-            <th style="width:140px;">Instagram</th>
+            <th style="width:68px;">Data</th>
+            <th style="width:18%;">Nome</th>
+            <th style="width:18%;">Instagram</th>
             <th>Observação</th>
-            <th style="width:175px;">Classificação</th>
-            <th style="width:32px;"></th>
+            <th style="width:170px;">Classificação</th>
+            <th style="width:28px;"></th>
           </tr>
         </thead>
         <tbody id="bj-mn-tbody"><tr class="er"><td colspan="6">Nenhum lead Mentoria adicionado.</td></tr></tbody>
@@ -5884,14 +5902,14 @@ async function initBeijamim(){
           <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
         </div>
       </div>
-      <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
+      <div style="overflow-y:auto;max-height:500px;">
         <table class="dt" style="width:100%;table-layout:fixed;">
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:80px;color:#FB923C;">Data</th>
-              <th style="width:170px;color:#FB923C;">Nome</th>
-              <th style="width:140px;color:#FB923C;">Instagram</th>
-              <th style="width:110px;color:#FB923C;">Plataforma</th>
+              <th style="width:68px;color:#FB923C;">Data</th>
+              <th style="width:15%;color:#FB923C;">Nome</th>
+              <th style="width:15%;color:#FB923C;">Instagram</th>
+              <th style="width:96px;color:#FB923C;">Plataforma</th>
               <th style="color:#FB923C;">Observação</th>
             </tr>
           </thead>
@@ -5915,13 +5933,13 @@ async function initBeijamim(){
           <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
         </div>
       </div>
-      <div style="overflow-x:auto;overflow-y:auto;max-height:400px;">
+      <div style="overflow-y:auto;max-height:500px;">
         <table class="dt" style="width:100%;table-layout:fixed;">
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:80px;color:#60A5FA;">Data</th>
-              <th style="width:170px;color:#60A5FA;">Nome</th>
-              <th style="width:140px;color:#60A5FA;">Instagram</th>
+              <th style="width:68px;color:#60A5FA;">Data</th>
+              <th style="width:18%;color:#60A5FA;">Nome</th>
+              <th style="width:18%;color:#60A5FA;">Instagram</th>
               <th style="color:#60A5FA;">Observação</th>
             </tr>
           </thead>
