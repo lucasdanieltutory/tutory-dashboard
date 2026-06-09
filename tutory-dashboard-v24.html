@@ -64,20 +64,23 @@ window.fbAsyncInit=function(){
 }
 /* ── LIGHT MODE ── */
 .light-mode{
-  --bg:#DBE4FF;--s1:#FFFFFF;--s2:#EEF3FF;--s3:#E0E9FF;
-  --brd:#B8C8F0;--brd2:#9AAEE8;
-  --txt:#08142E;--sub:#3A527A;--dim:#7A94C0;
-  --mn:#1741C6;--mn-bg:rgba(23,65,198,.12);--mn-b:rgba(23,65,198,.35);
-  --mn2:#1034A6;
-  --hb:#C23B08;--hb-bg:rgba(194,59,8,.12);--hb-b:rgba(194,59,8,.35);
-  --hb2:#9A2E06;
-  --ex:#A85A00;--ex-bg:rgba(168,90,0,.12);--ex-b:rgba(168,90,0,.35);
-  --ex2:#8A4800;
-  --gn:#05694A;--gn-bg:rgba(5,105,74,.12);--gn-b:rgba(5,105,74,.35);
-  --pu:#5B21B6;--pu-bg:rgba(91,33,182,.12);--pu-b:rgba(91,33,182,.30);
-  --red:#A81010;--red-bg:rgba(168,16,16,.10);
+  --bg:#C8D8FF;--s1:#FFFFFF;--s2:#E8EEFF;--s3:#D4E0FF;
+  --brd:#A0B8E8;--brd2:#7A9ED8;
+  --txt:#06102A;--sub:#1E3A6E;--dim:#3A5890;
+  --mn:#1034B8;--mn-bg:rgba(16,52,184,.14);--mn-b:rgba(16,52,184,.4);
+  --mn2:#0A2490;
+  --hb:#B83208;--hb-bg:rgba(184,50,8,.14);--hb-b:rgba(184,50,8,.4);
+  --hb2:#8A2406;
+  --ex:#9A5200;--ex-bg:rgba(154,82,0,.14);--ex-b:rgba(154,82,0,.4);
+  --ex2:#7A4000;
+  --gn:#046040;--gn-bg:rgba(4,96,64,.14);--gn-b:rgba(4,96,64,.4);
+  --pu:#4C18A8;--pu-bg:rgba(76,24,168,.14);--pu-b:rgba(76,24,168,.35);
+  --red:#9A0E0E;--red-bg:rgba(154,14,14,.12);
 }
-.light-mode body{background:linear-gradient(140deg,#C7D6FF 0%,#D8E5FF 40%,#C9DAFF 100%)!important;}
+.light-mode body{background:linear-gradient(140deg,#B4CAFE 0%,#C8D8FF 40%,#B8CCFF 100%)!important;}
+/* hero cards mais vivos no claro */
+.light-mode #gam-t-hero{background:linear-gradient(135deg,rgba(109,40,217,.22),rgba(129,140,248,.14))!important;box-shadow:0 4px 24px rgba(109,40,217,.2)!important;}
+.light-mode #bj-hero{background:linear-gradient(135deg,rgba(234,88,12,.22),rgba(251,146,60,.12))!important;box-shadow:0 4px 24px rgba(234,88,12,.2)!important;}
 
 /* ── SIDEBAR ── */
 .light-mode .sidebar{background:linear-gradient(175deg,#0F2880 0%,#1741C6 60%,#1D50E8 100%)!important;border-right:none!important;box-shadow:4px 0 24px rgba(23,65,198,.25)!important;}
@@ -108,7 +111,8 @@ window.fbAsyncInit=function(){
 .light-mode .tb-badge.live{background:rgba(5,105,74,.15)!important;border-color:var(--gn-b)!important;color:var(--gn)!important;}
 
 /* ── KPI CARDS ── */
-.light-mode .kpi{background:#FFFFFF!important;border:1px solid var(--brd)!important;box-shadow:0 4px 16px rgba(23,65,198,.09),0 1px 3px rgba(0,0,0,.04)!important;}
+.light-mode .kpi{background:#FFFFFF!important;border:1px solid var(--brd)!important;box-shadow:0 4px 18px rgba(16,52,184,.13),0 1px 4px rgba(0,0,0,.06)!important;}
+.light-mode .kpi:hover{box-shadow:0 10px 32px rgba(16,52,184,.22),0 2px 6px rgba(0,0,0,.08)!important;border-color:var(--brd2)!important;}
 .light-mode .kpi.mn{border-top:3px solid var(--mn)!important;}
 .light-mode .kpi.hb{border-top:3px solid var(--hb)!important;}
 .light-mode .kpi.gn{border-top:3px solid var(--gn)!important;}
@@ -5715,6 +5719,16 @@ async function renderBeijamim(){
     setKpi('bj-pts-total',(qual*20+reunioesBJ*50+bjBonusTotal)+' pts');
     setKpi('bj-hist-count',bjBonus.length+' registro'+(bjBonus.length!==1?'s':''));
     setKpi('bj-bonus-pts',bjBonusTotal+' pts');
+    /* Gráfico de pontos */
+    var bjPtsSegs=[];
+    if(qualHub.length*20>0)bjPtsSegs.push({label:'Leads HUB',value:qualHub.length*20,color:'#FB923C'});
+    if(qualMn.length*20>0)bjPtsSegs.push({label:'Leads Mentoria',value:qualMn.length*20,color:'#60A5FA'});
+    if(reunioesBJ*50>0)bjPtsSegs.push({label:'Reuniões Agendadas',value:reunioesBJ*50,color:'#10B981'});
+    var bjBonusByAcao={};
+    bjBonus.forEach(function(p){var k=p.acao||'Outros';bjBonusByAcao[k]=(bjBonusByAcao[k]||0)+(parseInt(p.pontos)||0);});
+    var bjCi=3;
+    Object.keys(bjBonusByAcao).forEach(function(acao){bjPtsSegs.push({label:acao,value:bjBonusByAcao[acao],color:_PTR_COLORS[bjCi%_PTR_COLORS.length]});bjCi++;});
+    gamDrawPtsOn('bj-pts-pie','bj-pts-legend',bjPtsSegs);
     var bjHistTb=document.getElementById('bj-hist-tbody');
     if(bjHistTb){
       if(bjBonus.length){
@@ -7018,31 +7032,62 @@ async function initGamificacao(){
     <div class="pbar-r" id="bj-period-label">Todos os registros</div>
   </div>
 
-  <!-- KPIs -->
-  <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+  <!-- HERO: PONTOS TOTAIS BEIRAJAMIM -->
+  <div id="bj-hero" style="background:linear-gradient(135deg,rgba(234,88,12,.18),rgba(251,146,60,.06));border:2px solid #FB923C;border-radius:18px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 4px 24px rgba(251,146,60,.18);">
+    <div style="display:flex;align-items:center;gap:18px;">
+      <span style="font-size:40px;line-height:1;">🏆</span>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">Pontos Totais — Beirajamim</div>
+        <div id="bj-pts-total" style="font-size:44px;font-weight:900;color:#FB923C;line-height:1.05;">—</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:3px;">Leads qualificados + Reuniões Agendadas + Bônus de vendas</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:260px;">
+      <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+        <div style="font-size:9px;font-weight:700;color:#FB923C;text-transform:uppercase;letter-spacing:.6px;">Pontos HUB</div>
+        <div id="bj-pts-hub" style="font-size:20px;font-weight:800;color:#FB923C;margin-top:2px;">—</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+        <div style="font-size:9px;font-weight:700;color:#60A5FA;text-transform:uppercase;letter-spacing:.6px;">Pontos Mentoria</div>
+        <div id="bj-pts-mn" style="font-size:20px;font-weight:800;color:#60A5FA;margin-top:2px;">—</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+        <div style="font-size:9px;font-weight:700;color:#22C55E;text-transform:uppercase;letter-spacing:.6px;">✅ Qualificados</div>
+        <div id="bj-qual" style="font-size:20px;font-weight:800;color:#22C55E;margin-top:2px;">—</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid rgba(16,185,129,.25);">
+        <div style="font-size:9px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.6px;">📅 Reuniões</div>
+        <div id="bj-reunioes" style="font-size:20px;font-weight:800;color:#10B981;margin-top:2px;">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs SECUNDÁRIOS BEIRAJAMIM -->
+  <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
     <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="bj-total">—</div><div class="ks">Todos os aeroportos</div></div>
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="bj-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="bj-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
-    <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="bj-qual">—</div><div class="ks">Ambos aeroportos</div></div>
-    <div class="kpi" style="border-top:3px solid #10B981;box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(16,185,129,.06);"><div class="ki">📅</div><div class="kl" style="color:#10B981;">Reuniões Agendadas</div><div class="kv" style="color:#10B981;" id="bj-reunioes">—</div><div class="ks">50 pts cada</div></div>
-    <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="bj-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
-    <div class="kpi hb"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="bj-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
-    <div class="kpi mn"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="bj-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
   </div>
 
-  <!-- GRÁFICO + BOTÃO ADICIONAR -->
-  <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
-
-    <!-- Gráfico pizza -->
+  <!-- GRÁFICOS + BOTÕES ADICIONAR -->
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
+    <!-- Gráfico qualificações -->
     <div class="card" style="border-left:3px solid #FB923C;">
-      <div class="ch"><div><div class="ct">📊 Distribuição de Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
-      <div class="cb" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-        <canvas id="bj-pie" width="160" height="160" style="flex-shrink:0;"></canvas>
-        <div id="bj-legend" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+      <div class="ch"><div><div class="ct">📊 Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
+      <div class="cb" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <canvas id="bj-pie" width="140" height="140" style="flex-shrink:0;"></canvas>
+        <div id="bj-legend" style="display:flex;flex-direction:column;gap:7px;font-size:12px;"></div>
       </div>
     </div>
-
-    <!-- Botão adicionar -->
+    <!-- Gráfico pontos -->
+    <div class="card" style="border-left:3px solid #F59E0B;">
+      <div class="ch"><div><div class="ct" style="color:#F59E0B;">🏆 Distribuição de Pontos</div><div class="cs">Origem de cada ponto conquistado</div></div></div>
+      <div class="cb" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <canvas id="bj-pts-pie" width="140" height="140" style="flex-shrink:0;"></canvas>
+        <div id="bj-pts-legend" style="display:flex;flex-direction:column;gap:6px;font-size:11px;flex:1;min-width:120px;max-height:160px;overflow-y:auto;"></div>
+      </div>
+    </div>
+    <!-- Botões -->
     <div style="display:flex;flex-direction:column;gap:10px;">
       <button onclick="bjOpenModal('hub')" style="background:linear-gradient(135deg,#EA580C,#FB923C);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(234,88,12,.35);">
         + Adicionar Lead HUB
