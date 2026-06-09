@@ -5806,25 +5806,57 @@ async function initBeijamim(){
       <div class="pbar-r" id="gam-period-label">Todos os registros</div>
     </div>
 
-    <!-- KPIs EQUIPE (7 métricas igual ao Beijamim) -->
-    <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+    <!-- HERO: PONTOS TOTAIS -->
+    <div id="gam-t-hero" style="background:linear-gradient(135deg,rgba(109,40,217,.18),rgba(129,140,248,.06));border:2px solid #818CF8;border-radius:18px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 4px 24px rgba(129,140,248,.18);">
+      <div style="display:flex;align-items:center;gap:18px;">
+        <span style="font-size:40px;line-height:1;">🏆</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">Pontos Totais da Equipe</div>
+          <div id="gam-t-pts-total" class="gam-t-color" style="font-size:44px;font-weight:900;line-height:1.05;">—</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:3px;">Leads qualificados + Reuniões Agendadas + Bônus de vendas</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:260px;">
+        <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+          <div style="font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;">Pontos HUB</div>
+          <div id="gam-t-pts-hub" class="gam-t-color" style="font-size:20px;font-weight:800;margin-top:2px;">—</div>
+        </div>
+        <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+          <div style="font-size:9px;font-weight:700;color:#60A5FA;text-transform:uppercase;letter-spacing:.6px;">Pontos Mentoria</div>
+          <div id="gam-t-pts-mn" style="font-size:20px;font-weight:800;color:#60A5FA;margin-top:2px;">—</div>
+        </div>
+        <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid var(--brd2);">
+          <div style="font-size:9px;font-weight:700;color:#22C55E;text-transform:uppercase;letter-spacing:.6px;">✅ Qualificados</div>
+          <div id="gam-t-qual" style="font-size:20px;font-weight:800;color:#22C55E;margin-top:2px;">—</div>
+        </div>
+        <div style="background:var(--s2);border-radius:12px;padding:10px 14px;border:1px solid rgba(16,185,129,.25);">
+          <div style="font-size:9px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.6px;">📅 Reuniões</div>
+          <div id="gam-t-reunioes" style="font-size:20px;font-weight:800;color:#10B981;margin-top:2px;">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs SECUNDÁRIOS -->
+    <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
       <div class="kpi gam-t-kpi-color"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="gam-t-total">—</div><div class="ks">Todos os aeroportos</div></div>
       <div class="kpi gam-t-kpi-color"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="gam-t-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
       <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="gam-t-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
-      <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="gam-t-qual">—</div><div class="ks">Ambos aeroportos</div></div>
-      <div class="kpi" style="border-top:3px solid #10B981;box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(16,185,129,.06);"><div class="ki">📅</div><div class="kl" style="color:#10B981;">Reuniões Agendadas</div><div class="kv" style="color:#10B981;" id="gam-t-reunioes">—</div><div class="ks">50 pts cada</div></div>
-      <div class="kpi gam-t-kpi-color"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="gam-t-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
-      <div class="kpi gam-t-kpi-color"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="gam-t-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
-      <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="gam-t-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
     </div>
 
-    <!-- GRÁFICO + BOTÕES ADICIONAR -->
-    <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
+    <!-- GRÁFICOS + BOTÕES ADICIONAR -->
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:18px;">
       <div class="card" id="gam-t-pie-card" style="border-left:3px solid #818CF8;">
-        <div class="ch"><div><div class="ct">📊 Distribuição de Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
-        <div class="cb" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-          <canvas id="gam-t-pie" width="160" height="160" style="flex-shrink:0;"></canvas>
-          <div id="gam-t-legend" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+        <div class="ch"><div><div class="ct">📊 Qualificações</div><div class="cs">Qualificados · Pré-Qualificados · Desqualificados</div></div></div>
+        <div class="cb" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <canvas id="gam-t-pie" width="140" height="140" style="flex-shrink:0;"></canvas>
+          <div id="gam-t-legend" style="display:flex;flex-direction:column;gap:7px;font-size:12px;"></div>
+        </div>
+      </div>
+      <div class="card" id="gam-t-pts-card" style="border-left:3px solid #F59E0B;">
+        <div class="ch"><div><div class="ct" style="color:#F59E0B;">🏆 Distribuição de Pontos</div><div class="cs">Origem de cada ponto conquistado</div></div></div>
+        <div class="cb" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <canvas id="gam-t-pts-pie" width="140" height="140" style="flex-shrink:0;"></canvas>
+          <div id="gam-t-pts-legend" style="display:flex;flex-direction:column;gap:6px;font-size:11px;flex:1;min-width:120px;max-height:160px;overflow-y:auto;"></div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -6617,6 +6649,40 @@ function gamDrawPieOn(canvasId,legendId,qual,pre,desq){
   }
 }
 
+/* ── PIE CHART DE PONTOS (segmentos livres) ── */
+var _PTR_COLORS=['#818CF8','#60A5FA','#10B981','#F59E0B','#F87171','#A78BFA','#FBBF24','#4ADE80','#38BDF8','#FB923C','#E879F9','#2DD4BF','#FCA5A5','#C4B5FD','#6EE7B7','#FDE68A','#93C5FD','#D8B4FE','#86EFAC','#34D399'];
+function gamDrawPtsOn(canvasId,legendId,segments){
+  var canvas=document.getElementById(canvasId);if(!canvas)return;
+  if(canvas._gc){canvas._gc.destroy();canvas._gc=null;}
+  var total=segments.reduce(function(s,x){return s+x.value;},0);
+  var leg=document.getElementById(legendId);
+  if(!total){
+    var ctx2=canvas.getContext('2d');ctx2.clearRect(0,0,canvas.width,canvas.height);
+    ctx2.fillStyle='var(--brd2)';ctx2.beginPath();ctx2.arc(70,70,60,0,Math.PI*2);ctx2.fill();
+    if(leg)leg.innerHTML='<span style="color:var(--sub);font-size:11px;">Nenhuma pontuação ainda</span>';
+    return;
+  }
+  if(typeof Chart!=='undefined'){
+    canvas._gc=new Chart(canvas,{
+      type:'doughnut',
+      data:{
+        labels:segments.map(function(s){return s.label;}),
+        datasets:[{data:segments.map(function(s){return s.value;}),backgroundColor:segments.map(function(s){return s.color;}),borderWidth:2,borderColor:'var(--s1)',hoverOffset:6}]
+      },
+      options:{responsive:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){var pct=total?Math.round(c.raw/total*100):0;return ' '+c.raw+' pts ('+pct+'%)';}}}}}
+    });
+    if(leg)leg.innerHTML=segments.map(function(s){
+      var pct=total?Math.round(s.value/total*100):0;
+      return '<div style="display:flex;align-items:center;gap:6px;">'
+        +'<span style="width:9px;height:9px;background:'+s.color+';border-radius:2px;flex-shrink:0;display:inline-block;"></span>'
+        +'<span style="color:var(--txt);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.label+'</span>'
+        +'<span style="color:var(--sub);font-weight:700;white-space:nowrap;">'+s.value+'pts</span>'
+        +'<span style="color:var(--sub);font-size:9px;min-width:24px;text-align:right;">'+pct+'%</span>'
+        +'</div>';
+    }).join('')+'<div style="border-top:1px solid var(--brd);margin-top:5px;padding-top:4px;color:var(--sub);font-size:10px;font-weight:700;">Total: '+total+' pts</div>';
+  }
+}
+
 /* ── EXPORT CSV ── */
 async function gamExportCSV(tipo){
   try{
@@ -6679,8 +6745,18 @@ async function renderGamTeam(){
   // Counts
   sk('gam-t-hub-count',hubTotal+' leads');
   sk('gam-t-mn-count',mnTotal+' leads');
-  // Pie chart (total qualifications)
+  // Pie chart: qualifications
   gamDrawPieOn('gam-t-pie','gam-t-legend',qual,pre,desq);
+  // Pie chart: points breakdown
+  var ptsSegs=[];
+  if(hubQual*20>0)ptsSegs.push({label:'Leads HUB',value:hubQual*20,color:_PTR_COLORS[0]});
+  if(mnQual*20>0)ptsSegs.push({label:'Leads Mentoria',value:mnQual*20,color:_PTR_COLORS[1]});
+  if(reunioes*50>0)ptsSegs.push({label:'Reuniões Agendadas',value:reunioes*50,color:_PTR_COLORS[2]});
+  var bonusByAcao={};
+  bonusList.forEach(function(p){var k=p.acao||'Outros';bonusByAcao[k]=(bonusByAcao[k]||0)+(parseInt(p.pontos)||0);});
+  var ci=3;
+  Object.keys(bonusByAcao).forEach(function(acao){ptsSegs.push({label:acao,value:bonusByAcao[acao],color:_PTR_COLORS[ci%_PTR_COLORS.length]});ci++;});
+  gamDrawPtsOn('gam-t-pts-pie','gam-t-pts-legend',ptsSegs);
   // HUB table
   var hubTb=document.getElementById('gam-t-hub-tbody');
   if(hubTb)hubTb.innerHTML=hubLeads.length?hubLeads.map(gamRowHub).join(''):'<tr class="er"><td colspan="8">Nenhum lead HUB no período selecionado.</td></tr>';
