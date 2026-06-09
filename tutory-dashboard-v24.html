@@ -5683,7 +5683,6 @@ async function renderBeijamim(){
     setKpi('bj-hub-total',totalHub);
     setKpi('bj-mn-total',totalMn);
     setKpi('bj-qual',qual);
-    setKpi('bj-pts-total',(qual*20+reunioesBJ*50)+' pts');
     setKpi('bj-reunioes',reunioesBJ);
     setKpi('bj-pts-hub',qualHub*20+' pts');
     setKpi('bj-pts-mn',qualMn*20+' pts');
@@ -5709,6 +5708,29 @@ async function renderBeijamim(){
     var qmnT=document.getElementById('bj-qmn-tbody');
     if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB qualificado no período.</td></tr>';
     if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria qualificado no período.</td></tr>';
+    /* Histórico de pontuações bônus */
+    var bjBonus=[];
+    try{bjBonus=await ponFetch('Beijamim');}catch(e){console.warn('ponFetch Beijamim:',e);}
+    var bjBonusTotal=bjBonus.reduce(function(s,p){return s+(parseInt(p.pontos)||0);},0);
+    setKpi('bj-pts-total',(qual*20+reunioesBJ*50+bjBonusTotal)+' pts');
+    setKpi('bj-hist-count',bjBonus.length+' registro'+(bjBonus.length!==1?'s':''));
+    setKpi('bj-bonus-pts',bjBonusTotal+' pts');
+    var bjHistTb=document.getElementById('bj-hist-tbody');
+    if(bjHistTb){
+      if(bjBonus.length){
+        bjHistTb.innerHTML=bjBonus.map(function(p){
+          var d=p.criado?p.criado.substring(0,10).split('-').reverse().join('/'):'—';
+          return '<tr>'
+            +'<td style="vertical-align:middle;font-size:11px;color:var(--sub);">'+d+'</td>'
+            +'<td style="vertical-align:middle;font-weight:600;">'+escHtml(p.responsavel||'—')+'</td>'
+            +'<td style="vertical-align:middle;">'+escHtml(p.acao||'—')+'</td>'
+            +'<td style="vertical-align:middle;text-align:center;"><span style="background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;">+'+(p.pontos||0)+' pts</span></td>'
+            +'</tr>';
+        }).join('');
+      }else{
+        bjHistTb.innerHTML='<tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr>';
+      }
+    }
     if(_diagEl)_diagEl.style.display='none';
     console.log('[BJ] render concluído com sucesso');
     /* DEBUG: inspecionar visibilidade da página */
@@ -6257,8 +6279,10 @@ async function ponFetch(equipe){
 }
 async function ponInsert(body){return supaInsert(PON_TABLE,body);}
 
-/* ── PONTUAÇÕES MODAL ── */
-function gamOpenPonModal(){
+/* ── PONTUAÇÕES MODAL (compartilhado: Gamificação + Beijamim) ── */
+var _ponEquipe=''; // contexto: 'Judá' | 'Efraim' | 'Beijamim'
+function _openPonModal(equipe){
+  _ponEquipe=equipe;
   var m=document.getElementById('gam-pon-modal');if(!m)return;
   var r=document.getElementById('gam-pon-resp');if(r)r.value='';
   var a=document.getElementById('gam-pon-acao');if(a)a.value='';
@@ -6266,6 +6290,8 @@ function gamOpenPonModal(){
   var btn=document.getElementById('gam-pon-save-btn');if(btn){btn.disabled=false;btn.textContent='💾 Salvar Pontuação';}
   m.style.display='flex';
 }
+function gamOpenPonModal(){_openPonModal(_gamEquipe);}
+function bjOpenPonModal(){_openPonModal('Beijamim');}
 function gamClosePonModal(){
   var m=document.getElementById('gam-pon-modal');if(m)m.style.display='none';
 }
@@ -6285,9 +6311,10 @@ async function gamSavePontuacao(){
   var btn=document.getElementById('gam-pon-save-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
   try{
-    await ponInsert({equipe:_gamEquipe,responsavel:resp,acao:acao.label,pontos:acao.pts});
+    await ponInsert({equipe:_ponEquipe,responsavel:resp,acao:acao.label,pontos:acao.pts});
     gamClosePonModal();
-    await renderGamTeam();
+    if(_ponEquipe==='Beijamim'){await renderBeijamim();}
+    else{await renderGamTeam();}
   }catch(e){
     alert('Erro ao salvar pontuação: '+(e&&e.message?e.message:String(e)));
     if(btn){btn.disabled=false;btn.textContent='💾 Salvar Pontuação';}
@@ -6931,6 +6958,9 @@ async function initGamificacao(){
       <button onclick="bjOpenModal('mentoria')" style="background:linear-gradient(135deg,#2563EB,#60A5FA);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(37,99,235,.35);">
         + Adicionar Lead Mentoria
       </button>
+      <button onclick="bjOpenPonModal()" style="background:linear-gradient(135deg,#D97706,#F59E0B);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(245,158,11,.35);">
+        🏆 Adicionar Pontuação
+      </button>
     </div>
   </div>
 
@@ -7056,6 +7086,38 @@ async function initGamificacao(){
     </div>
 
   </div><!-- /seções qualificados -->
+
+  <!-- HISTÓRICO DE PONTOS BEIJAMIM -->
+  <div style="margin-top:28px;border-top:2px solid var(--brd);padding-top:24px;">
+    <div style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(252,211,77,.04));border:1px solid rgba(245,158,11,.25);border-left:4px solid #F59E0B;border-radius:14px;overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#F59E0B;display:flex;align-items:center;gap:8px;">
+            <span style="background:#F59E0B;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">🏆 HISTÓRICO</span>
+            DE PONTOS — <span id="bj-hist-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 registros</span>
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px;">Pontuações extras registradas · vendas e ações</div>
+        </div>
+        <div style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+          <div id="bj-bonus-pts" style="font-size:20px;font-weight:800;color:#F59E0B;">0 pts</div>
+          <div style="font-size:10px;color:var(--sub);font-weight:600;">BÔNUS TOTAL</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;overflow-x:hidden;max-height:400px;">
+        <table class="dt" style="width:100%;table-layout:fixed;">
+          <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+            <tr>
+              <th style="width:90px;color:#F59E0B;">Data</th>
+              <th style="width:25%;color:#F59E0B;">Nome do Responsável</th>
+              <th style="color:#F59E0B;">Ação</th>
+              <th style="width:95px;color:#F59E0B;">Pontuação</th>
+            </tr>
+          </thead>
+          <tbody id="bj-hist-tbody"><tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /historico bj -->
 
 </div><!-- /wrap -->
 </div><!-- /page-beijamim -->
