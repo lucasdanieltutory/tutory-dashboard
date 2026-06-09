@@ -317,8 +317,8 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 .kpi.ex{border-left:3px solid var(--ex);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(252,211,77,.06);}
 .kpi.gn{border-left:3px solid var(--gn);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(52,211,153,.06);}
 /* Status badge dropdown */
-.st-dd{position:relative;display:inline-block;}
-.st-dd-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:500;background:var(--s1);border:1px solid var(--brd);border-radius:10px;padding:5px;flex-direction:column;gap:2px;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.45);}
+.st-dd{position:relative;display:block;width:100%;}
+.st-dd-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;left:auto;z-index:600;background:var(--s1);border:1px solid var(--brd);border-radius:10px;padding:5px;flex-direction:column;gap:2px;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.45);}
 .st-dd-menu.open{display:flex;}
 .ki{font-size:20px;margin-bottom:8px;}
 .kl{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--sub);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
@@ -6270,7 +6270,7 @@ function mkStatusBadge(status,id,fn){
   var opts=['Reunião Agendada','Aguardando','Perdido'];
   return '<div class="st-dd">'
     +'<button onclick="var m=document.getElementById(\''+dd+'\');m.classList.toggle(\'open\')" '
-    +'style="background:'+s.bg+';border:1px solid '+s.b+';color:'+s.c+';border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:.3px;">'+s.i+' '+cur+' ▾</button>'
+    +'style="width:100%;background:'+s.bg+';border:1px solid '+s.b+';color:'+s.c+';border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:.3px;text-align:center;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;">'+s.i+' '+cur+' ▾</button>'
     +'<div id="'+dd+'" class="st-dd-menu">'
     +opts.map(function(o){
       var sm=_stC[o];var a=o===cur;
@@ -6280,12 +6280,26 @@ function mkStatusBadge(status,id,fn){
     +'</div></div>';
 }
 async function bjSetStatus(id,status){
-  try{await bjPatch(id,{status:status});renderBeijamim();}
-  catch(e){console.error('bjSetStatus:',e);}
+  try{
+    var r=await bjPatch(id,{status:status});
+    renderBeijamim();
+  }catch(e){
+    console.error('bjSetStatus:',e);
+    if(e&&e.message&&e.message.includes('does not exist')){
+      alert('⚠️ Coluna "status" não existe na tabela.\nRode no Supabase SQL Editor:\nALTER TABLE prospeccoes_beijamim ADD COLUMN IF NOT EXISTS status text DEFAULT \'Aguardando\';');
+    }
+  }
 }
 async function gamSetStatus(id,status){
-  try{await gamPatch(id,{status:status});await renderGamificacao();}
-  catch(e){console.error('gamSetStatus:',e);}
+  try{
+    await gamPatch(id,{status:status});
+    await renderGamificacao();
+  }catch(e){
+    console.error('gamSetStatus:',e);
+    if(e&&e.message&&e.message.includes('does not exist')){
+      alert('⚠️ Coluna "status" não existe na tabela.\nRode no Supabase SQL Editor:\nALTER TABLE leads_gamificacao ADD COLUMN IF NOT EXISTS status text DEFAULT \'Aguardando\';');
+    }
+  }
 }
 
 /* ── ROW FUNÇÕES ── */
