@@ -5724,11 +5724,12 @@ async function renderBeijamim(){
             +'<td style="vertical-align:middle;font-size:11px;color:var(--sub);">'+d+'</td>'
             +'<td style="vertical-align:middle;font-weight:600;">'+escHtml(p.responsavel||'—')+'</td>'
             +'<td style="vertical-align:middle;">'+escHtml(p.acao||'—')+'</td>'
-            +'<td style="vertical-align:middle;text-align:center;"><span style="background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;">+'+(p.pontos||0)+' pts</span></td>'
+            +'<td style="vertical-align:middle;text-align:center;white-space:nowrap;"><span style="color:#F59E0B;font-size:13px;font-weight:800;">+'+(p.pontos||0)+'</span><span style="color:#F59E0B;font-size:10px;font-weight:600;margin-left:2px;">pts</span></td>'
+            +'<td style="vertical-align:middle;text-align:center;"><button onclick="ponDeleteRecord(\''+p.id+'\',\'bj\')" title="Excluir" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:6px;width:26px;height:26px;color:#EF4444;font-size:13px;cursor:pointer;line-height:1;padding:0;">✕</button></td>'
             +'</tr>';
         }).join('');
       }else{
-        bjHistTb.innerHTML='<tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr>';
+        bjHistTb.innerHTML='<tr class="er"><td colspan="5">Nenhuma pontuação registrada ainda.</td></tr>';
       }
     }
     if(_diagEl)_diagEl.style.display='none';
@@ -5983,13 +5984,14 @@ async function initBeijamim(){
           <table class="dt" style="width:100%;table-layout:fixed;">
             <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
               <tr>
-                <th style="width:90px;color:#F59E0B;">Data</th>
-                <th style="width:25%;color:#F59E0B;">Nome do Responsável</th>
+                <th style="width:82px;color:#F59E0B;">Data</th>
+                <th style="width:22%;color:#F59E0B;">Nome do Responsável</th>
                 <th style="color:#F59E0B;">Ação</th>
-                <th style="width:95px;color:#F59E0B;">Pontuação</th>
+                <th style="width:110px;color:#F59E0B;">Pontuação</th>
+                <th style="width:36px;color:#F59E0B;"></th>
               </tr>
             </thead>
-            <tbody id="gam-t-hist-tbody"><tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr></tbody>
+            <tbody id="gam-t-hist-tbody"><tr class="er"><td colspan="5">Nenhuma pontuação registrada ainda.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6278,6 +6280,19 @@ async function ponFetch(equipe){
   return supaFetch(PON_TABLE,q);
 }
 async function ponInsert(body){return supaInsert(PON_TABLE,body);}
+async function ponDelete(id){
+  await fetch(SUPA_URL+'/rest/v1/'+PON_TABLE+'?id=eq.'+id,{
+    method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'}
+  });
+}
+async function ponDeleteRecord(id,ctx){
+  if(!confirm('Excluir esta pontuação do histórico?'))return;
+  try{
+    await ponDelete(id);
+    if(ctx==='bj')await renderBeijamim();
+    else await renderGamTeam();
+  }catch(e){alert('Erro ao excluir: '+(e&&e.message?e.message:String(e)));}
+}
 
 /* ── PONTUAÇÕES MODAL (compartilhado: Gamificação + Beijamim) ── */
 var _ponEquipe=''; // contexto: 'Judá' | 'Efraim' | 'Beijamim'
@@ -6696,11 +6711,12 @@ async function renderGamTeam(){
           +'<td style="vertical-align:middle;font-size:11px;color:var(--sub);">'+d+'</td>'
           +'<td style="vertical-align:middle;font-weight:600;">'+escHtml(p.responsavel||'—')+'</td>'
           +'<td style="vertical-align:middle;">'+escHtml(p.acao||'—')+'</td>'
-          +'<td style="vertical-align:middle;text-align:center;"><span style="background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap;display:inline-block;">+'+(p.pontos||0)+' pts</span></td>'
+          +'<td style="vertical-align:middle;text-align:center;white-space:nowrap;"><span style="color:#F59E0B;font-size:13px;font-weight:800;">+'+(p.pontos||0)+'</span><span style="color:#F59E0B;font-size:10px;font-weight:600;margin-left:2px;">pts</span></td>'
+          +'<td style="vertical-align:middle;text-align:center;"><button onclick="ponDeleteRecord(\''+p.id+'\',\'gam\')" title="Excluir" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:6px;width:26px;height:26px;color:#EF4444;font-size:13px;cursor:pointer;line-height:1;padding:0;">✕</button></td>'
           +'</tr>';
       }).join('');
     }else{
-      histTb.innerHTML='<tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr>';
+      histTb.innerHTML='<tr class="er"><td colspan="5">Nenhuma pontuação registrada ainda.</td></tr>';
     }
   }
 }
@@ -7107,13 +7123,14 @@ async function initGamificacao(){
         <table class="dt" style="width:100%;table-layout:fixed;">
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
-              <th style="width:90px;color:#F59E0B;">Data</th>
-              <th style="width:25%;color:#F59E0B;">Nome do Responsável</th>
+              <th style="width:82px;color:#F59E0B;">Data</th>
+              <th style="width:22%;color:#F59E0B;">Nome do Responsável</th>
               <th style="color:#F59E0B;">Ação</th>
-              <th style="width:95px;color:#F59E0B;">Pontuação</th>
+              <th style="width:110px;color:#F59E0B;">Pontuação</th>
+              <th style="width:36px;color:#F59E0B;"></th>
             </tr>
           </thead>
-          <tbody id="bj-hist-tbody"><tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr></tbody>
+          <tbody id="bj-hist-tbody"><tr class="er"><td colspan="5">Nenhuma pontuação registrada ainda.</td></tr></tbody>
         </table>
       </div>
     </div>
