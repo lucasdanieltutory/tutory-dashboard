@@ -5669,6 +5669,7 @@ async function renderBeijamim(){
     var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
     var qualHub=hub.filter(function(l){return l.classificacao==='Qualificado';}).length;
     var qualMn=mn.filter(function(l){return l.classificacao==='Qualificado';}).length;
+    var reunioesBJ=leads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
 
     function setKpi(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
     setKpi('bj-total',total);
