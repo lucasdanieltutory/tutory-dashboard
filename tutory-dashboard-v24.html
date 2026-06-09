@@ -5956,6 +5956,7 @@ async function initBeijamim(){
     <div class="kgrid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
       <div class="kpi" style="border-top:3px solid #818CF8;"><div class="ki">🎯</div><div class="kl">Total Leads</div><div class="kv" id="gaml-total">—</div><div class="ks">Todos os leads</div></div>
       <div class="kpi gn"><div class="ki">✅</div><div class="kl">Qualificados</div><div class="kv" id="gaml-qual">—</div><div class="ks">Prontos p/ abordagem</div></div>
+      <div class="kpi" style="border-top:3px solid #10B981;box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(16,185,129,.06);"><div class="ki">📅</div><div class="kl" style="color:#10B981;">Reuniões Agendadas</div><div class="kv" style="color:#10B981;" id="gaml-reunioes">—</div><div class="ks">50 pts cada</div></div>
       <div class="kpi" style="border-top:3px solid #EAB308;"><div class="ki">⭐</div><div class="kl">Pré-qualificados</div><div class="kv" id="gaml-pre">—</div><div class="ks">Em análise</div></div>
       <div class="kpi" style="border-top:3px solid #EF4444;"><div class="ki">🚫</div><div class="kl">Desqualificados</div><div class="kv" id="gaml-desq">—</div><div class="ks">Não avançaram</div></div>
     </div>
@@ -6419,20 +6420,24 @@ async function renderGamTeam(){
   var hubTotal=hubLeads.length;
   var mnTotal=mnLeads.length;
   var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
-  var ptsTotal=qual*20;
+  var reunioes=leads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
+  var ptsTotal=qual*20+reunioes*50;
   var hubQual=hubLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  var hubReunioes=hubLeads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
   var mnQual=mnLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  var mnReunioes=mnLeads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
   var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
   var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
   function sk(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
-  // 7 KPIs
+  // KPIs
   sk('gam-t-total',total);
   sk('gam-t-hub-total',hubTotal);
   sk('gam-t-mn-total',mnTotal);
   sk('gam-t-qual',qual);
+  sk('gam-t-reunioes',reunioes);
   sk('gam-t-pts-total',ptsTotal+' pts');
-  sk('gam-t-pts-hub',hubQual*20+' pts');
-  sk('gam-t-pts-mn',mnQual*20+' pts');
+  sk('gam-t-pts-hub',(hubQual*20+hubReunioes*50)+' pts');
+  sk('gam-t-pts-mn',(mnQual*20+mnReunioes*50)+' pts');
   // Counts
   sk('gam-t-hub-count',hubTotal+' leads');
   sk('gam-t-mn-count',mnTotal+' leads');
@@ -6473,16 +6478,19 @@ async function renderGamLider(){
   var leads=gamFilterByDate(allLeads);
   var total=leads.length;
   var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
+  var reunioes=leads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
   var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
   var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
   function sk(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   sk('gaml-total',total);sk('gaml-qual',qual);sk('gaml-pre',pre);sk('gaml-desq',desq);
+  sk('gaml-reunioes',reunioes);
   sk('gaml-count',total+' leads');
   gamDrawPieOn('gaml-pie','gaml-legend',qual,pre,desq);
   var tbody=document.getElementById('gaml-tbody');
   if(tbody)tbody.innerHTML=leads.length?leads.map(gamRowLider).join(''):'<tr class="er"><td colspan="6">Nenhum lead no período selecionado.</td></tr>';
   var qLeads=leads.filter(function(l){return l.classificacao==='Qualificado';});
-  sk('gaml-qcount',qLeads.length+' leads');sk('gaml-qpts',qLeads.length*20+' pts');
+  sk('gaml-qcount',qLeads.length+' leads');
+  sk('gaml-qpts',(qLeads.length*20+reunioes*50)+' pts');
   var qtb=document.getElementById('gaml-qtbody');
   if(qtb)qtb.innerHTML=qLeads.length?qLeads.map(gamRowTeamQual).join(''):'<tr class="er"><td colspan="5">Nenhum lead qualificado no período.</td></tr>';
 }
