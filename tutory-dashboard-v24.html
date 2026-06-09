@@ -5752,25 +5752,6 @@ async function initBeijamim(){
 <div class="page" id="page-gamificacao" style="display:none">
 <div class="wrap">
 
-  <!-- FILTRO DE PERÍODO (compartilhado) -->
-  <div class="pbar" style="margin-bottom:16px;">
-    <div class="pbar-l">
-      <button class="pb gam-pb on" onclick="gamSelPeriod(this,'todos')">Todos</button>
-      <button class="pb gam-pb" onclick="gamSelPeriod(this,'hoje')">Hoje</button>
-      <button class="pb gam-pb" onclick="gamSelPeriod(this,'7')">7 dias</button>
-      <button class="pb gam-pb" onclick="gamSelPeriod(this,'30')">30 dias</button>
-      <button class="pb gam-pb" onclick="gamSelPeriod(this,'mes')">Mês atual</button>
-      <button class="pb gam-pb" onclick="gamSelPeriod(this,'custom')">Personalizado</button>
-      <span id="gam-custom-row" style="display:none;align-items:center;gap:6px;">
-        <input type="date" id="gam-df" class="di">
-        <span style="color:var(--sub);font-size:12px;">até</span>
-        <input type="date" id="gam-dt" class="di">
-        <button class="pb on" onclick="gamApplyCustom()">Aplicar</button>
-      </span>
-    </div>
-    <div class="pbar-r" id="gam-period-label">Todos os registros</div>
-  </div>
-
   <!-- ══════════════════════════════════════════════ -->
   <!-- VIEW EQUIPE (Judá / Efraim)                   -->
   <!-- ══════════════════════════════════════════════ -->
@@ -5781,6 +5762,25 @@ async function initBeijamim(){
       <div class="ph-ey gam-t-color" id="gam-t-eyebrow">EQUIPE · TUTORY GAMIFICAÇÃO</div>
       <div class="ph-t" id="gam-t-title">Aeroporto de Prospecções</div>
       <div class="ph-s" id="gam-t-sub">Leads da equipe · HUB & Mentoria · Qualifique e pontue cada lead ✈️</div>
+    </div>
+
+    <!-- FILTRO DE PERÍODO EQUIPE -->
+    <div class="pbar" style="margin-bottom:16px;">
+      <div class="pbar-l">
+        <button class="pb gam-pb on" onclick="gamSelPeriod(this,'todos')">Todos</button>
+        <button class="pb gam-pb" onclick="gamSelPeriod(this,'hoje')">Hoje</button>
+        <button class="pb gam-pb" onclick="gamSelPeriod(this,'7')">7 dias</button>
+        <button class="pb gam-pb" onclick="gamSelPeriod(this,'30')">30 dias</button>
+        <button class="pb gam-pb" onclick="gamSelPeriod(this,'mes')">Mês atual</button>
+        <button class="pb gam-pb" onclick="gamSelPeriod(this,'custom')">Personalizado</button>
+        <span id="gam-custom-row" style="display:none;align-items:center;gap:6px;">
+          <input type="date" id="gam-df" class="di">
+          <span style="color:var(--sub);font-size:12px;">até</span>
+          <input type="date" id="gam-dt" class="di">
+          <button class="pb on" onclick="gamApplyCustom()">Aplicar</button>
+        </span>
+      </div>
+      <div class="pbar-r" id="gam-period-label">Todos os registros</div>
     </div>
 
     <!-- KPIs EQUIPE (7 métricas igual ao Beijamim) -->
@@ -5810,6 +5810,9 @@ async function initBeijamim(){
         </button>
         <button onclick="gamOpenModal('mentoria')" style="background:linear-gradient(135deg,#2563EB,#60A5FA);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(37,99,235,.35);">
           + Adicionar Lead Mentoria
+        </button>
+        <button onclick="gamOpenPonModal()" style="background:linear-gradient(135deg,#D97706,#F59E0B);border:none;border-radius:12px;padding:14px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(245,158,11,.35);">
+          🏆 Adicionar Pontuação
         </button>
       </div>
     </div>
@@ -5938,6 +5941,38 @@ async function initBeijamim(){
 
     </div><!-- /qualificados -->
 
+    <!-- HISTÓRICO DE PONTOS -->
+    <div style="margin-top:28px;border-top:2px solid var(--brd);padding-top:24px;">
+      <div style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(252,211,77,.04));border:1px solid rgba(245,158,11,.25);border-left:4px solid #F59E0B;border-radius:14px;overflow:hidden;">
+        <div style="padding:18px 22px;border-bottom:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:15px;font-weight:800;color:#F59E0B;display:flex;align-items:center;gap:8px;">
+              <span style="background:#F59E0B;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;">🏆 HISTÓRICO</span>
+              DE PONTOS — <span id="gam-t-hist-count" style="font-size:13px;font-weight:600;color:var(--sub);">0 registros</span>
+            </div>
+            <div style="font-size:11px;color:var(--sub);margin-top:4px;">Pontuações extras registradas pela equipe · vendas e ações</div>
+          </div>
+          <div style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:8px 16px;text-align:center;">
+            <div id="gam-t-bonus-pts" style="font-size:20px;font-weight:800;color:#F59E0B;">0 pts</div>
+            <div style="font-size:10px;color:var(--sub);font-weight:600;">BÔNUS TOTAL</div>
+          </div>
+        </div>
+        <div style="overflow-y:auto;overflow-x:hidden;max-height:400px;">
+          <table class="dt" style="width:100%;table-layout:fixed;">
+            <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
+              <tr>
+                <th style="width:90px;color:#F59E0B;">Data</th>
+                <th style="width:25%;color:#F59E0B;">Nome do Responsável</th>
+                <th style="color:#F59E0B;">Ação</th>
+                <th style="width:95px;color:#F59E0B;">Pontuação</th>
+              </tr>
+            </thead>
+            <tbody id="gam-t-hist-tbody"><tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /historico -->
+
   </div><!-- /gam-view-team -->
 
   <!-- ══════════════════════════════════════════════ -->
@@ -5950,6 +5985,25 @@ async function initBeijamim(){
       <div class="ph-ey" style="color:#818CF8">AEROPORTO GERAL · LEADS GAMIFICAÇÃO</div>
       <div class="ph-t">Visão Consolidada — Todos os Leads</div>
       <div class="ph-s">Monitoramento geral de prospecções · Acompanhe qualificações e pontuações</div>
+    </div>
+
+    <!-- FILTRO DE PERÍODO LÍDER -->
+    <div class="pbar" style="margin-bottom:16px;">
+      <div class="pbar-l">
+        <button class="pb gaml-pb on" onclick="gamlSelPeriod(this,'todos')">Todos</button>
+        <button class="pb gaml-pb" onclick="gamlSelPeriod(this,'hoje')">Hoje</button>
+        <button class="pb gaml-pb" onclick="gamlSelPeriod(this,'7')">7 dias</button>
+        <button class="pb gaml-pb" onclick="gamlSelPeriod(this,'30')">30 dias</button>
+        <button class="pb gaml-pb" onclick="gamlSelPeriod(this,'mes')">Mês atual</button>
+        <button class="pb gaml-pb" onclick="gamlSelPeriod(this,'custom')">Personalizado</button>
+        <span id="gaml-custom-row" style="display:none;align-items:center;gap:6px;">
+          <input type="date" id="gaml-df" class="di">
+          <span style="color:var(--sub);font-size:12px;">até</span>
+          <input type="date" id="gaml-dt" class="di">
+          <button class="pb on" onclick="gamlApplyCustom()">Aplicar</button>
+        </span>
+      </div>
+      <div class="pbar-r" id="gaml-period-label">Todos os registros</div>
     </div>
 
     <!-- KPIs LÍDER -->
@@ -6096,6 +6150,56 @@ async function initBeijamim(){
   </div>
 </div>
 
+<!-- MODAL ADICIONAR PONTUAÇÃO -->
+<div id="gam-pon-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)gamClosePonModal()">
+  <div style="background:var(--s1);border:1px solid var(--brd);border-radius:16px;padding:28px;width:min(460px,92vw);box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#F59E0B;">🏆 Adicionar Pontuação</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px;">Registre uma venda ou ação pontuada</div>
+      </div>
+      <button onclick="gamClosePonModal()" style="background:var(--s2);border:1px solid var(--brd2);border-radius:8px;width:32px;height:32px;color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Responsável *</label>
+        <input id="gam-pon-resp" type="text" placeholder="Nome de quem fez a venda / ação" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Ação / Venda *</label>
+        <select id="gam-pon-acao" onchange="gamPonSelectAcao(this)" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+          <option value="">— Selecione a ação —</option>
+          <option value="0">Upgrade Starter Anual — 50 pts</option>
+          <option value="1">Upgrade Basic Anual — 100 pts</option>
+          <option value="2">Upgrade Pro Anual — 200 pts</option>
+          <option value="3">Vendas Starter — 100 pts</option>
+          <option value="4">Vendas Basic — 200 pts</option>
+          <option value="5">Vendas Pro — 400 pts</option>
+          <option value="6">Upgrade Basic Mensal — 50 pts</option>
+          <option value="7">Upgrade Pro Mensal — 100 pts</option>
+          <option value="8">Ativação de Carrinho — 50 pts</option>
+          <option value="9">Inadimplência 5k — 100 pts</option>
+          <option value="10">Renovação Basic — 100 pts</option>
+          <option value="11">Renovação Pro — 200 pts</option>
+          <option value="12">SDR Reunião Comparecida — 50 pts</option>
+          <option value="13">SDR Reunião Fechada — 100 pts</option>
+          <option value="14">Recuperação de Inativos — 80 pts</option>
+          <option value="15">Implementações — 100 pts</option>
+          <option value="16">Contratações Rápidas — 100 pts</option>
+        </select>
+      </div>
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:600;color:var(--sub);">Pontos desta ação:</span>
+        <span id="gam-pon-pts-display" style="font-size:22px;font-weight:800;color:#F59E0B;">— pts</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="gamClosePonModal()" style="flex:1;background:var(--s2);border:1px solid var(--brd2);border-radius:10px;padding:11px;color:var(--sub);font-size:13px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Cancelar</button>
+      <button onclick="gamSavePontuacao()" id="gam-pon-save-btn" style="flex:2;background:linear-gradient(135deg,#D97706,#F59E0B);border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">💾 Salvar Pontuação</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ════════════════════════════════════════════════════ */
 /*  LEADS GAMIFICAÇÃO — JS (3 roles)                   */
@@ -6114,6 +6218,27 @@ var GAM_EMOJIS={Judá:'🟣',Efraim:'🟢'};
 var GAM_RGBA  ={Judá:'109,40,217',Efraim:'5,150,105'};
 var _gamModal_tipo='hub'; // 'hub' | 'mentoria'
 
+var PON_TABLE='pontuacoes_gamificacao';
+var ACOES=[
+  {label:'Upgrade Starter Anual',pts:50},
+  {label:'Upgrade Basic Anual',pts:100},
+  {label:'Upgrade Pro Anual',pts:200},
+  {label:'Vendas Starter',pts:100},
+  {label:'Vendas Basic',pts:200},
+  {label:'Vendas Pro',pts:400},
+  {label:'Upgrade Basic Mensal',pts:50},
+  {label:'Upgrade Pro Mensal',pts:100},
+  {label:'Ativação de Carrinho',pts:50},
+  {label:'Inadimplência 5k',pts:100},
+  {label:'Renovação Basic',pts:100},
+  {label:'Renovação Pro',pts:200},
+  {label:'SDR Reunião Comparecida',pts:50},
+  {label:'SDR Reunião Fechada',pts:100},
+  {label:'Recuperação de Inativos',pts:80},
+  {label:'Implementações',pts:100},
+  {label:'Contratações Rápidas',pts:100}
+];
+
 /* ── SUPABASE HELPERS ── */
 async function gamFetch(){return supaFetch(GAM_TABLE,'select=*&order=criado.asc');}
 async function gamInsert(body){return supaInsert(GAM_TABLE,body);}
@@ -6122,6 +6247,72 @@ async function gamDelete(id){
   await fetch(SUPA_URL+'/rest/v1/'+GAM_TABLE+'?id=eq.'+id,{
     method:'DELETE',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'}
   });
+}
+
+/* ── PONTUAÇÕES HELPERS ── */
+async function ponFetch(equipe){
+  var q='select=*&order=criado.desc';
+  if(equipe)q+='&equipe=eq.'+encodeURIComponent(equipe);
+  return supaFetch(PON_TABLE,q);
+}
+async function ponInsert(body){return supaInsert(PON_TABLE,body);}
+
+/* ── PONTUAÇÕES MODAL ── */
+function gamOpenPonModal(){
+  var m=document.getElementById('gam-pon-modal');if(!m)return;
+  var r=document.getElementById('gam-pon-resp');if(r)r.value='';
+  var a=document.getElementById('gam-pon-acao');if(a)a.value='';
+  var d=document.getElementById('gam-pon-pts-display');if(d)d.textContent='— pts';
+  var btn=document.getElementById('gam-pon-save-btn');if(btn){btn.disabled=false;btn.textContent='💾 Salvar Pontuação';}
+  m.style.display='flex';
+}
+function gamClosePonModal(){
+  var m=document.getElementById('gam-pon-modal');if(m)m.style.display='none';
+}
+function gamPonSelectAcao(sel){
+  var idx=parseInt(sel.value);
+  var d=document.getElementById('gam-pon-pts-display');
+  if(d)d.textContent=(!isNaN(idx)&&ACOES[idx])?ACOES[idx].pts+' pts':'— pts';
+}
+async function gamSavePontuacao(){
+  var resp=(document.getElementById('gam-pon-resp').value||'').trim();
+  var acaoVal=document.getElementById('gam-pon-acao').value;
+  if(!resp){alert('Preencha o nome do responsável.');return;}
+  if(acaoVal===''||acaoVal===null||acaoVal===undefined){alert('Selecione uma ação.');return;}
+  var idx=parseInt(acaoVal);
+  var acao=ACOES[idx];
+  if(!acao){alert('Ação inválida.');return;}
+  var btn=document.getElementById('gam-pon-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
+  try{
+    await ponInsert({equipe:_gamEquipe,responsavel:resp,acao:acao.label,pontos:acao.pts});
+    gamClosePonModal();
+    await renderGamTeam();
+  }catch(e){
+    alert('Erro ao salvar pontuação: '+(e&&e.message?e.message:String(e)));
+    if(btn){btn.disabled=false;btn.textContent='💾 Salvar Pontuação';}
+  }
+}
+
+/* ── FILTRO LÍDER (gaml) — espelha gamSelPeriod mas com IDs próprios ── */
+function gamlSelPeriod(btn,p){
+  document.querySelectorAll('.gaml-pb').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  _gamPeriodo=p;
+  var cr=document.getElementById('gaml-custom-row');
+  if(cr)cr.style.display=p==='custom'?'flex':'none';
+  var lbl=document.getElementById('gaml-period-label');
+  var labels={todos:'Todos os registros',hoje:'Hoje',7:'Últimos 7 dias',30:'Últimos 30 dias',mes:'Mês atual',custom:'Período personalizado'};
+  if(lbl)lbl.textContent=labels[p]||p;
+  if(p!=='custom')renderGamificacao();
+}
+function gamlApplyCustom(){
+  var df=document.getElementById('gaml-df'),dt=document.getElementById('gaml-dt');
+  if(!df||!dt||!df.value||!dt.value){alert('Selecione as duas datas.');return;}
+  _gamDataDe=df.value;_gamDataAte=dt.value;
+  var lbl=document.getElementById('gaml-period-label');
+  if(lbl)lbl.textContent=df.value+' → '+dt.value;
+  renderGamificacao();
 }
 
 /* ── MODAL ── */
@@ -6421,13 +6612,18 @@ async function renderGamTeam(){
   var mnTotal=mnLeads.length;
   var qual=leads.filter(function(l){return l.classificacao==='Qualificado';}).length;
   var reunioes=leads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
-  var ptsTotal=qual*20+reunioes*50;
   var hubQual=hubLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
   var hubReunioes=hubLeads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
   var mnQual=mnLeads.filter(function(l){return l.classificacao==='Qualificado';}).length;
   var mnReunioes=mnLeads.filter(function(l){return l.classificacao==='Qualificado'&&l.status==='Reunião Agendada';}).length;
   var pre=leads.filter(function(l){return l.classificacao==='Pré-qualificado';}).length;
   var desq=leads.filter(function(l){return l.classificacao==='Desqualificado';}).length;
+  // Fetch bonus pontuações
+  var bonusList=[];
+  try{bonusList=await ponFetch(_gamEquipe);}catch(e){console.warn('ponFetch:',e);}
+  var bonusTotal=bonusList.reduce(function(s,p){return s+(parseInt(p.pontos)||0);},0);
+  var ptsLeads=qual*20+reunioes*50;
+  var ptsTotal=ptsLeads+bonusTotal;
   function sk(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   // KPIs
   sk('gam-t-total',total);
@@ -6461,6 +6657,25 @@ async function renderGamTeam(){
   sk('gam-t-qmn-pts',qMn.length*20+' pts');
   var qMnTb=document.getElementById('gam-t-qmn-tbody');
   if(qMnTb)qMnTb.innerHTML=qMn.length?qMn.map(gamRowQMn).join(''):'<tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado no período.</td></tr>';
+  // Histórico de pontos
+  sk('gam-t-hist-count',bonusList.length+' registro'+(bonusList.length!==1?'s':''));
+  sk('gam-t-bonus-pts',bonusTotal+' pts');
+  var histTb=document.getElementById('gam-t-hist-tbody');
+  if(histTb){
+    if(bonusList.length){
+      histTb.innerHTML=bonusList.map(function(p){
+        var d=p.criado?p.criado.substring(0,10).split('-').reverse().join('/'):'—';
+        return '<tr>'
+          +'<td style="vertical-align:middle;font-size:11px;color:var(--sub);">'+d+'</td>'
+          +'<td style="vertical-align:middle;font-weight:600;">'+escHtml(p.responsavel||'—')+'</td>'
+          +'<td style="vertical-align:middle;">'+escHtml(p.acao||'—')+'</td>'
+          +'<td style="vertical-align:middle;text-align:center;"><span style="background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;">+'+((p.pontos||0))+' pts</span></td>'
+          +'</tr>';
+      }).join('');
+    }else{
+      histTb.innerHTML='<tr class="er"><td colspan="4">Nenhuma pontuação registrada ainda.</td></tr>';
+    }
+  }
 }
 
 /* ── ROW LÍDER QUALIFICADOS ── */
