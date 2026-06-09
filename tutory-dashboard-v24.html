@@ -6414,6 +6414,15 @@ async function renderGamTeam(){
   if(qMnTb)qMnTb.innerHTML=qMn.length?qMn.map(gamRowQMn).join(''):'<tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado no período.</td></tr>';
 }
 
+/* ── ROW LÍDER QUALIFICADOS ── */
+function gamRowTeamQual(lead){
+  return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
+    +'<td style="vertical-align:middle;">'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'</tr>';
+}
+
 /* ── RENDER LÍDER ── */
 async function renderGamLider(){
   var allLeads=await gamFetch();
