@@ -310,12 +310,16 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 .ph-t{font-size:22px;font-weight:700;line-height:1.2;letter-spacing:-.3px;}
 .ph-s{font-size:13px;color:var(--sub);margin-top:4px;}
 .kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
-.kpi{background:linear-gradient(145deg,var(--s1),var(--s2));border:1px solid var(--brd);border-radius:14px;padding:20px 22px;transition:all .2s;position:relative;overflow:hidden;}
-.kpi:hover{border-color:var(--brd2);transform:translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,.35);}
-.kpi.mn{border-left:3px solid var(--mn);box-shadow:inset 0 0 40px rgba(79,142,247,.04);}
-.kpi.hb{border-left:3px solid var(--hb);box-shadow:inset 0 0 40px rgba(251,146,60,.04);}
-.kpi.ex{border-left:3px solid var(--ex);box-shadow:inset 0 0 40px rgba(252,211,77,.04);}
-.kpi.gn{border-left:3px solid var(--gn);box-shadow:inset 0 0 40px rgba(52,211,153,.04);}
+.kpi{background:linear-gradient(145deg,var(--s1),var(--s2));border:1px solid var(--brd);border-radius:14px;padding:20px 22px;transition:all .2s;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.kpi:hover{border-color:var(--brd2);transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.4);}
+.kpi.mn{border-left:3px solid var(--mn);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(79,142,247,.06);}
+.kpi.hb{border-left:3px solid var(--hb);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(251,146,60,.06);}
+.kpi.ex{border-left:3px solid var(--ex);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(252,211,77,.06);}
+.kpi.gn{border-left:3px solid var(--gn);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(52,211,153,.06);}
+/* Status badge dropdown */
+.st-dd{position:relative;display:inline-block;}
+.st-dd-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:500;background:var(--s1);border:1px solid var(--brd);border-radius:10px;padding:5px;flex-direction:column;gap:2px;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.45);}
+.st-dd-menu.open{display:flex;}
 .ki{font-size:20px;margin-bottom:8px;}
 .kl{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--sub);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
 .kv{font-size:26px;font-weight:700;line-height:1.15;letter-spacing:-.5px;}
@@ -497,8 +501,8 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
     </div>
     <div class="login-title">Acesso Restrito</div>
     <div class="login-sub">Digite a senha para acessar o dashboard</div>
-    <input class="login-input" type="text" id="usr" placeholder="usuario@tutory.com" onkeydown="if(event.key==='Enter')doLogin()">
-    <input class="login-input" type="password" id="pwd" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="login-input" type="text" id="usr" autocomplete="off" placeholder="usuario@tutory.com" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="login-input" type="password" id="pwd" autocomplete="new-password" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-error" id="lerr">Senha incorreta. Tente novamente.</div>
   </div>
@@ -5576,18 +5580,20 @@ function bjRowMn(lead){
     +'<td style="vertical-align:middle;">'+bjBadge(lead.classificacao,lead.id)+'</td>'
     +'<td style="text-align:center;vertical-align:middle;">'+bjDelBtn(lead.id)+'</td></tr>';
 }
-/* QUALIFICADOS HUB: Data | Nome | Instagram | Plataforma | Obs = 5 colunas */
+/* QUALIFICADOS HUB: Data | Nome | Instagram | Plataforma | Obs | Status = 6 colunas */
 function bjRowQHub(lead){
   return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
     +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
     +'<td '+_bjTdOvf+'>'+bjPlatBadge(lead.plataforma)+'</td>'
-    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+mkStatusBadge(lead.status,lead.id,'bjSetStatus')+'</td></tr>';
 }
-/* QUALIFICADOS MENTORIA: Data | Nome | Instagram | Obs = 4 colunas */
+/* QUALIFICADOS MENTORIA: Data | Nome | Instagram | Obs | Status = 5 colunas */
 function bjRowQMn(lead){
   return '<tr>'+bjDateTd(lead.criado)+bjNomeTd(lead.nome)
     +'<td '+_bjTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
-    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td></tr>';
+    +'<td style="vertical-align:middle;">'+bjObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+mkStatusBadge(lead.status,lead.id,'bjSetStatus')+'</td></tr>';
 }
 
 /* ── PIE CHART ── */
@@ -5669,7 +5675,8 @@ async function renderBeijamim(){
     setKpi('bj-hub-total',totalHub);
     setKpi('bj-mn-total',totalMn);
     setKpi('bj-qual',qual);
-    setKpi('bj-pts-total',qual*20+' pts');
+    setKpi('bj-pts-total',(qual*20+reunioesBJ*50)+' pts');
+    setKpi('bj-reunioes',reunioesBJ);
     setKpi('bj-pts-hub',qualHub*20+' pts');
     setKpi('bj-pts-mn',qualMn*20+' pts');
     setKpi('bj-hub-count',totalHub+' leads');
@@ -5692,8 +5699,8 @@ async function renderBeijamim(){
     setKpi('bj-qmn-pts',qualMn.length*20+' pts');
     var qhubT=document.getElementById('bj-qhub-tbody');
     var qmnT=document.getElementById('bj-qmn-tbody');
-    if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="5">Nenhum lead HUB qualificado no período.</td></tr>';
-    if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="4">Nenhum lead Mentoria qualificado no período.</td></tr>';
+    if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB qualificado no período.</td></tr>';
+    if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria qualificado no período.</td></tr>';
   }catch(e){
     console.error('renderBeijamim:',e);
     var hubTbody=document.getElementById('bj-hub-tbody');
@@ -5751,6 +5758,7 @@ async function initBeijamim(){
       <div class="kpi gam-t-kpi-color"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="gam-t-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
       <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="gam-t-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
       <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="gam-t-qual">—</div><div class="ks">Ambos aeroportos</div></div>
+      <div class="kpi" style="border-top:3px solid #10B981;box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(16,185,129,.06);"><div class="ki">📅</div><div class="kl" style="color:#10B981;">Reuniões Agendadas</div><div class="kv" style="color:#10B981;" id="gam-t-reunioes">—</div><div class="ks">50 pts cada</div></div>
       <div class="kpi gam-t-kpi-color"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="gam-t-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
       <div class="kpi gam-t-kpi-color"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="gam-t-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
       <div class="kpi" style="border-top:3px solid #2563EB;"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="gam-t-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
@@ -5858,9 +5866,10 @@ async function initBeijamim(){
                 <th class="gam-t-color" style="width:115px;">Telefone</th>
                 <th class="gam-t-color">Observação</th>
               </tr>
+                <th class="gam-t-color" style="width:160px;">Status</th>
             </thead>
             <tbody id="gam-t-qhub-tbody"><tr class="er"><td colspan="6">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
-          </table>
+            <tbody id="gam-t-qhub-tbody"><tr class="er"><td colspan="7">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
         </div>
       </div>
 
@@ -5889,9 +5898,10 @@ async function initBeijamim(){
                 <th style="width:115px;color:#60A5FA;">Telefone</th>
                 <th style="color:#60A5FA;">Observação</th>
               </tr>
+                <th style="width:160px;color:#60A5FA;">Status</th>
             </thead>
             <tbody id="gam-t-qmn-tbody"><tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
-          </table>
+            <tbody id="gam-t-qmn-tbody"><tr class="er"><td colspan="6">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
         </div>
       </div>
 
@@ -6186,9 +6196,14 @@ async function gamSaveObs(id){
   catch(e){btn.textContent='❌';setTimeout(function(){btn.textContent='💾 salvar';btn.disabled=false;},2000);}
 }
 function gamTelTd(id,val){
-  return '<div style="position:relative;">'
+  var waLink='';
+  if(val){var waN=val.replace(/\D/g,'');var waNum=waN.startsWith('55')?waN:'55'+waN;waLink='<a href="https://wa.me/'+waNum+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;color:#25D366;font-size:10px;font-weight:700;text-decoration:none;margin-top:3px;">💬 Abrir WhatsApp</a>';}
+  return '<div>'
+    +'<div style="position:relative;">'
     +'<input id="gam_tel_'+id+'" type="text" value="'+escHtml(val||'')+'" placeholder="📞 adicionar" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:5px 28px 5px 7px;color:var(--txt);font-size:11px;font-family:\'Plus Jakarta Sans\',sans-serif;outline:none;box-sizing:border-box;" onkeydown="if(event.key===\'Enter\')gamSaveTel(\''+id+'\')">'
     +'<button id="gam_tel_btn_'+id+'" onclick="gamSaveTel(\''+id+'\')" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--sub);font-size:13px;cursor:pointer;padding:2px 4px;" title="Salvar">💾</button>'
+    +'</div>'
+    +waLink
     +'</div>';
 }
 async function gamSaveTel(id){
@@ -6211,6 +6226,35 @@ function gamBadge(cls,id){
     var a=o===cls;
     return '<button onclick="gamSetClass(\''+id+'\',\''+o+'\')" style="background:'+(a?colors[o]:'transparent')+';border:1px solid '+(a?colors[o]:'var(--brd2)')+';color:'+(a?'#fff':'var(--sub)')+';border-radius:7px;padding:3px 8px;font-size:10px;font-weight:'+(a?'700':'500')+';cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;white-space:nowrap;">'+emoji[o]+' '+o+'</button>';
   }).join('')+'</div>';
+}
+
+/* ── STATUS BADGE (Beirajamim + Gamificação) ── */
+var _stC={'Reunião Agendada':{c:'#10B981',bg:'rgba(16,185,129,.18)',b:'rgba(16,185,129,.4)',i:'📅'},
+          'Aguardando'      :{c:'#F59E0B',bg:'rgba(245,158,11,.18)',b:'rgba(245,158,11,.4)',i:'⏳'},
+          'Perdido'         :{c:'#EF4444',bg:'rgba(239,68,68,.18)',b:'rgba(239,68,68,.4)', i:'❌'}};
+function mkStatusBadge(status,id,fn){
+  var cur=status||'Aguardando';
+  var s=_stC[cur]||_stC['Aguardando'];
+  var dd='std_'+id.replace(/-/g,'');
+  var opts=['Reunião Agendada','Aguardando','Perdido'];
+  return '<div class="st-dd">'
+    +'<button onclick="var m=document.getElementById(\''+dd+'\');m.classList.toggle(\'open\')" '
+    +'style="background:'+s.bg+';border:1px solid '+s.b+';color:'+s.c+';border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:\'Plus Jakarta Sans\',sans-serif;letter-spacing:.3px;">'+s.i+' '+cur+' ▾</button>'
+    +'<div id="'+dd+'" class="st-dd-menu">'
+    +opts.map(function(o){
+      var sm=_stC[o];var a=o===cur;
+      return '<button onclick="'+fn+'(\''+id+'\',\''+o+'\');document.getElementById(\''+dd+'\').classList.remove(\'open\')" '
+        +'style="display:block;width:100%;text-align:left;background:'+(a?sm.bg:'transparent')+';border:'+(a?'1px solid '+sm.b:'1px solid transparent')+';color:'+sm.c+';border-radius:7px;padding:6px 10px;font-size:11px;font-weight:'+(a?'700':'500')+';cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;white-space:nowrap;transition:background .1s;">'+sm.i+' '+o+'</button>';
+    }).join('')
+    +'</div></div>';
+}
+async function bjSetStatus(id,status){
+  try{await bjPatch(id,{status:status});renderBeijamim();}
+  catch(e){console.error('bjSetStatus:',e);}
+}
+async function gamSetStatus(id,status){
+  try{await gamPatch(id,{status:status});await renderGamificacao();}
+  catch(e){console.error('gamSetStatus:',e);}
 }
 
 /* ── ROW FUNÇÕES ── */
@@ -6236,7 +6280,7 @@ function gamRowMn(lead){
     +'<td style="text-align:center;vertical-align:middle;"><button onclick="gamDeleteLead(\''+lead.id+'\')" title="Remover" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#EF4444;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto;">✕</button></td>'
     +'</tr>';
 }
-/* QUAL HUB: Data|Nome|Instagram|Plataforma|Telefone|Obs = 6 cols */
+/* QUAL HUB: Data|Nome|Instagram|Plataforma|Telefone|Obs|Status = 7 cols */
 function gamRowQHub(lead){
   var platBadge=lead.plataforma?'<span style="background:rgba(99,102,241,.15);color:#818CF8;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;white-space:nowrap;">'+escHtml(lead.plataforma)+'</span>':'<span style="color:var(--sub);font-size:10px;">—</span>';
   return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
@@ -6244,14 +6288,16 @@ function gamRowQHub(lead){
     +'<td style="vertical-align:middle;text-align:center;">'+platBadge+'</td>'
     +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
     +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+mkStatusBadge(lead.status,lead.id,'gamSetStatus')+'</td>'
     +'</tr>';
 }
-/* QUAL MENTORIA: Data|Nome|Instagram|Telefone|Obs = 5 cols */
+/* QUAL MENTORIA: Data|Nome|Instagram|Telefone|Obs|Status = 6 cols */
 function gamRowQMn(lead){
   return '<tr>'+gamDateTd(lead.criado)+gamNomeTd(lead.nome)
     +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
     +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
     +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+mkStatusBadge(lead.status,lead.id,'gamSetStatus')+'</td>'
     +'</tr>';
 }
 /* LÍDER: Data|Nome|Instagram|Telefone|Obs|Class = 6 cols (sem equipe, sem del) */
@@ -6580,6 +6626,7 @@ async function initGamificacao(){
     <div class="kpi hb"><div class="ki">🏪</div><div class="kl">Leads HUB</div><div class="kv" id="bj-hub-total">—</div><div class="ks">Aeroporto HUB</div></div>
     <div class="kpi mn"><div class="ki">🎓</div><div class="kl">Leads Mentoria</div><div class="kv" id="bj-mn-total">—</div><div class="ks">Aeroporto Mentoria</div></div>
     <div class="kpi gn"><div class="ki">✅</div><div class="kl">Total Qualificados</div><div class="kv" id="bj-qual">—</div><div class="ks">Ambos aeroportos</div></div>
+    <div class="kpi" style="border-top:3px solid #10B981;box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 0 40px rgba(16,185,129,.06);"><div class="ki">📅</div><div class="kl" style="color:#10B981;">Reuniões Agendadas</div><div class="kv" style="color:#10B981;" id="bj-reunioes">—</div><div class="ks">50 pts cada</div></div>
     <div class="kpi" style="border-top:3px solid #FB923C;"><div class="ki">🏆</div><div class="kl">Pontos Totais</div><div class="kv" id="bj-pts-total">—</div><div class="ks">Qualificado = 20 pts</div></div>
     <div class="kpi hb"><div class="ki">💠</div><div class="kl">Pontos HUB</div><div class="kv" id="bj-pts-hub">—</div><div class="ks">HUB qualificados</div></div>
     <div class="kpi mn"><div class="ki">🌟</div><div class="kl">Pontos Mentoria</div><div class="kv" id="bj-pts-mn">—</div><div class="ks">Mentoria qualificados</div></div>
@@ -6686,14 +6733,15 @@ async function initGamificacao(){
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
               <th style="width:68px;color:#FB923C;">Data</th>
-              <th style="width:15%;color:#FB923C;">Nome</th>
-              <th style="width:15%;color:#FB923C;">Instagram</th>
-              <th style="width:96px;color:#FB923C;">Plataforma</th>
+              <th style="width:68px;color:#FB923C;">Data</th>
+              <th style="width:14%;color:#FB923C;">Nome</th>
+              <th style="width:14%;color:#FB923C;">Instagram</th>
+              <th style="width:90px;color:#FB923C;">Plataforma</th>
               <th style="color:#FB923C;">Observação</th>
-            </tr>
+              <th style="width:160px;color:#FB923C;">Status</th>
           </thead>
           <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="5">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
-        </table>
+          <tbody id="bj-qhub-tbody"><tr class="er"><td colspan="6">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
       </div>
     </div>
 
@@ -6717,13 +6765,14 @@ async function initGamificacao(){
           <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
             <tr>
               <th style="width:68px;color:#60A5FA;">Data</th>
-              <th style="width:18%;color:#60A5FA;">Nome</th>
-              <th style="width:18%;color:#60A5FA;">Instagram</th>
+              <th style="width:68px;color:#60A5FA;">Data</th>
+              <th style="width:17%;color:#60A5FA;">Nome</th>
+              <th style="width:17%;color:#60A5FA;">Instagram</th>
               <th style="color:#60A5FA;">Observação</th>
-            </tr>
+              <th style="width:160px;color:#60A5FA;">Status</th>
           </thead>
           <tbody id="bj-qmn-tbody"><tr class="er"><td colspan="4">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
-        </table>
+          <tbody id="bj-qmn-tbody"><tr class="er"><td colspan="5">Nenhum lead Mentoria qualificado ainda.</td></tr></tbody>
       </div>
     </div>
 
