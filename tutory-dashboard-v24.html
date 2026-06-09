@@ -5711,6 +5711,15 @@ async function renderBeijamim(){
     if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria qualificado no período.</td></tr>';
     if(_diagEl)_diagEl.style.display='none';
     console.log('[BJ] render concluído com sucesso');
+    /* DEBUG: inspecionar visibilidade da página */
+    var _pg=document.getElementById('page-beijamim');
+    if(_pg){
+      var _cs=window.getComputedStyle(_pg);
+      console.log('[BJ] page-beijamim computed: display='+_cs.display+' visibility='+_cs.visibility+' opacity='+_cs.opacity+' zIndex='+_cs.zIndex);
+      console.log('[BJ] page-beijamim offsetHeight='+_pg.offsetHeight+' scrollHeight='+_pg.scrollHeight+' clientWidth='+_pg.clientWidth);
+      var _firstChild=_pg.firstElementChild;
+      if(_firstChild){var _fcs=window.getComputedStyle(_firstChild);console.log('[BJ] primeiro filho (wrap) computed: display='+_fcs.display+' visibility='+_fcs.visibility+' opacity='+_fcs.opacity);}
+    }
   }catch(e){
     console.error('[BJ] ERRO em renderBeijamim:',e);
     if(_diagEl){_diagEl.style.background='rgba(239,68,68,.18)';_diagEl.style.color='#EF4444';_diagEl.textContent='❌ Erro: '+e.message;}
