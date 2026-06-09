@@ -5656,8 +5656,15 @@ async function renderBeijamim(){
     }
   },30000);
 
+  /* Diagnóstico: mostrar loading visível */
+  var _diagEl=document.getElementById('bj-diag');
+  if(_diagEl)_diagEl.textContent='⏳ Carregando dados...';
+  console.log('[BJ] renderBeijamim iniciado');
+
   try{
+    console.log('[BJ] iniciando fetch de prospeccoes_beijamim...');
     var allLeads=await bjFetch();
+    console.log('[BJ] fetch OK, total de leads:', allLeads&&allLeads.length);
     var leads=bjFilterByDate(allLeads);
     var hub=leads.filter(function(l){return l.tipo==='hub';});
     var mn=leads.filter(function(l){return l.tipo==='mentoria';});
@@ -5702,10 +5709,13 @@ async function renderBeijamim(){
     var qmnT=document.getElementById('bj-qmn-tbody');
     if(qhubT) qhubT.innerHTML=qualHub.length?qualHub.map(bjRowQHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB qualificado no período.</td></tr>';
     if(qmnT)  qmnT.innerHTML=qualMn.length?qualMn.map(bjRowQMn).join(''):'<tr class="er"><td colspan="6">Nenhum lead Mentoria qualificado no período.</td></tr>';
+    if(_diagEl)_diagEl.style.display='none';
+    console.log('[BJ] render concluído com sucesso');
   }catch(e){
-    console.error('renderBeijamim:',e);
+    console.error('[BJ] ERRO em renderBeijamim:',e);
+    if(_diagEl){_diagEl.style.background='rgba(239,68,68,.18)';_diagEl.style.color='#EF4444';_diagEl.textContent='❌ Erro: '+e.message;}
     var hubTbody=document.getElementById('bj-hub-tbody');
-    if(hubTbody)hubTbody.innerHTML='<tr class="er"><td colspan="6">⚠️ Erro ao carregar. Verifique a tabela no Supabase.</td></tr>';
+    if(hubTbody)hubTbody.innerHTML='<tr class="er"><td colspan="6">⚠️ Erro: '+e.message+'</td></tr>';
   }
 }
 
@@ -6603,6 +6613,8 @@ async function initGamificacao(){
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div class="page" id="page-beijamim" style="display:none">
 <div class="wrap">
+  <!-- DIAGNÓSTICO (removido após dados carregarem) -->
+  <div id="bj-diag" style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);color:#FB923C;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;"></div>
 
   <!-- HEADER -->
   <div class="ph">
