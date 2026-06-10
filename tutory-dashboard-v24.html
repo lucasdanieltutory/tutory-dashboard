@@ -4584,7 +4584,9 @@ const GADS_LOGIN_CUSTOMER_ID='5041220639'; // MCC TUTORY MCC (504-122-0639)
 const GADS_DEV_TOKEN='yfK8K1bqpXm-V9FrO8UX3Q';
 let _gadsToken=localStorage.getItem('tutory_gads_token')||'';
 let _gadsTokenExpiry=parseInt(localStorage.getItem('tutory_gads_token_expiry')||'0');
-let _gadsTokenClient=null;
+let _gadsRefreshToken=localStorage.getItem('tutory_gads_refresh_token')||'';
+let _gadsCodeClient=null;
+let _gadsRefreshTimer=null;
 let _gadsCache={};
 
 function getGadsToken(){
@@ -4592,37 +4594,163 @@ function getGadsToken(){
   return null;
 }
 
-function initGoogleAdsAuth(){
+// ── Supabase: salvar/carregar/apagar refresh token ──
+async function saveGadsRefreshToSupabase(token){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes`,{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({chave:'gads_refresh_token',valor:token,expiry:9999999999999})
+    });
+    console.log('🔑 Refresh token Google Ads salvo no Supabase (permanente)');
+  }catch(e){}
+}
+async function loadGadsRefreshFromSupabase(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.gads_refresh_token&limit=1`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d||!d[0]||!d[0].valor)return false;
+    _gadsRefreshToken=d[0].valor;
+    localStorage.setItem('tutory_gads_refresh_token',_gadsRefreshToken);
+    return true;
+  }catch(e){return false;}
+}
+async function deleteGadsRefreshFromSupabase(){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.gads_refresh_token`,{
+      method:'DELETE',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+  }catch(e){}
+}
+
+// ── Renovar access token usando refresh token (sem interação) ──
+async function refreshGadsAccessToken(){
+  if(!_gadsRefreshToken)return false;
+  try{
+    const resp=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        refresh_token:_gadsRefreshToken,
+        client_id:YT_CLIENT_ID,
+        client_secret:YT_CLIENT_SECRET,
+        grant_type:'refresh_token'
+      }).toString()
+    });
+    const tokens=await resp.json();
+    if(!tokens.access_token){
+      console.warn('Refresh Google Ads falhou:',tokens);
+      if(tokens.error==='invalid_grant'){
+        _gadsRefreshToken='';
+        localStorage.removeItem('tutory_gads_refresh_token');
+        await deleteGadsRefreshFromSupabase();
+        updateGadsAuthUI(false);
+      }
+      return false;
+    }
+    const expiry=Date.now()+(tokens.expires_in||3600)*1000;
+    _gadsToken=tokens.access_token;
+    _gadsTokenExpiry=expiry;
+    localStorage.setItem('tutory_gads_token',_gadsToken);
+    localStorage.setItem('tutory_gads_token_expiry',String(expiry));
+    _gadsCache={};
+    updateGadsAuthUI(true);
+    console.log('✅ Token Google Ads renovado automaticamente');
+    return true;
+  }catch(e){console.warn('refreshGadsAccessToken erro:',e);return false;}
+}
+
+// ── Auto-renovação 5 min antes de expirar ──
+function setupGadsAutoRefresh(){
+  if(_gadsRefreshTimer)clearTimeout(_gadsRefreshTimer);
+  const exp=parseInt(localStorage.getItem('tutory_gads_token_expiry')||'0');
+  const msLeft=exp-Date.now();
+  const delay=Math.max(msLeft-300000,60000);
+  _gadsRefreshTimer=setTimeout(async()=>{
+    const ok=await refreshGadsAccessToken();
+    if(ok){setupGadsAutoRefresh();renderGoogleAdsMetrics();}
+    else if(_gadsRefreshToken){setTimeout(async()=>{await refreshGadsAccessToken();setupGadsAutoRefresh();},300000);}
+  },delay);
+}
+
+// ── Callback: troca código por access + refresh token ──
+async function _gadsCodeCallback(response){
+  if(response.error){console.warn('Google Ads OAuth erro:',response.error);return;}
+  try{
+    const resp=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        code:response.code,
+        client_id:YT_CLIENT_ID,
+        client_secret:YT_CLIENT_SECRET,
+        redirect_uri:'postmessage',
+        grant_type:'authorization_code'
+      }).toString()
+    });
+    const tokens=await resp.json();
+    if(!tokens.access_token){console.warn('Google Ads code exchange falhou:',tokens);alert('Erro ao autenticar com Google Ads. Tente novamente.');return;}
+    if(tokens.refresh_token){
+      _gadsRefreshToken=tokens.refresh_token;
+      localStorage.setItem('tutory_gads_refresh_token',_gadsRefreshToken);
+      await saveGadsRefreshToSupabase(_gadsRefreshToken);
+      console.log('🔑 Refresh token Google Ads salvo — autenticação permanente ativada!');
+    }
+    const expiry=Date.now()+(tokens.expires_in||3600)*1000;
+    _gadsToken=tokens.access_token;
+    _gadsTokenExpiry=expiry;
+    localStorage.setItem('tutory_gads_token',_gadsToken);
+    localStorage.setItem('tutory_gads_token_expiry',String(expiry));
+    _gadsCache={};
+    setupGadsAutoRefresh();
+    updateGadsAuthUI(true);
+    renderGoogleAdsMetrics();
+  }catch(e){console.warn('_gadsCodeCallback erro:',e);}
+}
+
+async function initGoogleAdsAuth(){
   if(typeof google==='undefined'||!google.accounts){setTimeout(initGoogleAdsAuth,500);return;}
-  _gadsTokenClient=google.accounts.oauth2.initTokenClient({
+  // Cria o code client (obtém refresh token na primeira conexão)
+  _gadsCodeClient=google.accounts.oauth2.initCodeClient({
     client_id:YT_CLIENT_ID,
     scope:'https://www.googleapis.com/auth/adwords',
+    ux_mode:'popup',
     login_hint:'lucas.daniel@tutory.com.br',
-    callback:async(response)=>{
-      if(response.error){console.warn('Google Ads OAuth erro:',response.error);return;}
-      const expiry=Date.now()+(response.expires_in||3600)*1000;
-      _gadsToken=response.access_token;
-      _gadsTokenExpiry=expiry;
-      localStorage.setItem('tutory_gads_token',_gadsToken);
-      localStorage.setItem('tutory_gads_token_expiry',String(expiry));
-      _gadsCache={};
-      updateGadsAuthUI(true);
-      renderGoogleAdsMetrics();
-    }
+    callback:_gadsCodeCallback
   });
-  // Verifica se já tem token válido
-  if(getGadsToken()){updateGadsAuthUI(true);}
+  // Tenta carregar refresh token do localStorage ou Supabase
+  if(!_gadsRefreshToken)await loadGadsRefreshFromSupabase();
+  if(_gadsRefreshToken){
+    console.log('🔑 Refresh token Google Ads encontrado — renovando automaticamente...');
+    const ok=await refreshGadsAccessToken();
+    if(ok){
+      setupGadsAutoRefresh();
+      renderGoogleAdsMetrics();
+      return;
+    }
+  }
+  // Sem refresh token: verifica se tem access token local ainda válido
+  if(getGadsToken()){updateGadsAuthUI(true);renderGoogleAdsMetrics();}
+  else{updateGadsAuthUI(false);}
 }
 
 function connectGoogleAds(){
-  if(!_gadsTokenClient){initGoogleAdsAuth();setTimeout(connectGoogleAds,700);return;}
-  _gadsTokenClient.requestAccessToken({prompt:'select_account',login_hint:'lucas.daniel@tutory.com.br'});
+  if(!_gadsCodeClient){initGoogleAdsAuth();setTimeout(connectGoogleAds,800);return;}
+  _gadsCodeClient.requestCode();
 }
 
-function disconnectGoogleAds(){
-  _gadsToken='';_gadsTokenExpiry=0;
+async function disconnectGoogleAds(){
+  _gadsToken='';_gadsTokenExpiry=0;_gadsRefreshToken='';
+  if(_gadsRefreshTimer){clearTimeout(_gadsRefreshTimer);_gadsRefreshTimer=null;}
   localStorage.removeItem('tutory_gads_token');
   localStorage.removeItem('tutory_gads_token_expiry');
+  localStorage.removeItem('tutory_gads_refresh_token');
+  await deleteGadsRefreshFromSupabase();
   _gadsCache={};
   updateGadsAuthUI(false);
 }
