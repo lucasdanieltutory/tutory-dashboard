@@ -6239,6 +6239,10 @@ async function initBeijamim(){
         <input id="gam-pon-resp" type="text" placeholder="Nome de quem fez a venda / ação" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
       </div>
       <div>
+        <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Data da Ação *</label>
+        <input id="gam-pon-data" type="date" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+      </div>
+      <div>
         <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Ação / Venda *</label>
         <select id="gam-pon-acao" onchange="gamPonSelectAcao(this)" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
           <option value="">— Selecione a ação —</option>
@@ -6254,12 +6258,25 @@ async function initBeijamim(){
           <option value="9">Inadimplência 5k — 100 pts</option>
           <option value="10">Renovação Basic — 100 pts</option>
           <option value="11">Renovação Pro — 200 pts</option>
-          <option value="12">SDR Reunião Comparecida — 50 pts</option>
+          <option value="12">Social Selling — 50 pts</option>
           <option value="13">SDR Reunião Fechada — 100 pts</option>
           <option value="14">Recuperação de Inativos — 80 pts</option>
           <option value="15">Implementações — 100 pts</option>
           <option value="16">Contratações Rápidas — 100 pts</option>
+          <option value="17">Vendas Mini — 50 pts</option>
+          <option value="custom">✏️ Personalizado</option>
         </select>
+      </div>
+      <!-- Campos personalizados (visíveis apenas quando "Personalizado" selecionado) -->
+      <div id="gam-pon-custom-row" style="display:none;gap:10px;">
+        <div style="flex:2;">
+          <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Nome da Ação *</label>
+          <input id="gam-pon-custom-label" type="text" placeholder="Descreva a ação..." style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px;">Pontos *</label>
+          <input id="gam-pon-custom-pts" type="number" min="1" placeholder="ex: 150" style="width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:8px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;">
+        </div>
       </div>
       <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:12px;font-weight:600;color:var(--sub);">Pontos desta ação:</span>
@@ -6305,11 +6322,12 @@ var ACOES=[
   {label:'Inadimplência 5k',pts:100},
   {label:'Renovação Basic',pts:100},
   {label:'Renovação Pro',pts:200},
-  {label:'SDR Reunião Comparecida',pts:50},
+  {label:'Social Selling',pts:50},
   {label:'SDR Reunião Fechada',pts:100},
   {label:'Recuperação de Inativos',pts:80},
   {label:'Implementações',pts:100},
-  {label:'Contratações Rápidas',pts:100}
+  {label:'Contratações Rápidas',pts:100},
+  {label:'Vendas Mini',pts:50}
 ];
 
 /* ── SUPABASE HELPERS ── */
@@ -6352,6 +6370,13 @@ function _openPonModal(equipe){
   var a=document.getElementById('gam-pon-acao');if(a)a.value='';
   var d=document.getElementById('gam-pon-pts-display');if(d)d.textContent='— pts';
   var btn=document.getElementById('gam-pon-save-btn');if(btn){btn.disabled=false;btn.textContent='💾 Salvar Pontuação';}
+  // data padrão = hoje
+  var dt=document.getElementById('gam-pon-data');
+  if(dt){var t=new Date();var y=t.getFullYear();var mo=String(t.getMonth()+1).padStart(2,'0');var dy=String(t.getDate()).padStart(2,'0');dt.value=y+'-'+mo+'-'+dy;}
+  // ocultar campos personalizados
+  var cr=document.getElementById('gam-pon-custom-row');if(cr){cr.style.display='none';}
+  var cl=document.getElementById('gam-pon-custom-label');if(cl)cl.value='';
+  var cp=document.getElementById('gam-pon-custom-pts');if(cp)cp.value='';
   m.style.display='flex';
 }
 function gamOpenPonModal(){_openPonModal(_gamEquipe);}
@@ -6360,22 +6385,46 @@ function gamClosePonModal(){
   var m=document.getElementById('gam-pon-modal');if(m)m.style.display='none';
 }
 function gamPonSelectAcao(sel){
-  var idx=parseInt(sel.value);
+  var cr=document.getElementById('gam-pon-custom-row');
   var d=document.getElementById('gam-pon-pts-display');
-  if(d)d.textContent=(!isNaN(idx)&&ACOES[idx])?ACOES[idx].pts+' pts':'— pts';
+  if(sel.value==='custom'){
+    if(cr)cr.style.display='flex';
+    if(d)d.textContent='— pts';
+    // atualiza pontos ao digitar no campo personalizado
+    var cp=document.getElementById('gam-pon-custom-pts');
+    if(cp)cp.oninput=function(){if(d)d.textContent=(this.value&&parseInt(this.value)>0)?parseInt(this.value)+' pts':'— pts';};
+  }else{
+    if(cr)cr.style.display='none';
+    var idx=parseInt(sel.value);
+    if(d)d.textContent=(!isNaN(idx)&&ACOES[idx])?ACOES[idx].pts+' pts':'— pts';
+  }
 }
 async function gamSavePontuacao(){
   var resp=(document.getElementById('gam-pon-resp').value||'').trim();
   var acaoVal=document.getElementById('gam-pon-acao').value;
+  var dataVal=(document.getElementById('gam-pon-data').value||'').trim();
   if(!resp){alert('Preencha o nome do responsável.');return;}
+  if(!dataVal){alert('Preencha a data da ação.');return;}
   if(acaoVal===''||acaoVal===null||acaoVal===undefined){alert('Selecione uma ação.');return;}
-  var idx=parseInt(acaoVal);
-  var acao=ACOES[idx];
-  if(!acao){alert('Ação inválida.');return;}
+  var acaoLabel,acaoPts;
+  if(acaoVal==='custom'){
+    acaoLabel=(document.getElementById('gam-pon-custom-label').value||'').trim();
+    acaoPts=parseInt(document.getElementById('gam-pon-custom-pts').value||'0');
+    if(!acaoLabel){alert('Preencha o nome da ação personalizada.');return;}
+    if(!acaoPts||acaoPts<1){alert('Preencha a pontuação da ação personalizada.');return;}
+  }else{
+    var idx=parseInt(acaoVal);
+    var acao=ACOES[idx];
+    if(!acao){alert('Ação inválida.');return;}
+    acaoLabel=acao.label;acaoPts=acao.pts;
+  }
   var btn=document.getElementById('gam-pon-save-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
   try{
-    await ponInsert({equipe:_ponEquipe,responsavel:resp,acao:acao.label,pontos:acao.pts});
+    // usa a data escolhida como criado (mantém hora atual)
+    var t=new Date();var h=String(t.getHours()).padStart(2,'0');var mi=String(t.getMinutes()).padStart(2,'0');var s=String(t.getSeconds()).padStart(2,'0');
+    var criadoISO=dataVal+'T'+h+':'+mi+':'+s;
+    await ponInsert({equipe:_ponEquipe,responsavel:resp,acao:acaoLabel,pontos:acaoPts,criado:criadoISO});
     gamClosePonModal();
     if(_ponEquipe==='Beijamim'){await renderBeijamim();}
     else{await renderGamTeam();}
