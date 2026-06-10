@@ -3842,7 +3842,8 @@ async function exportarRelatorio(){
     const invEx=_msRel.total>0?_msRel.experience:campEx.reduce((a,r)=>a+(+r.gasto||0),0);
     const invTotal=invMn+invHb+invEx;
     const leadsMn=leads.length;
-    const leadsHb=campHb.reduce((a,r)=>a+(+r.leads||0),0);
+    // Usa Meta API leads_hub se disponível (igual à Visão Geral), fallback Supabase
+    const leadsHb=(_msRel.leads_hub>0)?_msRel.leads_hub:campHb.reduce((a,r)=>a+(+r.leads||0),0);
     const vendasEx=campEx.reduce((a,r)=>a+(+r.vendas||0),0);
     const qualMn=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
     const cplMn=leadsMn>0?invMn/leadsMn:0;
@@ -3933,9 +3934,10 @@ async function exportarRelatorio(){
       const lMnArr=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
       const cHb=hCampsHb.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const lMn=lMnArr.length;
-      const lHb=cHb.reduce((s,r)=>s+(+r.leads||0),0);
       const hot=lMnArr.filter(r=>r.classificacao_manual==='Qualificado').length;
-      const _ms=_dynMeta[sqKey]||{mentoria:0,hub:0,experience:0,total:0};
+      const _ms=_dynMeta[sqKey]||{mentoria:0,hub:0,experience:0,total:0,leads_hub:0};
+      // Usa Meta API leads_hub se disponível, fallback campanhas_hub.leads
+      const lHb=(_ms.leads_hub>0)?_ms.leads_hub:cHb.reduce((s,r)=>s+(+r.leads||0),0);
       const cMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const iMn=_ms.total>0?_ms.mentoria:cMn.reduce((s,r)=>s+(+r.gasto||0),0);
       const iHb=_ms.total>0?_ms.hub:cHb.reduce((s,r)=>s+(+r.gasto||0),0);
