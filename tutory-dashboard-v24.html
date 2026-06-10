@@ -3911,6 +3911,7 @@ async function exportarRelatorio(){
       {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
       {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
       {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
+      {label:'Mai/2026',y:2026,m:5},
     ];
     // Busca Meta API para meses recentes sem dados estáticos (investimento em tempo real)
     const _dynMonths=histMonths.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return!staticHistData[k];});
