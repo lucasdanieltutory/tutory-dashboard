@@ -6265,10 +6265,6 @@ async function initBeijamim(){
             </div>
             <div style="font-size:11px;color:var(--sub);margin-top:4px;">Leads HUB qualificados de todas as equipes · prontos para abordagem</div>
           </div>
-          <div style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:8px 16px;text-align:center;">
-            <div style="font-size:20px;font-weight:800;color:#22C55E;" id="gaml-qpts">0 pts</div>
-            <div style="font-size:10px;color:var(--sub);font-weight:600;">PONTOS</div>
-          </div>
         </div>
         <div style="overflow-y:auto;overflow-x:hidden;max-height:500px;">
           <table class="dt" style="width:100%;table-layout:fixed;">
@@ -7007,7 +7003,10 @@ function gamRowTeamQual(lead){
 
 /* ── RENDER LÍDER ── */
 async function renderGamLider(){
-  var allLeads=await gamFetch();
+  // Busca leads das duas tabelas: leads_gamificacao (Judá/Efraim) + prospeccoes_beijamim
+  var allGam=await gamFetch();
+  var allBj=await bjFetch();
+  var allLeads=allGam.concat(allBj);
   // Líder vê apenas leads HUB (tipo='hub' ou sem tipo, que defaulta para hub)
   var leads=gamFilterByDate(allLeads).filter(function(l){return (l.tipo||'hub')==='hub';});
   var total=leads.length;
@@ -7024,7 +7023,6 @@ async function renderGamLider(){
   if(tbody)tbody.innerHTML=leads.length?leads.map(gamRowLider).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB no período selecionado.</td></tr>';
   var qLeads=leads.filter(function(l){return l.classificacao==='Qualificado';});
   sk('gaml-qcount',qLeads.length+' leads');
-  sk('gaml-qpts',(qLeads.length*20+reunioes*50)+' pts');
   var qtb=document.getElementById('gaml-qtbody');
   // Reutiliza gamRowQHub que já tem Plataforma + Status com botão Reunião Agendada
   if(qtb)qtb.innerHTML=qLeads.length?qLeads.map(gamRowQHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB qualificado no período.</td></tr>';
