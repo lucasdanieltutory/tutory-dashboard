@@ -6241,15 +6241,16 @@ async function initBeijamim(){
           <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
             <tr>
               <th style="width:68px;">Data</th>
-              <th style="width:14%;">Nome</th>
-              <th style="width:14%;">Instagram</th>
-              <th style="width:85px;">Plataforma</th>
-              <th style="width:110px;">Telefone</th>
+              <th style="width:80px;">Equipe</th>
+              <th style="width:13%;">Nome</th>
+              <th style="width:13%;">Instagram</th>
+              <th style="width:82px;">Plataforma</th>
+              <th style="width:105px;">Telefone</th>
               <th>Observação</th>
               <th style="width:170px;">Classificação</th>
             </tr>
           </thead>
-          <tbody id="gaml-tbody"><tr class="er"><td colspan="7">Nenhum lead HUB ainda.</td></tr></tbody>
+          <tbody id="gaml-tbody"><tr class="er"><td colspan="8">Nenhum lead HUB ainda.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -6271,15 +6272,16 @@ async function initBeijamim(){
             <thead style="position:sticky;top:0;z-index:5;background:var(--s1);">
               <tr>
                 <th style="width:68px;color:#22C55E;">Data</th>
-                <th style="width:14%;color:#22C55E;">Nome</th>
-                <th style="width:14%;color:#22C55E;">Instagram</th>
-                <th style="width:85px;color:#22C55E;">Plataforma</th>
-                <th style="width:110px;color:#22C55E;">Telefone</th>
+                <th style="width:80px;color:#22C55E;">Equipe</th>
+                <th style="width:13%;color:#22C55E;">Nome</th>
+                <th style="width:13%;color:#22C55E;">Instagram</th>
+                <th style="width:82px;color:#22C55E;">Plataforma</th>
+                <th style="width:105px;color:#22C55E;">Telefone</th>
                 <th style="color:#22C55E;">Observação</th>
                 <th style="width:160px;color:#22C55E;">Status</th>
               </tr>
             </thead>
-            <tbody id="gaml-qtbody"><tr class="er"><td colspan="7">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
+            <tbody id="gaml-qtbody"><tr class="er"><td colspan="8">Nenhum lead HUB qualificado ainda.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6761,6 +6763,79 @@ async function gamSetStatus(id,status){
   }
 }
 
+/* ── LÍDER/ADMIN: funções que roteiam para a tabela correta ── */
+async function liderSetClass(id,cls,source,equipe){
+  try{
+    if(source==='bj'){await bjPatch(id,{classificacao:cls});}
+    else{await gamPatch(id,{classificacao:cls});}
+    await renderGamLider();
+  }catch(e){console.error('liderSetClass:',e);}
+}
+async function liderSetStatus(id,status,source){
+  try{
+    if(source==='bj'){await bjPatch(id,{status:status});}
+    else{await gamPatch(id,{status:status});}
+    await renderGamLider();
+  }catch(e){console.error('liderSetStatus:',e);}
+}
+// Badge de classificação para o Líder — passa source e equipe codificados
+function liderBadge(cls,id,source,equipe){
+  var opts=['Qualificado','Pré-qualificado','Desqualificado'];
+  var colors={Qualificado:'#22C55E','Pré-qualificado':'#EAB308',Desqualificado:'#EF4444'};
+  var emoji={Qualificado:'✅','Pré-qualificado':'⭐',Desqualificado:'🚫'};
+  var src=encodeURIComponent(source||'gam');
+  var eq=encodeURIComponent(equipe||'');
+  return '<div style="display:flex;flex-direction:column;gap:4px;">'+opts.map(function(o){
+    var a=o===cls;
+    return '<button onclick="liderSetClass(\''+id+'\',\''+o+'\',decodeURIComponent(\''+src+'\'),decodeURIComponent(\''+eq+'\'))" style="background:'+(a?colors[o]:'transparent')+';border:1px solid '+(a?colors[o]:'var(--brd2)')+';color:'+(a?'#fff':'var(--sub)')+';border-radius:7px;padding:3px 8px;font-size:10px;font-weight:'+(a?'700':'500')+';cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;white-space:nowrap;">'+emoji[o]+' '+o+'</button>';
+  }).join('')+'</div>';
+}
+// Row aeroporto para Líder/Admin: Data|Equipe|Nome|Instagram|Plataforma|Tel|Obs|Class
+function liderRowHub(lead){
+  var src=lead._source||'gam';var eq=lead._equipe||'';
+  var eqColors={'Judá':'#A78BFA','Efraim':'#10B981','Beijamim':'#FB923C'};
+  var eqBadge='<span style="background:rgba(129,140,248,.12);color:'+(eqColors[eq]||'#818CF8')+';border:1px solid '+(eqColors[eq]||'#818CF8')+'55;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">'+escHtml(eq||'—')+'</span>';
+  var platBadge=lead.plataforma?'<span style="background:rgba(99,102,241,.15);color:#818CF8;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;white-space:nowrap;">'+escHtml(lead.plataforma)+'</span>':'<span style="color:var(--sub);font-size:10px;">—</span>';
+  return '<tr>'+gamDateTd(lead.criado)
+    +'<td style="vertical-align:middle;text-align:center;">'+eqBadge+'</td>'
+    +gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;text-align:center;">'+platBadge+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+liderBadge(lead.classificacao,lead.id,src,eq)+'</td>'
+    +'</tr>';
+}
+// Row qualificados para Líder/Admin: Data|Equipe|Nome|Instagram|Plataforma|Tel|Obs|Status
+function liderRowQHub(lead){
+  var src=lead._source||'gam';var eq=lead._equipe||'';
+  var eqColors={'Judá':'#A78BFA','Efraim':'#10B981','Beijamim':'#FB923C'};
+  var eqBadge='<span style="background:rgba(129,140,248,.12);color:'+(eqColors[eq]||'#818CF8')+';border:1px solid '+(eqColors[eq]||'#818CF8')+'55;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">'+escHtml(eq||'—')+'</span>';
+  var platBadge=lead.plataforma?'<span style="background:rgba(99,102,241,.15);color:#818CF8;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;white-space:nowrap;">'+escHtml(lead.plataforma)+'</span>':'<span style="color:var(--sub);font-size:10px;">—</span>';
+  var fnStatus='liderSetStatus';
+  var dd='std_'+lead.id.replace(/-/g,'');
+  var cur=lead.status||'Aguardando';
+  var s=_stC[cur]||_stC['Aguardando'];
+  var opts=['Reunião Agendada','Aguardando','Perdido'];
+  var statusBadge='<div class="st-dd">'
+    +'<button onclick="var m=document.getElementById(\''+dd+'\');m.classList.toggle(\'open\')" '
+    +'style="width:100%;background:'+s.bg+';border:1px solid '+s.b+';color:'+s.c+';border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:\'Plus Jakarta Sans\',sans-serif;text-align:center;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;">'+s.i+' '+cur+' ▾</button>'
+    +'<div id="'+dd+'" class="st-dd-menu">'
+    +opts.map(function(o){var sm=_stC[o];var a=o===cur;
+      return '<button onclick="liderSetStatus(\''+lead.id+'\',\''+o+'\',\''+src+'\');document.getElementById(\''+dd+'\').classList.remove(\'open\')" '
+        +'style="display:block;width:100%;text-align:left;background:'+(a?sm.bg:'transparent')+';border:'+(a?'1px solid '+sm.b:'1px solid transparent')+';color:'+sm.c+';border-radius:7px;padding:6px 10px;font-size:11px;font-weight:'+(a?'700':'500')+';cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;white-space:nowrap;">'+sm.i+' '+o+'</button>';
+    }).join('')+'</div></div>';
+  return '<tr>'+gamDateTd(lead.criado)
+    +'<td style="vertical-align:middle;text-align:center;">'+eqBadge+'</td>'
+    +gamNomeTd(lead.nome)
+    +'<td '+_gamTdOvf+'>'+bjInstaLink(lead.instagram)+'</td>'
+    +'<td style="vertical-align:middle;text-align:center;">'+platBadge+'</td>'
+    +'<td style="vertical-align:middle;">'+gamTelTd(lead.id,lead.telefone)+'</td>'
+    +'<td style="vertical-align:middle;">'+gamObsTd(lead.id,lead.obs)+'</td>'
+    +'<td style="vertical-align:middle;">'+statusBadge+'</td>'
+    +'</tr>';
+}
+
 /* ── ROW FUNÇÕES ── */
 /* HUB: Data|Nome|Instagram|Plataforma|Telefone|Obs|Class|Del = 8 cols */
 function gamRowHub(lead){
@@ -7006,6 +7081,9 @@ async function renderGamLider(){
   // Busca leads das duas tabelas: leads_gamificacao (Judá/Efraim) + prospeccoes_beijamim
   var allGam=await gamFetch();
   var allBj=await bjFetch();
+  // Tagging de origem e equipe
+  allGam.forEach(function(l){l._source='gam';l._equipe=l.equipe||'Judá';});
+  allBj.forEach(function(l){l._source='bj';l._equipe='Beijamim';});
   var allLeads=allGam.concat(allBj);
   // Líder vê apenas leads HUB (tipo='hub' ou sem tipo, que defaulta para hub)
   var leads=gamFilterByDate(allLeads).filter(function(l){return (l.tipo||'hub')==='hub';});
@@ -7020,12 +7098,11 @@ async function renderGamLider(){
   sk('gaml-count',total+' leads');
   gamDrawPieOn('gaml-pie','gaml-legend',qual,pre,desq);
   var tbody=document.getElementById('gaml-tbody');
-  if(tbody)tbody.innerHTML=leads.length?leads.map(gamRowLider).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB no período selecionado.</td></tr>';
+  if(tbody)tbody.innerHTML=leads.length?leads.map(liderRowHub).join(''):'<tr class="er"><td colspan="8">Nenhum lead HUB no período selecionado.</td></tr>';
   var qLeads=leads.filter(function(l){return l.classificacao==='Qualificado';});
   sk('gaml-qcount',qLeads.length+' leads');
   var qtb=document.getElementById('gaml-qtbody');
-  // Reutiliza gamRowQHub que já tem Plataforma + Status com botão Reunião Agendada
-  if(qtb)qtb.innerHTML=qLeads.length?qLeads.map(gamRowQHub).join(''):'<tr class="er"><td colspan="7">Nenhum lead HUB qualificado no período.</td></tr>';
+  if(qtb)qtb.innerHTML=qLeads.length?qLeads.map(liderRowQHub).join(''):'<tr class="er"><td colspan="8">Nenhum lead HUB qualificado no período.</td></tr>';
 }
 
 /* ── RENDER PRINCIPAL ── */
