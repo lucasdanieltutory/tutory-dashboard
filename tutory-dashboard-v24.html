@@ -2676,7 +2676,10 @@ async function renderGeral(){
     const _hdIT=_hdIMn+_hdIHb+_hdIEx;
     if($('g-leads'))$('g-leads').textContent=fmt.num(_hdLMn||leads.length);
     if($('g-hot'))$('g-hot').textContent=_hdHot||hot;
-    if($('g-leads-hb'))$('g-leads-hb').textContent=_hdLHb||'—';
+    // Fallback ao vivo (igual aos demais KPIs): se o histórico por mês der 0
+    // (ex.: mês atual fora de _allHM), usa registros da Meta do período ou campanhas_hub.leads
+    const _lhbVal=_hdLHb||_msG.leads_hub||leadsHub.reduce((a,r)=>a+(+r.leads||0),0);
+    if($('g-leads-hb'))$('g-leads-hb').textContent=_lhbVal?fmt.num(_lhbVal):'—';
     if($('g-inv'))$('g-inv').textContent=fmt.brlK(_hdIT||totInv);
     if($('g-inv-mn'))$('g-inv-mn').textContent=fmt.brlK(_hdIMn||totInvMn);
     if($('g-inv-hb'))$('g-inv-hb').textContent=fmt.brlK(_hdIHb||totInvHb);
@@ -4122,12 +4125,10 @@ async function exportarRelatorio(){
       '2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},
       '2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19},
     };
-    const histMonths=[
-      {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
-      {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
-      {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
-      {label:'Mai/2026',y:2026,m:5},{label:'Jun/2026',y:2026,m:6},
-    ];
+    // Gera meses dinamicamente: Nov/2025 → mês atual. Evita manutenção manual
+    // e o zeramento do relatório quando o período cai num mês fora da lista.
+    const _histAbbr=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const histMonths=(()=>{const a=[];const now=new Date();const ey=now.getFullYear(),em=now.getMonth()+1;let y=2025,m=11;while(y<ey||(y===ey&&m<=em)){a.push({label:`${_histAbbr[m-1]}/${y}`,y,m});m++;if(m>12){m=1;y++;}}return a;})();
     // Busca Meta API para meses recentes sem dados estáticos (investimento em tempo real)
     const _dynMonths=histMonths.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return!staticHistData[k];});
     const _dynMeta={};
@@ -4164,13 +4165,16 @@ async function exportarRelatorio(){
     });
     // ── Totais do período via histData (fonte única de verdade) ──
     const _periodoHist=histData.filter(h=>{const k=`${h.y}-${String(h.m).padStart(2,'0')}`;return k>=ini.slice(0,7)&&k<=fim.slice(0,7)&&h.hasData;});
-    const _relIT=_periodoHist.reduce((s,h)=>s+h.iT,0);
-    const _relIMn=_periodoHist.reduce((s,h)=>s+(h.iMn||0),0);
-    const _relIHb=_periodoHist.reduce((s,h)=>s+(h.iHb||0),0);
-    const _relIEx=_periodoHist.reduce((s,h)=>s+(h.iEx||0),0);
-    const _relLMn=_periodoHist.reduce((s,h)=>s+h.lMn,0);
-    const _relLHb=_periodoHist.reduce((s,h)=>s+h.lHb,0);
-    const _relHot=_periodoHist.reduce((s,h)=>s+(h.hot||0),0);
+    // Se _periodoHist vier vazio (período fora dos meses agregados), usa os
+    // valores ao vivo do período já calculados acima como fallback.
+    const _hasHist=_periodoHist.length>0;
+    const _relIT=_hasHist?_periodoHist.reduce((s,h)=>s+h.iT,0):invTotal;
+    const _relIMn=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iMn||0),0):invMn;
+    const _relIHb=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iHb||0),0):invHb;
+    const _relIEx=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iEx||0),0):invEx;
+    const _relLMn=_hasHist?_periodoHist.reduce((s,h)=>s+h.lMn,0):leadsMn;
+    const _relLHb=_hasHist?_periodoHist.reduce((s,h)=>s+h.lHb,0):leadsHb;
+    const _relHot=_hasHist?_periodoHist.reduce((s,h)=>s+(h.hot||0),0):qualMn;
     const _relCplMn=_relLMn>0?_relIMn/_relLMn:0;
     const _relCplHb=_relLHb>0?_relIHb/_relLHb:0;
     const _perHot=_relHot;
