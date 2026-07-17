@@ -680,6 +680,15 @@ async function exchangeLongLivedToken(shortToken){
     const res=await fetch(url);
     const data=await res.json();
     if(data.access_token){
+      // expires_in===0 → token de Usuário do Sistema: nunca expira
+      const neverExpires=('expires_in' in data)&&Number(data.expires_in)===0;
+      if(neverExpires){
+        localStorage.setItem('tutory_meta_token',data.access_token);
+        localStorage.removeItem('tutory_meta_token_expiry');
+        saveTokenToSupabase(data.access_token, 0); // 0 = permanente
+        console.log('✅ Token Meta permanente (Usuário do Sistema) salvo.');
+        return data.access_token;
+      }
       const expiresIn=data.expires_in||5183944; // ~60 dias padrão
       const expiry=Date.now()+expiresIn*1000;
       localStorage.setItem('tutory_meta_token',data.access_token);
@@ -808,11 +817,12 @@ async function saveMetaToken(){
     if(st){st.textContent='● Ativo até '+expiryDate;st.className='cfg-int-status on';}
     alert('✅ Token de 60 dias ativado! Expira em: '+expiryDate+'\nAtualizando dados...');
   } else {
-    // Salva token curto como fallback
+    // Não trocou (ex.: token permanente de Usuário do Sistema) — salva direto
     localStorage.setItem('tutory_meta_token',t);
     localStorage.removeItem('tutory_meta_token_expiry');
-    if(st){st.textContent='● Ativo (curta duração)';st.className='cfg-int-status on';}
-    alert('Token salvo (curta duração). Atualizando dados...');
+    saveTokenToSupabase(t, 0); // 0 = permanente, vale em qualquer dispositivo
+    if(st){st.textContent='● Ativo (permanente)';st.className='cfg-int-status on';}
+    alert('✅ Token salvo (permanente). Atualizando dados...');
   }
   Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
   location.reload();
@@ -827,16 +837,23 @@ function openMetaTokenModal(){
   m.innerHTML=`
     <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.6);">
       <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">🔑 Renovar Token Meta Ads</div>
-      <div style="font-size:12px;color:#aaa;margin-bottom:20px;">Token de 60 dias — você só precisa fazer isso a cada 2 meses</div>
-      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;font-size:12px;color:#94a3b8;line-height:1.8;">
-        <b style="color:#fff;">Passo 1:</b> Clique no botão abaixo para abrir o Graph API Explorer<br>
-        <b style="color:#fff;">Passo 2:</b> Clique em <b style="color:#60a5fa;">"Generate Access Token"</b><br>
-        <b style="color:#fff;">Passo 3:</b> Marque <b style="color:#60a5fa;">ads_read</b> → Gerar → Copiar<br>
-        <b style="color:#fff;">Passo 4:</b> Cole o token abaixo e clique Salvar
+      <div style="font-size:12px;color:#aaa;margin-bottom:16px;">Recomendado: token de <b style="color:#22c55e;">Usuário do Sistema</b> — gere <b>uma vez</b> e nunca mais expira.</div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;font-size:12px;color:#94a3b8;line-height:1.8;">
+        <b style="color:#22c55e;">Opção permanente (recomendada):</b><br>
+        <b style="color:#fff;">1.</b> Abra o Business Settings (botão verde abaixo)<br>
+        <b style="color:#fff;">2.</b> Menu <b style="color:#60a5fa;">Usuários › Usuários do sistema</b> → selecione/crie um<br>
+        <b style="color:#fff;">3.</b> <b style="color:#60a5fa;">Gerar novo token</b> → escolha o app da Tutory<br>
+        <b style="color:#fff;">4.</b> Validade: <b style="color:#22c55e;">Nunca</b> · marque <b style="color:#60a5fa;">ads_read</b> → Gerar → Copiar<br>
+        <b style="color:#fff;">5.</b> Cole o token abaixo e clique Salvar
       </div>
+      <a href="https://business.facebook.com/settings/system-users" target="_blank"
+        style="display:block;text-align:center;background:#22c55e;color:#fff;text-decoration:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;margin-bottom:8px;">
+        🟢 Abrir Business Settings (token permanente)
+      </a>
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;text-align:center;">ou, rápido mas expira em 60 dias:</div>
       <a href="https://developers.facebook.com/tools/explorer/?app_id=754854064155303&method=GET&path=me&version=v19.0" target="_blank"
-        style="display:block;text-align:center;background:#1877F2;color:#fff;text-decoration:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;margin-bottom:14px;">
-        🔗 Abrir Graph API Explorer
+        style="display:block;text-align:center;background:#1877F2;color:#fff;text-decoration:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;margin-bottom:14px;">
+        🔗 Graph API Explorer (60 dias)
       </a>
       <div style="display:flex;gap:8px;">
         <input id="meta-modal-token-inp" type="text" placeholder="Cole aqui o token copiado..."
@@ -868,13 +885,14 @@ async function saveMetaTokenFromModal(){
     alert('✅ Token de 60 dias ativado!\nExpira em: '+expiryDate+'\nAtualizando dados...');
     location.reload();
   } else {
-    // Token curto como fallback
+    // Não trocou (ex.: já é token permanente de Usuário do Sistema) — salva direto
     localStorage.setItem('tutory_meta_token',t);
     localStorage.removeItem('tutory_meta_token_expiry');
+    saveTokenToSupabase(t, 0); // 0 = permanente, vale em qualquer dispositivo
     document.getElementById('meta-token-modal').style.display='none';
     const b=document.getElementById('meta-token-banner');if(b)b.remove();
     Object.keys(_metaCache).forEach(k=>delete _metaCache[k]);
-    alert('Token salvo. Atualizando dados...');
+    alert('✅ Token salvo (permanente). Atualizando dados...');
     location.reload();
   }
 }
@@ -1165,9 +1183,9 @@ async function supaInsert(table, body){
       </div>
       <div class="cb np" style="overflow-x:hidden;">
         <table class="dt dt-fx">
-          <colgroup><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:14%"></colgroup>
-          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
-          <tbody id="mn-all-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
+          <colgroup><col style="width:8%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:14%"><col style="width:10%"><col style="width:13%"><col style="width:4%"></colgroup>
+          <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th><th></th></tr></thead>
+          <tbody id="mn-all-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1282,9 +1300,9 @@ async function supaInsert(table, body){
     </div>
     <div class="cb np" style="overflow-x:hidden;">
       <table class="dt dt-fx">
-        <colgroup><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:10%"><col style="width:14%"></colgroup>
-        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th></tr></thead>
-        <tbody id="mn-leads"><tr class="er"><td colspan="9">Carregando leads...</td></tr></tbody>
+        <colgroup><col style="width:8%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:14%"><col style="width:10%"><col style="width:13%"><col style="width:4%"></colgroup>
+        <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th><th></th></tr></thead>
+        <tbody id="mn-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1711,6 +1729,82 @@ async function supaInsert(table, body){
       </div>
     </div>
   </div>
+</div>
+
+<!-- AEROPORTO HUB -->
+<div style="max-width:1360px;margin:0 auto;padding:0 26px 28px;display:flex;flex-direction:column;gap:14px;">
+
+  <!-- TODOS OS LEADS -->
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">✈️ Aeroporto de Leads — Hub</div><div class="cs">Todos os cadastros · em tempo real</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:11px;color:var(--sub)" id="hb-air-count">—</span>
+        <button onclick="exportarHbSecaoAll()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+      </div>
+    </div>
+    <div style="overflow-y:auto;max-height:360px;overflow-x:hidden;">
+      <table class="dt dt-fx">
+        <colgroup><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:11%"><col style="width:12%"><col style="width:10%"><col style="width:13%"><col style="width:13%"></colgroup>
+        <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+          <tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificação</th><th>Classificar</th></tr>
+        </thead>
+        <tbody id="hb-air-all"><tr class="er"><td colspan="8">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- QUALIFICADOS -->
+  <div class="card" style="border-left:3px solid #22C55E;">
+    <div class="ch">
+      <div><div class="ct">✅ Leads Qualificados — <span id="hb-s1-count">0 leads</span></div><div class="cs">Leads aprovados no Aeroporto Hub</div></div>
+      <button onclick="exportarHbSecao('Qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+    </div>
+    <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
+      <table class="dt dt-fx">
+        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+        <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+        </thead>
+        <tbody id="hb-s1-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRÉ-QUALIFICADOS -->
+  <div class="card" style="border-left:3px solid #EAB308;">
+    <div class="ch">
+      <div><div class="ct">⭐ Leads Pré-Qualificados — <span id="hb-s2-count">0 leads</span></div><div class="cs">Leads em avaliação no Aeroporto Hub</div></div>
+      <button onclick="exportarHbSecao('Pré-qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+    </div>
+    <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
+      <table class="dt dt-fx">
+        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+        <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+        </thead>
+        <tbody id="hb-s2-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DESQUALIFICADOS -->
+  <div class="card" style="border-left:3px solid #EF4444;">
+    <div class="ch">
+      <div><div class="ct">🚫 Desqualificados — <span id="hb-s3-count">0 leads</span></div><div class="cs">Leads reprovados no Aeroporto Hub</div></div>
+      <button onclick="exportarHbSecao('Desqualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
+    </div>
+    <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
+      <table class="dt dt-fx">
+        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+        <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+        </thead>
+        <tbody id="hb-s3-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -2492,7 +2586,7 @@ function exportarMnSecao(classificacao){
     URL.revokeObjectURL(url);
   });
 }
-function canalChip(c){if(c==='Landing Page')return'<span class="chip clp">🌐 LP</span>';if(c==='Typebot')return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi')return'<span class="chip crp">💬 Respondi</span>';if(c==='Site'||c==='Site Oficial')return'<span class="chip cst">🌐 Site</span>';if(c==='Orgânico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
+function canalChip(c){var cl=(c||'').toLowerCase();if(c==='Landing Page'||cl==='landing page'||cl==='lp')return'<span class="chip clp">🌐 LP</span>';if(cl==='typebot'||cl.startsWith('typebot'))return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi'||cl==='respondi')return'<span class="chip crp">💬 Respondi</span>';if(cl==='site'||cl==='site oficial')return'<span class="chip cst">🌐 Site</span>';if(cl==='orgânico'||cl==='organico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
 function platChip(p){
   if(!p||p==='meta')return'<span style="background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
   if(p==='google')return'<span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🔍 Google</span>';
@@ -2550,12 +2644,43 @@ async function renderGeral(){
     if($('g-inv-hb'))$('g-inv-hb').textContent=fmt.brlK(totInvHb);
     if($('g-inv-ex'))$('g-inv-ex').textContent=fmt.brlK(totInvEx);
     if($('g-roi'))$('g-roi').textContent=totInv>0?fmt.pct(totRoi):'—';
-    if($('g-leads'))$('g-leads').textContent=fmt.num(leads.length);
-    if($('g-hot'))$('g-hot').textContent=hot;
-    const metaInsGeral=await fetchMetaInsights(gIni,gFim);
-    const msGeral=metaSumByPlatform(metaInsGeral);
-    const totLeadsHb=msGeral&&msGeral.leads_hub>0?msGeral.leads_hub:(leadsHub?leadsHub.reduce((a,r)=>a+(+r.leads||0),0):0);
-    if($('g-leads-hb'))$('g-leads-hb').textContent=totLeadsHb||'—';
+    // ── Sincroniza KPIs com histData: mesma fonte do relatório ──
+    const _sHD={'2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},'2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},'2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},'2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19}};
+    const _allHM=[{y:2025,m:11},{y:2025,m:12},{y:2026,m:1},{y:2026,m:2},{y:2026,m:3},{y:2026,m:4},{y:2026,m:5},{y:2026,m:6}];
+    const _kI=gIni.slice(0,7),_kF=gFim.slice(0,7);
+    const _mhPer=_allHM.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return k>=_kI&&k<=_kF;});
+    const _dynMhG={};
+    await Promise.all(_mhPer.filter(hm=>!_sHD[`${hm.y}-${String(hm.m).padStart(2,'0')}`]).map(async hm=>{
+      const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
+      const _ins=await fetchMetaInsights(`${k}-01`,new Date(hm.y,hm.m,0).toISOString().slice(0,10));
+      _dynMhG[k]=metaSumByPlatform(_ins);
+    }));
+    const _hIni='2025-11-01',_hFim=new Date().toISOString().slice(0,10);
+    const [_hLeads,_hCampsHb]=await Promise.all([
+      supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${_hIni}T00:00:00&created_at=lte.${_hFim}T23:59:59`),
+      supaFetch('campanhas_hub',`select=leads,data&data=gte.${_hIni}&data=lte.${_hFim}`)
+    ]);
+    const _inMo=(d,y,m)=>{if(!d)return false;const dt=new Date(d.slice(0,10));return dt.getFullYear()===y&&dt.getMonth()+1===m;};
+    let _hdLMn=0,_hdLHb=0,_hdHot=0,_hdIMn=0,_hdIHb=0,_hdIEx=0;
+    for(const hm of _mhPer){
+      const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
+      const sd=_sHD[k];
+      if(sd){_hdLMn+=sd.lMn;_hdLHb+=sd.lHb;_hdHot+=(sd.hot||0);_hdIMn+=sd.iMn;_hdIHb+=sd.iHb;_hdIEx+=sd.iEx;continue;}
+      const arr=_hLeads.filter(r=>_inMo(r.created_at,hm.y,hm.m));
+      _hdLMn+=arr.length;
+      _hdHot+=arr.filter(r=>r.classificacao_manual==='Qualificado').length;
+      const _ms=_dynMhG[k]||{mentoria:0,hub:0,experience:0,total:0,leads_hub:0};
+      _hdLHb+=(_ms.leads_hub>0)?_ms.leads_hub:_hCampsHb.filter(r=>_inMo(r.data,hm.y,hm.m)).reduce((s,r)=>s+(+r.leads||0),0);
+      _hdIMn+=_ms.mentoria;_hdIHb+=_ms.hub;_hdIEx+=_ms.experience;
+    }
+    const _hdIT=_hdIMn+_hdIHb+_hdIEx;
+    if($('g-leads'))$('g-leads').textContent=fmt.num(_hdLMn||leads.length);
+    if($('g-hot'))$('g-hot').textContent=_hdHot||hot;
+    if($('g-leads-hb'))$('g-leads-hb').textContent=_hdLHb||'—';
+    if($('g-inv'))$('g-inv').textContent=fmt.brlK(_hdIT||totInv);
+    if($('g-inv-mn'))$('g-inv-mn').textContent=fmt.brlK(_hdIMn||totInvMn);
+    if($('g-inv-hb'))$('g-inv-hb').textContent=fmt.brlK(_hdIHb||totInvHb);
+    if($('g-inv-ex'))$('g-inv-ex').textContent=fmt.brlK(_hdIEx||totInvEx);
     // Prospecções na Visão Geral
     supaFetch('prospeccoes','select=id').then(pr=>{
       if($('g-pr-total'))$('g-pr-total').textContent=pr?pr.length:'—';
@@ -2692,6 +2817,7 @@ async function renderMentoria(){
             </select>
           </div>
         </td>
+        <td style="text-align:center;"><button onclick="deleteMnLead('${r.id}',this)" title="Excluir lead" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;" onmouseover="this.style.opacity='1';this.style.color='#EF4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--sub)';">🗑</button></td>
       </tr>`;
     const lb=$('mn-leads');
     if(lb){
@@ -2751,7 +2877,7 @@ async function renderHub(){
       supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}&order=data.desc`),
       supaFetch('diagnosticos','select=*&plataforma=eq.hub&order=created_at.desc&limit=1'),
-      supaFetch('leads_hub','select=*&order=created_at.desc&limit=50'),
+      supaFetch('leads_hub',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59&order=created_at.desc`),
       supaFetch('receita_hub','select=valor')
     ]);
     const _metaHb=await fetchMetaInsights(ini,fim);const _msHb=metaSumByPlatform(_metaHb);
@@ -2810,6 +2936,9 @@ async function renderHub(){
         <td style="color:var(--sub)">${r.observacao||'—'}</td>
       </tr>`).join('');}
     }
+    // aeroporto hub
+    window._hbLeads=leads;
+    renderHbAeroporto(leads);
     // diag
     if(diags.length){
       const d=diags[0];
@@ -2823,6 +2952,91 @@ async function renderHub(){
       if($('hb-dtxt'))$('hb-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
   }catch(e){console.error('renderHub:',e);}
+}
+
+function hbCanalChip(c){
+  if(!c)return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">—</span>';
+  const cl=c.toLowerCase();
+  if(cl.includes('meta')||cl.includes('facebook'))return'<span style="background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
+  if(cl.includes('google'))return'<span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🔍 Google</span>';
+  if(cl.includes('linkedin'))return'<span style="background:rgba(0,119,181,.12);border:1px solid rgba(0,119,181,.3);color:#0077B5;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">💼 LinkedIn</span>';
+  if(cl.includes('tiktok'))return'<span style="background:rgba(255,0,80,.12);border:1px solid rgba(255,0,80,.3);color:#FF0050;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🎵 TikTok</span>';
+  if(cl.includes('youtube')||cl.includes('yt'))return'<span style="background:rgba(255,0,0,.12);border:1px solid rgba(255,0,0,.3);color:#FF0000;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">▶ YouTube</span>';
+  if(cl.includes('site')||cl.includes('web'))return'<span style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818CF8;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌐 Site</span>';
+  if(cl.includes('org')||cl.includes('indic'))return'<span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34D399;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌱 Orgânico</span>';
+  return`<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">${c}</span>`;
+}
+function hbClassifBadge(cl){
+  if(cl==='Qualificado')return'<span style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22C55E;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">✅ Qualificado</span>';
+  if(cl==='Pré-qualificado')return'<span style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.3);color:#CA8A04;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">⚡ Pré-qualif.</span>';
+  if(cl==='Desqualificação prévia')return'<span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#EA580C;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">⚠ Desq. prévia</span>';
+  if(cl==='Desqualificado')return'<span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#DC2626;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">✕ Desqualif.</span>';
+  return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">— Sem classif.</span>';
+}
+function _hbSelect(id,cl){
+  return`<select onchange="salvarClassifLeadHub('${id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+    <option value="">— Classificar</option>
+    <option value="Qualificado" ${'Qualificado'===cl?'selected':''}>✅ Qualificado</option>
+    <option value="Pré-qualificado" ${'Pré-qualificado'===cl?'selected':''}>⚡ Pré-qualificado</option>
+    <option value="Desqualificação prévia" ${'Desqualificação prévia'===cl?'selected':''}>⚠ Desq. prévia</option>
+    <option value="Desqualificado" ${'Desqualificado'===cl?'selected':''}>✕ Desqualificado</option>
+  </select>`;
+}
+function renderHbAeroporto(leads){
+  const _wa=p=>{if(!p)return'—';const n=p.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`;};
+  const _ig=ig=>ig?`<a href="https://instagram.com/${ig.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${ig}</a>`:'—';
+  const _canal=r=>r.origem||r.canal||'—';
+  const _rowAll=r=>`<tr>
+    <td class="mo" style="font-size:11px;">${fmtDate(r.created_at)}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+    <td style="font-size:11px;">${_wa(r.contact_phone)}</td>
+    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_ig(r.contact_instagram)}</td>
+    <td class="cel-wrap">${hbCanalChip(_canal(r))}</td>
+    <td class="cel-wrap">${hbClassifBadge(r.classificacao_manual)}</td>
+    <td class="cel-classif">${_hbSelect(r.id,r.classificacao_manual)}</td>
+  </tr>`;
+  const _rowSec=r=>`<tr>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+    <td style="font-size:11px;">${_wa(r.contact_phone)}</td>
+    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_ig(r.contact_instagram)}</td>
+    <td class="cel-wrap">${hbCanalChip(_canal(r))}</td>
+    <td class="cel-classif">${_hbSelect(r.id,r.classificacao_manual)}</td>
+  </tr>`;
+  const _eA=m=>`<tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
+  const _eS=m=>`<tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
+  const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
+  const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
+  const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
+  const airAll=$('hb-air-all');if(airAll)airAll.innerHTML=leads.length?leads.map(_rowAll).join(''):_eA('Nenhum lead registrado no período');
+  const airCnt=$('hb-air-count');if(airCnt)airCnt.textContent=leads.length+' leads';
+  const s1tb=$('hb-s1-leads');if(s1tb)s1tb.innerHTML=s1.length?s1.map(_rowSec).join(''):_eS('Nenhum lead qualificado ainda');
+  const s2tb=$('hb-s2-leads');if(s2tb)s2tb.innerHTML=s2.length?s2.map(_rowSec).join(''):_eS('Nenhum lead pré-qualificado ainda');
+  const s3tb=$('hb-s3-leads');if(s3tb)s3tb.innerHTML=s3.length?s3.map(_rowSec).join(''):_eS('Nenhum lead desqualificado ainda');
+  const s1c=$('hb-s1-count');if(s1c)s1c.textContent=s1.length+(s1.length===1?' lead':' leads');
+  const s2c=$('hb-s2-count');if(s2c)s2c.textContent=s2.length+(s2.length===1?' lead':' leads');
+  const s3c=$('hb-s3-count');if(s3c)s3c.textContent=s3.length+(s3.length===1?' lead':' leads');
+}
+async function salvarClassifLeadHub(id,classificacao,selectEl){
+  try{
+    await supaUpdate('leads_hub',id,{classificacao_manual:classificacao});
+    if(window._hbLeads){const _r=window._hbLeads.find(r=>r.id===id);if(_r)_r.classificacao_manual=classificacao;renderHbAeroporto(window._hbLeads);}
+  }catch(e){console.error('Erro classif hub:',e);alert('Erro ao salvar: '+e.message);}
+}
+async function exportarHbSecaoAll(){
+  if(!window._hbLeads||!window._hbLeads.length){alert('Nenhum lead para exportar.');return;}
+  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','classificacao_manual','created_at'];
+  const csv='﻿'+cols.join(',')+'\n'+window._hbLeads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='hub-leads-todos.csv';a.click();
+}
+async function exportarHbSecao(classificacao){
+  const leads=(window._hbLeads||[]).filter(r=>r.classificacao_manual===classificacao);
+  if(!leads.length){alert('Nenhum lead nesta seção para exportar.');return;}
+  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','classificacao_manual','created_at'];
+  const csv='﻿'+cols.join(',')+'\n'+leads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const slug=classificacao.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`hub-${slug}.csv`;a.click();
 }
 
 // RENDER EXPERIENCE
@@ -3823,12 +4037,13 @@ async function exportarRelatorio(){
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
     ]);
 
-    // ── Fetch histórico Nov/2025 → atual ──
+    // ── Fetch histórico Nov/2025 → HOJE (sempre, independente do período) ──
     const histIni='2025-11-01';
+    const histFim=new Date().toISOString().slice(0,10);
     const [hLeadsMn,hCampsMn,hCampsHb]=await Promise.all([
-      supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${fim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
-      supaFetch('campanhas_hub',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${fim}`),
+      supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
+      supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
+      supaFetch('campanhas_hub',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
     ]);
 
     // ── KPIs ──
@@ -3845,7 +4060,7 @@ async function exportarRelatorio(){
     // Usa Meta API leads_hub se disponível (igual à Visão Geral), fallback Supabase
     const leadsHb=(_msRel.leads_hub>0)?_msRel.leads_hub:campHb.reduce((a,r)=>a+(+r.leads||0),0);
     const vendasEx=campEx.reduce((a,r)=>a+(+r.vendas||0),0);
-    const qualMn=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
+    const qualMn=hLeadsMn.filter(r=>r.created_at&&r.created_at.slice(0,10)>=ini&&r.created_at.slice(0,10)<=fim&&r.classificacao_manual==='Qualificado').length;
     const cplMn=leadsMn>0?invMn/leadsMn:0;
     const cplHb=leadsHb>0?invHb/leadsHb:0;
     const custoEx=vendasEx>0?invEx/vendasEx:0;
@@ -3911,7 +4126,7 @@ async function exportarRelatorio(){
       {label:'Nov/2025',y:2025,m:11},{label:'Dez/2025',y:2025,m:12},
       {label:'Jan/2026',y:2026,m:1},{label:'Fev/2026',y:2026,m:2},
       {label:'Mar/2026',y:2026,m:3},{label:'Abr/2026',y:2026,m:4},
-      {label:'Mai/2026',y:2026,m:5},
+      {label:'Mai/2026',y:2026,m:5},{label:'Jun/2026',y:2026,m:6},
     ];
     // Busca Meta API para meses recentes sem dados estáticos (investimento em tempo real)
     const _dynMonths=histMonths.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return!staticHistData[k];});
@@ -3947,13 +4162,36 @@ async function exportarRelatorio(){
       const cpHb=lHb>0?iHb/lHb:0;
       return{...hm,lMn,lHb,hot,iMn,iHb,iEx,iT:iMn+iHb+iEx,cpMn,cpHb,hasData:lMn>0||iMn>0};
     });
+    // ── Totais do período via histData (fonte única de verdade) ──
+    const _periodoHist=histData.filter(h=>{const k=`${h.y}-${String(h.m).padStart(2,'0')}`;return k>=ini.slice(0,7)&&k<=fim.slice(0,7)&&h.hasData;});
+    const _relIT=_periodoHist.reduce((s,h)=>s+h.iT,0);
+    const _relIMn=_periodoHist.reduce((s,h)=>s+(h.iMn||0),0);
+    const _relIHb=_periodoHist.reduce((s,h)=>s+(h.iHb||0),0);
+    const _relIEx=_periodoHist.reduce((s,h)=>s+(h.iEx||0),0);
+    const _relLMn=_periodoHist.reduce((s,h)=>s+h.lMn,0);
+    const _relLHb=_periodoHist.reduce((s,h)=>s+h.lHb,0);
+    const _relHot=_periodoHist.reduce((s,h)=>s+(h.hot||0),0);
+    const _relCplMn=_relLMn>0?_relIMn/_relLMn:0;
+    const _relCplHb=_relLHb>0?_relIHb/_relLHb:0;
+    const _perHot=_relHot;
     const curDate=new Date(fim+'T12:00:00');
     const historicoRows=histData.map(hm=>{
       const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
       const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
-      if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td></tr>`;
-      return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+      if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td></tr>`;
+      return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
     }).join('');
+    // Linha de total
+    const _hd=histData.filter(h=>h.hasData);
+    const _totIT=_hd.reduce((s,h)=>s+h.iT,0);
+    const _totIMn=_hd.reduce((s,h)=>s+(h.iMn||0),0);
+    const _totIHb=_hd.reduce((s,h)=>s+(h.iHb||0),0);
+    const _totLMn=_hd.reduce((s,h)=>s+h.lMn,0);
+    const _totLHb=_hd.reduce((s,h)=>s+h.lHb,0);
+    const _totHot=_hd.reduce((s,h)=>s+(h.hot||0),0);
+    const _totCpMn=_totLMn>0?_totIMn/_totLMn:0;
+    const _totCpHb=_totLHb>0?_totIHb/_totLHb:0;
+    const totalRow=`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_totIMn)}</td><td style="text-align:right;">${brl(_totIHb)}</td><td style="text-align:right;">${brl(_totIT)}</td><td style="text-align:right;">${_totLMn}</td><td style="text-align:right;">${_totLHb}</td><td style="text-align:right;color:#4ADE80;">${_totHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_totCpMn>0?brl(_totCpMn):'—'}</td><td style="text-align:right;">${_totCpHb>0?brl(_totCpHb):'—'}</td></tr>`;
 
     // Insight de crescimento (Por que os Leads Subiram)
     const mesesComDados=histData.filter(h=>h.hasData);
@@ -3978,13 +4216,12 @@ async function exportarRelatorio(){
         const _topResumo=topCamps.slice(0,6).map(c=>`- ${c.nome}: ${c.leads} leads | CPL R$${(c.gasto/c.leads).toFixed(2)} | Gasto R$${c.gasto.toFixed(0)}`).join('\n');
         const _canaisResumo=Object.entries(canais).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`${c}: ${n}`).join(' | ');
         const _taxaQual=leadsMn>0?((qualMn/leadsMn)*100).toFixed(1):0;
-        const _gglCtx=gglData?`Google Ads: Invest R$${gglData.inv.toFixed(2)}, ${gglData.impressoes.toLocaleString()} impressões, ${gglData.cliques} cliques, CTR ${(gglData.cliques/gglData.impressoes*100).toFixed(2)}% | Search: ${gglData.searchLeads} leads CPL R$${gglData.searchCpl} | Demand Gen: ${gglData.demandInscritos} inscritos R$${gglData.demandCusto}/inscrito`:'Google Ads: sem dados no período';
+        const _gglCtx='';
 
         const _prompt=`PERÍODO ANALISADO: ${periodo}
 
 INVESTIMENTO:
 - Total: R$${invTotal.toFixed(2)} | Mentoria: R$${invMn.toFixed(2)} | Hub: R$${invHb.toFixed(2)} | Experience: R$${invEx.toFixed(2)}
-- ${_gglCtx}
 
 LEADS E QUALIDADE:
 - Mentoria: ${leadsMn} leads | CPL R$${cplMn.toFixed(2)} | Qualificados: ${qualMn} (taxa ${_taxaQual}%)
@@ -4148,33 +4385,28 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
         <div class="kpi-grid">
           <div class="kpi-card accent">
             <div class="kpi-label">Investimento Total</div>
-            <div class="kpi-value">${brl(invTotal)}</div>
+            <div class="kpi-value">${brl(_relIT)}</div>
             <div class="kpi-sub">Meta Ads · todas as plataformas</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Leads Mentoria</div>
-            <div class="kpi-value">${num(leadsMn)}</div>
+            <div class="kpi-value">${num(_relLMn)}</div>
             <div class="kpi-sub">Total captados no período</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Leads Hub</div>
-            <div class="kpi-value">${num(leadsHb)}</div>
+            <div class="kpi-value">${num(_relLHb)}</div>
             <div class="kpi-sub">Registros concluídos</div>
           </div>
           <div class="kpi-card green">
             <div class="kpi-label">Leads Qualificados</div>
-            <div class="kpi-value">${num(qualMn)}</div>
+            <div class="kpi-value">${num(_relHot)}</div>
             <div class="kpi-sub">Classificação manual</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Vendas Experience</div>
             <div class="kpi-value">${num(vendasEx)}</div>
             <div class="kpi-sub">Ingressos do evento</div>
-          </div>
-          <div class="kpi-card google">
-            <div class="kpi-label">Leads Google Ads</div>
-            <div class="kpi-value">${num(gglData?gglData.searchLeads:gglLeads)}</div>
-            <div class="kpi-sub">Search · CPL ${gglData?brl(gglData.searchCpl):'—'}</div>
           </div>
         </div>
       </div>
@@ -4185,22 +4417,22 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
         <div class="plat-grid">
           <div class="plat-card mn">
             <div class="plat-name">🎓 Mentoria</div>
-            <div class="plat-row"><label>Investimento</label><span>${brl(invMn)}</span></div>
-            <div class="plat-row"><label>Leads</label><span>${num(leadsMn)}</span></div>
-            <div class="plat-row"><label>CPL</label><span>${brl(cplMn)}</span></div>
-            <div class="plat-row"><label>Qualificados</label><span style="color:#16A34A;">${num(qualMn)}</span></div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(_relIMn)}</span></div>
+            <div class="plat-row"><label>Leads</label><span>${num(_relLMn)}</span></div>
+            <div class="plat-row"><label>CPL</label><span>${_relCplMn>0?brl(_relCplMn):'—'}</span></div>
+            <div class="plat-row"><label>Qualificados</label><span style="color:#16A34A;">${num(_relHot)}</span></div>
           </div>
           <div class="plat-card hb">
             <div class="plat-name">🏪 Hub</div>
-            <div class="plat-row"><label>Investimento</label><span>${brl(invHb)}</span></div>
-            <div class="plat-row"><label>Leads</label><span>${num(leadsHb)}</span></div>
-            <div class="plat-row"><label>CPL</label><span>${brl(cplHb)}</span></div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(_relIHb)}</span></div>
+            <div class="plat-row"><label>Leads</label><span>${num(_relLHb)}</span></div>
+            <div class="plat-row"><label>CPL</label><span>${_relCplHb>0?brl(_relCplHb):'—'}</span></div>
           </div>
           <div class="plat-card ex">
             <div class="plat-name">🎟 Experience</div>
-            <div class="plat-row"><label>Investimento</label><span>${brl(invEx)}</span></div>
+            <div class="plat-row"><label>Investimento</label><span>${brl(_relIEx)}</span></div>
             <div class="plat-row"><label>Vendas</label><span>${num(vendasEx)}</span></div>
-            <div class="plat-row"><label>Custo/Ingresso</label><span>${vendasEx>0?brl(custoEx):'—'}</span></div>
+            <div class="plat-row"><label>Custo/Ingresso</label><span>${vendasEx>0?brl(_relIEx/vendasEx):'—'}</span></div>
           </div>
         </div>
       </div>
@@ -4211,7 +4443,7 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
         <table>
           <thead><tr><th>Canal</th><th>Total Leads</th><th>Qualificados</th><th>Taxa</th></tr></thead>
           <tbody>
-            ${Object.entries(canais).sort((a,b)=>b[1]-a[1]).map(([c,tot])=>{
+            ${Object.entries(canais).filter(([c])=>c!=='Organico').sort((a,b)=>b[1]-a[1]).map(([c,tot])=>{
               const q=canalQual[c]||0;
               const taxa=tot>0?Math.round(q/tot*100):0;
               const badge=taxa>=30?'gn':taxa>=15?'yw':'rd';
@@ -4220,66 +4452,6 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
             ${melhorCanal?`<tr style="background:#F0FDF4;"><td colspan="4" style="font-size:12px;color:#16A34A;font-weight:700;">🏆 Canal com mais qualificados: ${melhorCanalNome} (${melhorCanalQtd} leads qualificados)</td></tr>`:''}
           </tbody>
         </table>
-      </div>
-
-      <!-- GOOGLE ADS -->
-      <div class="section">
-        <div class="section-title">🔍 Google Ads — ${periodo.split(' ')[0]}</div>
-        ${gglData?`
-        <div class="kpi-grid-4" style="margin-bottom:20px;">
-          <div class="kpi-card google">
-            <div class="kpi-label">Investimento Total</div>
-            <div class="kpi-value" style="font-size:22px;">${brl(gglData.inv)}</div>
-            <div class="kpi-sub">Google Ads · período</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Impressões</div>
-            <div class="kpi-value" style="font-size:22px;">${gglData.impressoes.toLocaleString('pt-BR')}</div>
-            <div class="kpi-sub">Total de exibições</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Cliques</div>
-            <div class="kpi-value" style="font-size:22px;">${gglData.cliques.toLocaleString('pt-BR')}</div>
-            <div class="kpi-sub">CTR ${(gglData.cliques/gglData.impressoes*100).toFixed(2)}%</div>
-          </div>
-          <div class="kpi-card green">
-            <div class="kpi-label">CPC Médio</div>
-            <div class="kpi-value" style="font-size:22px;">${brl(gglData.inv/gglData.cliques)}</div>
-            <div class="kpi-sub">Custo por clique</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-          <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #E2E8F0;border-top:4px solid #4285F4;">
-            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#4285F4;margin-bottom:14px;">🔎 Search</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Leads</div>
-                <div style="font-size:28px;font-weight:800;color:#0F172A;">${gglData.searchLeads}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">CPL</div>
-                <div style="font-size:22px;font-weight:700;color:#16A34A;">${brl(gglData.searchCpl)}</div>
-              </div>
-            </div>
-          </div>
-          <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #E2E8F0;border-top:4px solid #FBBC04;">
-            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F59E0B;margin-bottom:14px;">📣 Demand Gen</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Inscritos</div>
-                <div style="font-size:28px;font-weight:800;color:#0F172A;">${gglData.demandInscritos.toLocaleString('pt-BR')}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-size:11px;color:#64748B;margin-bottom:2px;">Custo / Inscrito</div>
-                <div style="font-size:22px;font-weight:700;color:#16A34A;">${brl(gglData.demandCusto)}</div>
-              </div>
-            </div>
-          </div>
-        </div>`:`
-        <div class="info-box yellow">
-          <div class="info-box-title">⚡ Dados não disponíveis para este período</div>
-          <p>Os dados do Google Ads ainda não foram inseridos para o período selecionado.</p>
-        </div>`}
       </div>
 
       <!-- CAMPANHAS QUE TIVERAM RESULTADO -->
@@ -4312,22 +4484,104 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
         <table>
           <thead><tr>
             <th>Mês</th>
-            <th style="text-align:right;">Invest.</th>
-            <th style="text-align:right;">Leads Mentoria</th>
-            <th style="text-align:right;">Leads Hub</th>
-            <th style="text-align:right;">Qualificados Mentoria</th>
-            <th style="text-align:right;">CPL Mentoria</th>
-            <th style="text-align:right;">CPL Hub</th>
+            <th style="text-align:right;">Invest. MN</th>
+            <th style="text-align:right;">Invest. HB</th>
+            <th style="text-align:right;">Total</th>
+            <th style="text-align:right;">Leads MN</th>
+            <th style="text-align:right;">Leads HB</th>
+            <th style="text-align:right;">Qual. Mentoria</th>
+            <th style="text-align:right;">Qual. HUB</th>
+            <th style="text-align:right;">CPL MN</th>
+            <th style="text-align:right;">CPL HB</th>
           </tr></thead>
-          <tbody>${historicoRows}</tbody>
+          <tbody>${historicoRows}${totalRow}</tbody>
         </table>
         <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; — Sem dados registrados</p>
       </div>
 
-      <!-- DIAGNÓSTICO ESTRATÉGICO IA -->
+      <!-- COMPARATIVO ANUAL 2026 -->
       <div class="section">
-        <div class="section-title">🧠 Diagnóstico Estratégico de Performance</div>
-        ${diagnosticoHTML}
+        <div class="section-title">📆 Comparativo Anual — 2026</div>
+        <table>
+          <thead><tr>
+            <th>Mês</th>
+            <th style="text-align:right;">Invest. MN</th>
+            <th style="text-align:right;">Invest. HB</th>
+            <th style="text-align:right;">Total</th>
+            <th style="text-align:right;">Leads MN</th>
+            <th style="text-align:right;">Leads HB</th>
+            <th style="text-align:right;">Qual. Mentoria</th>
+            <th style="text-align:right;">Qual. HUB</th>
+            <th style="text-align:right;">CPL MN</th>
+            <th style="text-align:right;">CPL HB</th>
+          </tr></thead>
+          <tbody>${(()=>{
+            const _2026=histData.filter(h=>h.y===2026);
+            const rows=_2026.map(hm=>{
+              const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
+              const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
+              if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td colspan="9" style="text-align:center;color:#CBD5E1;">—</td></tr>`;
+              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+            });
+            const _d=_2026.filter(h=>h.hasData);
+            const _tIT=_d.reduce((s,h)=>s+h.iT,0);
+            const _tIMn=_d.reduce((s,h)=>s+(h.iMn||0),0);
+            const _tIHb=_d.reduce((s,h)=>s+(h.iHb||0),0);
+            const _tLMn=_d.reduce((s,h)=>s+h.lMn,0);
+            const _tLHb=_d.reduce((s,h)=>s+h.lHb,0);
+            const _tHot=_d.reduce((s,h)=>s+(h.hot||0),0);
+            const _tCpMn=_tLMn>0?_tIMn/_tLMn:0;
+            const _tCpHb=_tLHb>0?_tIHb/_tLHb:0;
+            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL 2026</td><td style="text-align:right;">${brl(_tIMn)}</td><td style="text-align:right;">${brl(_tIHb)}</td><td style="text-align:right;">${brl(_tIT)}</td><td style="text-align:right;">${_tLMn}</td><td style="text-align:right;">${_tLHb}</td><td style="text-align:right;color:#4ADE80;">${_tHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_tCpMn>0?brl(_tCpMn):'—'}</td><td style="text-align:right;">${_tCpHb>0?brl(_tCpHb):'—'}</td></tr>`);
+            return rows.join('');
+          })()}</tbody>
+        </table>
+        <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; — Sem dados registrados</p>
+      </div>
+
+      <!-- COMPARATIVO DO PERÍODO SELECIONADO -->
+      <div class="section">
+        <div class="section-title">📊 Comparativo do Período — ${periodo}</div>
+        <table>
+          <thead><tr>
+            <th>Mês</th>
+            <th style="text-align:right;">Invest. MN</th>
+            <th style="text-align:right;">Invest. HB</th>
+            <th style="text-align:right;">Total</th>
+            <th style="text-align:right;">Leads MN</th>
+            <th style="text-align:right;">Leads HB</th>
+            <th style="text-align:right;">Qual. Mentoria</th>
+            <th style="text-align:right;">Qual. HUB</th>
+            <th style="text-align:right;">CPL MN</th>
+            <th style="text-align:right;">CPL HB</th>
+          </tr></thead>
+          <tbody>${(()=>{
+            const _per=histData.filter(h=>{
+              const k=`${h.y}-${String(h.m).padStart(2,'0')}`;
+              const kIni=ini.slice(0,7);
+              const kFim=fim.slice(0,7);
+              return k>=kIni&&k<=kFim&&h.hasData;
+            });
+            if(!_per.length)return`<tr><td colspan="10" style="text-align:center;color:#94A3B8;padding:16px;">Sem dados no período selecionado</td></tr>`;
+            const rows=_per.map(hm=>{
+              const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
+              const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
+              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+            });
+            const _d=_per;
+            const _pIT=_d.reduce((s,h)=>s+h.iT,0);
+            const _pIMn=_d.reduce((s,h)=>s+(h.iMn||0),0);
+            const _pIHb=_d.reduce((s,h)=>s+(h.iHb||0),0);
+            const _pLMn=_d.reduce((s,h)=>s+h.lMn,0);
+            const _pLHb=_d.reduce((s,h)=>s+h.lHb,0);
+            const _pHot=_d.reduce((s,h)=>s+(h.hot||0),0);
+            const _pCpMn=_pLMn>0?_pIMn/_pLMn:0;
+            const _pCpHb=_pLHb>0?_pIHb/_pLHb:0;
+            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_pIMn)}</td><td style="text-align:right;">${brl(_pIHb)}</td><td style="text-align:right;">${brl(_pIT)}</td><td style="text-align:right;">${_pLMn}</td><td style="text-align:right;">${_pLHb}</td><td style="text-align:right;color:#4ADE80;">${_pHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_pCpMn>0?brl(_pCpMn):'—'}</td><td style="text-align:right;">${_pCpHb>0?brl(_pCpHb):'—'}</td></tr>`);
+            return rows.join('');
+          })()}</tbody>
+        </table>
+        <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; Dados filtrados pelo período selecionado no dashboard</p>
       </div>
 
       <!-- RODAPÉ -->
@@ -4385,12 +4639,33 @@ async function exportarLeadsCSV(){
   URL.revokeObjectURL(url);
 }
 
+function normCanal(c){
+  var cl=(c||'').toLowerCase().trim();
+  if(cl.includes('typebot'))return'Typebot';
+  if(cl==='lp'||cl==='landing page'||cl==='landingpage')return'LP';
+  if(cl==='site'||cl==='site oficial')return'Site';
+  return'Orgânico';
+}
+async function deleteMnLead(id,btn){
+  if(!confirm('Excluir este lead permanentemente?'))return;
+  btn.disabled=true;btn.textContent='…';
+  const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
+  const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/leads_mentoria?id=eq.${id}`,{
+      method:'DELETE',
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Prefer':'return=minimal'}
+    });
+    if(r.ok){const row=btn.closest('tr');if(row)row.remove();}
+    else{alert('Erro ao excluir.');btn.disabled=false;btn.textContent='🗑';}
+  }catch(e){alert('Erro: '+e.message);btn.disabled=false;btn.textContent='🗑';}
+}
 // LEADS QUENTES POR CANAL
 function renderHotCanal(leads){
   const el=$('mn-hot-canal');if(!el)return;
   const canais={};
   leads.forEach(l=>{
-    const c=l.canal||'Organico';
+    const c=normCanal(l.canal);
     if(!canais[c])canais[c]={total:0,hot:0};
     canais[c].total++;
     if(l.classificacao_manual==='Qualificado')canais[c].hot++;
@@ -4767,8 +5042,8 @@ function updateGadsAuthUI(connected){
 // ═══════════════════════════════════════
 // YOUTUBE INTEGRATION
 // ═══════════════════════════════════════
-const YT_CLIENT_ID=String.fromCharCode(54,50,48,55,48,55,50,48,48,55,53,55,45,111,118,113,106,48,114,113,106,99,50,105,53,106,115,52,50,51,51,118,117,117,114,106,51,55,104,52,52,57,51,109,104,46,97,112,112,115,46,103,111,111,103,108,101,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109);
-const YT_CLIENT_SECRET=String.fromCharCode(71,79,67,83,80,88,45,79,85,108,54,101,85,105,89,110,79,75,48,121,85,99,74,105,78,84,78,52,111,81,104,79,97,104,76);
+const YT_CLIENT_ID=String.fromCharCode(54,52,51,50,57,54,51,55,51,48,52,48,45,54,55,53,53,53,57,51,118,97,118,113,113,53,112,97,112,102,103,51,117,106,54,101,50,97,48,116,97,55,97,117,49,46,97,112,112,115,46,103,111,111,103,108,101,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109);
+const YT_CLIENT_SECRET=String.fromCharCode(71,79,67,83,80,88,45,120,79,111,100,69,115,87,77,49,110,113,56,87,72,116,87,97,54,49,80,101,118,105,50,102,117,114,111);
 const YT_SCOPES='https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly';
 let _ytTokenClient=null;
 let _ytCodeClient=null;
