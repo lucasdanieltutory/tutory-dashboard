@@ -10,24 +10,20 @@ module.exports = async function handler(req, res) {
 
   const b = req.body || {};
 
+  // Colunas reais da tabela leads_mentoria
   const payload = {
-    contact_name:      b.contact_name      || b.Nome      || '',
-    contact_sobrenome: b.contact_sobrenome  || b.sobrenome || '',
+    contact_name:      b.contact_name      || '',
     contact_email:     b.contact_email      || b.email     || '',
     contact_phone:     b.contact_phone      || b.telefone  || '',
     contact_instagram: b.contact_instagram  || b.instagram || '',
+    cargo:             b.area_de_atuacao    || b.cargo     || '',
+    cargo_lp:          b.area_de_atuacao    || b.cargo     || '',
     faturamento:       b.faturamento        || '',
-    melhor_horario:    b.melhor_horario     || '',
-    situacao_atual:    b.situacao_atual     || '',
-    estagio_da_jornada:b.estagio_da_jornada || '',
-    area_de_atuacao:   b.area_de_atuacao    || '',
-    numero_de_alunos:  b.numero_de_alunos   || '',
-    versao_typebot:    b.versao_typebot      || 'typebot-site',
-    plataforma_ad:     b.plataforma_ad      || 'meta',
+    momento:           b.situacao_atual     || b.situacao  || b.momento || '',
     canal:             b.canal              || 'Typebot',
   };
 
-  // Remove campos vazios para não sobrescrever defaults do Supabase
+  // Remove campos vazios
   Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
 
   const r = await fetch(`${SUPA_URL}/rest/v1/leads_mentoria`, {
@@ -43,9 +39,8 @@ module.exports = async function handler(req, res) {
 
   if (!r.ok) {
     const err = await r.text();
-    console.error('[leads] Supabase error:', err);
-    // Retorna 200 para Typebot não repetir o disparo
-    return res.status(200).json({ warning: 'supabase_error', detail: err });
+    console.error('[leads] Supabase error:', r.status, err);
+    return res.status(200).json({ warning: 'supabase_error', status: r.status, detail: err });
   }
 
   return res.status(201).json({ success: true });
