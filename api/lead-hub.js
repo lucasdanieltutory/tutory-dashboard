@@ -12,15 +12,28 @@ module.exports = async function handler(req, res) {
 
   const b = req.body || {};
 
+  // Limpa valores crus vindos do Slack Block Kit:
+  // "*Nome: *\nPrisma Sonoro" -> "Prisma Sonoro"
+  // "<mailto:x@x.com|x@x.com>" -> "x@x.com" ; "<https://insta/...|...>" -> "https://insta/..."
+  function clean(v) {
+    if (v == null) return '';
+    let s = String(v);
+    if (s.indexOf('*') !== -1) s = s.substring(s.lastIndexOf('*') + 1); // remove "*Label: *"
+    s = s.trim();
+    const m = s.match(/<(?:mailto:)?([^|>]+)(?:\|[^>]*)?>/); // desembrulha <...> / <mailto:..|..>
+    if (m) s = m[1];
+    return s.trim();
+  }
+
   // Aceita vários nomes de campo p/ o módulo do Make ficar simples.
-  const perfil = b.perfil || b.Perfil || '';
+  const perfil = clean(b.perfil || b.Perfil || '');
   const payload = {
-    contact_name:      b.contact_name      || b.nome      || b.Nome      || '',
-    contact_email:     b.contact_email     || b.email     || b.Email     || '',
-    contact_phone:     b.contact_phone     || b.telefone  || b.celular   || b.Celular || '',
-    contact_instagram: b.contact_instagram || b.instagram || b.Instagram || '',
-    origem:            b.origem            || b.Origem    || '',
-    observacao:        b.observacao        || b.obs       || (perfil ? ('Perfil: ' + perfil) : ''),
+    contact_name:      clean(b.contact_name      || b.nome      || b.Nome      || ''),
+    contact_email:     clean(b.contact_email     || b.email     || b.Email     || ''),
+    contact_phone:     clean(b.contact_phone     || b.telefone  || b.celular   || b.Celular || ''),
+    contact_instagram: clean(b.contact_instagram || b.instagram || b.Instagram || ''),
+    origem:            clean(b.origem            || b.Origem    || ''),
+    observacao:        clean(b.observacao        || b.obs       || '') || (perfil ? ('Perfil: ' + perfil) : ''),
   };
 
   // Remove campos vazios (não sobrescreve defaults do Supabase)
