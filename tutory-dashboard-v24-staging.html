@@ -1983,6 +1983,7 @@ async function supaInsert(table, body){
   </div>
   <div class="cbar" style="margin-bottom:16px;">
     <div class="cbadge"><div class="cbi">👤</div><div><div class="cbl">Total Leads</div><div class="cbv" id="hb-tot-leads">—</div></div></div>
+    <div class="cbadge" style="background:rgba(59,130,246,.10);border-color:rgba(59,130,246,.35);"><div class="cbi">📥</div><div><div class="cbl" style="color:#60a5fa">Leads Cadastrados</div><div class="cbv" id="hb-leads-cad" style="color:#60a5fa">—</div></div></div>
     <div class="cbadge"><div class="cbi">🎯</div><div><div class="cbl">CPL</div><div class="cbv" id="hb-cpl" style="color:var(--hb)">—</div></div></div>
     <div class="cbadge" style="background:var(--gn-bg);border-color:var(--gn-b);"><div class="cbi">🎯</div><div><div class="cbl" style="color:var(--gn)">Prospecções Hub</div><div class="cbv" id="hb-pr-total" style="color:var(--gn)">—</div></div></div>
   </div>
@@ -3511,6 +3512,8 @@ async function renderHub(){
     if($('hb-imp'))$('hb-imp').textContent=fmt.k(imp);
     if($('hb-clk'))$('hb-clk').textContent=fmt.k(clks);
     if($('hb-tot-leads'))$('hb-tot-leads').textContent=totLeadsHb||'—';
+    // Métrica SEPARADA: cadastros reais na leads_hub (Slack/Make/form) — não mistura com Meta
+    if($('hb-leads-cad'))$('hb-leads-cad').textContent=fmt.num(leads.length);
     if($('hb-cpl'))$('hb-cpl').textContent=cplHb>0?'R$'+cplHb.toFixed(2).replace('.',','):'—';
     supaFetch('prospeccoes','select=id&plataforma=eq.hub').then(pr=>{
       if($('hb-pr-total'))$('hb-pr-total').textContent=pr?pr.length:'—';
