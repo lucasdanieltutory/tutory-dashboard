@@ -1511,6 +1511,24 @@ async function supaInsert(table, body){
       </div>
     </div>
   </div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="ch">
+      <div><div class="ct">🎯 Atribuição — De onde vieram os leads</div><div class="cs">Plataforma real e anúncio que originou cada lead qualificado</div></div>
+      <div style="font-size:11px;color:var(--sub);white-space:nowrap;" id="mn-atr-cob">—</div>
+    </div>
+    <div class="cb">
+      <div class="crow c2" style="gap:18px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#A78BFA;margin-bottom:10px;">📡 Por plataforma</div>
+          <div id="mn-atr-plat"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🏆 Top anúncios — por qualificados</div>
+          <div id="mn-atr-ads"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="crow c2">
     <div class="card">
       <div class="ch"><div><div class="ct">Leads por Classificação</div><div class="cs">Score Claude · Quente · Morno · Frio</div></div></div>
@@ -3354,6 +3372,43 @@ function renderUFSection(leads){
   const t2=$('mn-uf-tot');if(t2)t2.innerHTML=bars(tot,'#6AAAFF','tot');
 }
 
+// ── Atribuição: plataforma real e anúncio de origem ────────────
+function _escAtr(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderAtribuicao(leads){
+  const arr=leads||[];
+  const porPlat={},porAd={};let comOrigem=0;
+  arr.forEach(r=>{
+    const isQ=r.classificacao_manual==='Qualificado';
+    const p=(r.plataforma_ad||'').trim();
+    if(p){comOrigem++;if(!porPlat[p])porPlat[p]={tot:0,qual:0};porPlat[p].tot++;if(isQ)porPlat[p].qual++;}
+    const ad=(r.utm_content||'').trim();
+    if(ad){if(!porAd[ad])porAd[ad]={tot:0,qual:0};porAd[ad].tot++;if(isQ)porAd[ad].qual++;}
+  });
+  const cob=$('mn-atr-cob');
+  if(cob)cob.textContent=arr.length?`${comOrigem}/${arr.length} com origem identificada`:'—';
+  const vazio='<div style="color:var(--sub);font-size:13px;padding:12px;line-height:1.7;">Ainda sem dados de origem.<br><span style="font-size:11px;color:var(--dim)">Configure as UTMs no Typebot e nos anúncios para popular esta seção.</span></div>';
+  const linhas=(obj,color,porQual)=>{
+    const e=Object.entries(obj).sort((a,b)=>porQual?(b[1].qual-a[1].qual||b[1].tot-a[1].tot):(b[1].tot-a[1].tot)).slice(0,10);
+    if(!e.length)return vazio;
+    const max=Math.max.apply(null,e.map(x=>porQual?x[1].qual:x[1].tot))||1;
+    return e.map(([nome,v],i)=>{
+      const val=porQual?v.qual:v.tot;
+      const conv=v.tot>0?Math.round(v.qual/v.tot*100):0;
+      const n=_escAtr(nome);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+        <span style="width:16px;font-size:11px;color:var(--sub)">${i+1}</span>
+        <span style="flex:0 0 auto;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;" title="${n}">${n}</span>
+        <div style="flex:1;height:16px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(val/max*100)}%;background:${color};border-radius:5px;"></div>
+        </div>
+        <span style="width:96px;text-align:right;font-size:11px;color:var(--sub)">${v.qual} qual · ${conv}%</span>
+      </div>`;
+    }).join('');
+  };
+  const pe=$('mn-atr-plat');if(pe)pe.innerHTML=linhas(porPlat,'#A78BFA',false);
+  const ae=$('mn-atr-ads');if(ae)ae.innerHTML=linhas(porAd,'#22C55E',true);
+}
+
 async function renderMentoria(force){
   try{
     const {ini,fim}=getDates('mentoria');
@@ -3435,6 +3490,7 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     mkD('c-mn-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hotL,warmL,dqpL,coldL],['#22C55E','#EAB308','#F97316','#EF4444']);
     renderHotCanal(leads);
     renderUFSection(leads);
+    renderAtribuicao(leads);
     // Agrupa anúncios por nome (evita duplicatas de múltiplos dias)
     const anunciosMap={};
     anuncios.forEach(a=>{
