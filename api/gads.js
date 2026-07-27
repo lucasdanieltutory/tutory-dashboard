@@ -46,8 +46,9 @@ module.exports = async function handler(req, res) {
     [121,102,75,56,75,49,98,113,112,88,109,45,86,57,70,114,79,56,85,88,51,81]
       .map(c => String.fromCharCode(c)).join('');
 
-  // Tenta versões de mais recente para mais antiga até achar uma que responda JSON
-  const VERSIONS = ['v20', 'v21', 'v22', 'v19', 'v18', 'v17', 'v16'];
+  // Versões ATUAIS da Google Ads API (v20 e anteriores foram descontinuadas).
+  // Ordem crescente: usa a mais antiga ainda suportada e sobe se ela for bloqueada.
+  const VERSIONS = ['v21', 'v22', 'v23', 'v24'];
   let lastError = '';
 
   for (const version of VERSIONS) {
@@ -57,6 +58,12 @@ module.exports = async function handler(req, res) {
     if (isJson) {
       try {
         const parsed = JSON.parse(r.body);
+        // Versão descontinuada → tenta a próxima (auto-resiliência a deprecações futuras)
+        if (parsed.error && JSON.stringify(parsed.error).indexOf('UNSUPPORTED_VERSION') !== -1) {
+          lastError = `${version}: descontinuada`;
+          console.log(`Google Ads ${version} descontinuada, tentando próxima...`);
+          continue;
+        }
         return res.status(r.status || 200).json(parsed);
       } catch(e) {
         lastError = `${version}: parse error - ${r.body.substring(0, 200)}`;
