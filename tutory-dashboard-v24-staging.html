@@ -6134,6 +6134,7 @@ function _makeYtCodeClient(selectAccount){
     client_id:YT_CLIENT_ID,
     scope:YT_SCOPES,
     ux_mode:'popup',
+    prompt:'consent',        // força o Google a SEMPRE devolver o refresh token (persiste p/ sempre)
     login_hint:selectAccount?'':('tutory@tutory.com.br'),
     callback:_ytCodeCallback
   });
