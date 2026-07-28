@@ -44,6 +44,25 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'lead sem nome/email/telefone' });
   }
 
+  // ── Dedup: não insere se já existe lead com mesmo email OU telefone ──
+  try {
+    const ors = [];
+    if (payload.contact_email) ors.push(`contact_email.eq.${encodeURIComponent(payload.contact_email)}`);
+    if (payload.contact_phone) {
+      const digits = String(payload.contact_phone).replace(/\D/g, '').slice(-9); // últimos 9 dígitos
+      if (digits.length >= 8) ors.push(`contact_phone.ilike.*${digits}*`);
+    }
+    if (ors.length) {
+      const chk = await fetch(`${SUPA_URL}/rest/v1/leads_hub?select=id&or=(${ors.join(',')})&limit=1`, {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      });
+      const ex = await chk.json().catch(() => []);
+      if (Array.isArray(ex) && ex.length) {
+        return res.status(200).json({ success: true, dedup: 'lead_ja_existe' });
+      }
+    }
+  } catch (e) { /* se a checagem falhar, segue e insere (não bloqueia lead) */ }
+
   const r = await fetch(`${SUPA_URL}/rest/v1/leads_hub`, {
     method: 'POST',
     headers: {
