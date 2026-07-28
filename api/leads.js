@@ -8,7 +8,10 @@ module.exports = async function handler(req, res) {
   const SUPA_URL = 'https://stgzgtpcuhtayglignik.supabase.co';
   const SUPA_KEY = 'sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
 
-  const b = req.body || {};
+  // Aceita dados no corpo E na query string (?utm_source=linkedin). O corpo
+  // tem prioridade; a query preenche o que faltar — permite taggar a origem
+  // só pela URL do webhook, sem mexer no corpo JSON do bloco do Typebot.
+  const b = Object.assign({}, req.query || {}, req.body || {});
   const s = v => (v == null ? '' : String(v).trim());
 
   // ── Detecta a plataforma de origem ────────────────────────────
