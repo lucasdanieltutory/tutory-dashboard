@@ -62,6 +62,16 @@ window.fbAsyncInit=function(){
   --red:#FB7185;--red-bg:rgba(251,113,133,.08);
   --rb:16px;
 }
+/* ═══ POLIMENTO GLOBAL (todas as abas) — ui-ux-pro-max: camadas, hover, transições ═══ */
+.card,.kpi,.ccard,.cbadge,.cb,.dact{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease!important;}
+.card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.34);}
+.kpi:hover,.ccard:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.30);}
+.cbadge:hover{transform:translateY(-1px);background:rgba(255,255,255,.05);}
+button:not(:disabled),.btn,[onclick]{transition:filter .18s ease,transform .18s ease,opacity .18s ease;}
+button:not(:disabled):hover,.btn:hover{filter:brightness(1.08);}
+button:active,.btn:active{transform:scale(.97);}
+:focus-visible{outline:2px solid var(--gn);outline-offset:2px;border-radius:6px;}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 /* ── LIGHT MODE ── */
 .light-mode{
   --bg:#F5F6FA;--s1:#FFFFFF;--s2:#F0F2F8;--s3:#E8EBF5;
