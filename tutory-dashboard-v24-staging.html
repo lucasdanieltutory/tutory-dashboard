@@ -1371,6 +1371,13 @@ async function supaInsert(table, body){
       <div class="ccs">Investimento Meta Ads</div>
     </div>
   </div>
+  <!-- Gastos por plataforma de mídia -->
+  <div class="cgrid" style="margin-bottom:16px;">
+    <div class="ccard"><div class="ccn">Google Ads</div><div class="ccv" id="g-inv-gads">—</div><div class="ccs">Search + Display</div></div>
+    <div class="ccard"><div class="ccn">YouTube</div><div class="ccv" id="g-inv-yt">—</div><div class="ccs">Google Ads · vídeo</div></div>
+    <div class="ccard"><div class="ccn">LinkedIn</div><div class="ccv" id="g-inv-li">—</div><div class="ccs">LinkedIn Ads</div></div>
+    <div class="ccard" style="border:1px solid rgba(34,197,94,.45);"><div class="ccn" style="color:#22C55E">Total Geral</div><div class="ccv" id="g-inv-total">—</div><div class="ccs">Meta + Google + YT + LinkedIn</div></div>
+  </div>
   <div class="crow c2">
     <div class="card">
       <div class="ch"><div><div class="ct">Leads por Classificação — Mentoria</div><div class="cs">Score Claude · dados reais</div></div></div>
@@ -3308,6 +3315,21 @@ async function renderGeral(){
     if($('g-inv-mn'))$('g-inv-mn').textContent=fmt.brlK(_hdIMn||totInvMn);
     if($('g-inv-hb'))$('g-inv-hb').textContent=fmt.brlK(_hdIHb||totInvHb);
     if($('g-inv-ex'))$('g-inv-ex').textContent=fmt.brlK(_hdIEx||totInvEx);
+    // Gastos por plataforma: Google Ads (search/display) + YouTube (vídeo) + LinkedIn + Total Geral
+    (async()=>{
+      const _metaTot=_hdIT||totInv;
+      let gAds=0,gYt=0;
+      try{
+        if(!getGadsToken()){await loadGadsRefreshFromSupabase();if(_gadsRefreshToken)await refreshGadsAccessToken();}
+        const _gs=gadsSumByType(await fetchGAdsCampaigns(gIni,gFim));
+        if(_gs){gAds=(_gs.mentoria.cost||0)+(_gs.hub.cost||0);gYt=(_gs.youtube.cost||0);}
+      }catch(e){}
+      const _li=0; // LinkedIn ainda sem integração de API — mostra "—"
+      if($('g-inv-gads'))$('g-inv-gads').textContent=gAds>0?fmt.brlK(gAds):'—';
+      if($('g-inv-yt'))$('g-inv-yt').textContent=gYt>0?fmt.brlK(gYt):'—';
+      if($('g-inv-li'))$('g-inv-li').textContent=_li>0?fmt.brlK(_li):'—';
+      if($('g-inv-total'))$('g-inv-total').textContent=fmt.brlK(_metaTot+gAds+gYt+_li);
+    })();
     // Prospecções na Visão Geral
     supaFetch('prospeccoes','select=id').then(pr=>{
       if($('g-pr-total'))$('g-pr-total').textContent=pr?pr.length:'—';
