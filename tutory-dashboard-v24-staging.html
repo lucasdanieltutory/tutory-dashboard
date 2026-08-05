@@ -1522,6 +1522,16 @@ async function supaInsert(table, body){
             <div id="mn-atr-camp-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
           </div>
         </div>
+        <div class="crow c2" style="gap:18px;margin-top:18px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🧩 Conjunto de Anúncios — Qualificados</div>
+            <div id="mn-atr-set-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">🧩 Conjunto de Anúncios — Desqualificados</div>
+            <div id="mn-atr-set-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Aeroporto de Leads -->
@@ -1542,6 +1552,34 @@ async function supaInsert(table, body){
 
   <!-- ── META ADS ── -->
   <div id="mn-sub-meta" class="mn-subtab" style="display:none">
+
+  <!-- Setup UTM Card -->
+  <div class="card" style="border-left:3px solid #1877F2;margin-bottom:14px;">
+    <div class="ch">
+      <div><div class="ct">🔗 Configuração de UTMs — Meta Ads</div><div class="cs">Adicione este parâmetro dinâmico no anúncio para rastrear campanha, conjunto e anúncio automaticamente</div></div>
+      <span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">⚡ Ação necessária</span>
+    </div>
+    <div class="cb">
+      <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#1877F2;margin-bottom:14px;word-break:break-all;">utm_source=meta&amp;utm_medium=paid&amp;utm_campaign={{campaign.name}}&amp;utm_term={{adset.name}}&amp;utm_content={{ad.name}}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+        <div style="background:var(--s2);border-radius:8px;padding:12px;">
+          <div style="font-size:10px;font-weight:700;color:#1877F2;text-transform:uppercase;margin-bottom:6px;">① Gerenciador de Anúncios</div>
+          <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Abrir o anúncio</div>
+          <div style="font-size:11px;color:var(--sub);">Nível Anúncio → Editar → Rastreamento</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;">
+          <div style="font-size:10px;font-weight:700;color:#1877F2;text-transform:uppercase;margin-bottom:6px;">② Parâmetros de URL</div>
+          <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Colar o parâmetro acima</div>
+          <div style="font-size:11px;color:var(--sub);">{{campaign.name}}, {{adset.name}} e {{ad.name}} são dinâmicos — o Meta preenche sozinho, não precisa editar por anúncio</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;">
+          <div style="font-size:10px;font-weight:700;color:#1877F2;text-transform:uppercase;margin-bottom:6px;">③ Automático</div>
+          <div style="font-size:12px;color:var(--txt);font-weight:600;margin-bottom:3px;">Leads chegam identificados</div>
+          <div style="font-size:11px;color:var(--sub);">Aplica em todos os anúncios de uma vez (pode colar no nível Campanha ou Conta em "Modelo de rastreamento" nos Ads Manager Settings)</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="kgrid">
     <div class="kpi mn"><div class="ki">📣</div><div class="kl">Investimento</div><div class="kv" id="mn-inv">—</div><div class="ks">Meta Ads · real</div></div>
@@ -1686,7 +1724,7 @@ async function supaInsert(table, body){
         <span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">⚡ Ação necessária</span>
       </div>
       <div class="cb">
-        <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#4285F4;margin-bottom:14px;word-break:break-all;">?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign={{nome_campanha}}&amp;utm_content={{nome_anuncio}}</div>
+        <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#4285F4;margin-bottom:14px;word-break:break-all;">utm_source=google&amp;utm_medium=cpc&amp;utm_campaign={{nome_campanha}}&amp;utm_term={{nome_grupo_de_anuncios}}&amp;utm_content={{nome_anuncio}}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
           <div style="background:var(--s2);border-radius:8px;padding:12px;">
             <div style="font-size:10px;font-weight:700;color:#4285F4;text-transform:uppercase;margin-bottom:6px;">① Google Ads</div>
@@ -3442,7 +3480,7 @@ function renderUFSection(leads){
 function _escAtr(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderAtribuicao(leads){
   const arr=leads||[];
-  const porAd={},porCamp={};let comAd=0,comCamp=0;
+  const porAd={},porCamp={},porSet={};let comAd=0,comCamp=0,comSet=0;
   arr.forEach(r=>{
     const isQ=r.classificacao_manual==='Qualificado';
     const isD=r.classificacao_manual==='Desqualificado';
@@ -3450,9 +3488,11 @@ function renderAtribuicao(leads){
     if(ad){comAd++;if(!porAd[ad])porAd[ad]={tot:0,qual:0,desq:0};porAd[ad].tot++;if(isQ)porAd[ad].qual++;if(isD)porAd[ad].desq++;}
     const camp=(r.utm_campaign||'').trim();
     if(camp){comCamp++;if(!porCamp[camp])porCamp[camp]={tot:0,qual:0,desq:0};porCamp[camp].tot++;if(isQ)porCamp[camp].qual++;if(isD)porCamp[camp].desq++;}
+    const set=(r.utm_term||'').trim(); // utm_term = conjunto de anúncios (ad set)
+    if(set){comSet++;if(!porSet[set])porSet[set]={tot:0,qual:0,desq:0};porSet[set].tot++;if(isQ)porSet[set].qual++;if(isD)porSet[set].desq++;}
   });
   const cob=$('mn-atr-cob');
-  if(cob)cob.textContent=arr.length?`${comAd}/${arr.length} com anúncio · ${comCamp}/${arr.length} com campanha`:'—';
+  if(cob)cob.textContent=arr.length?`${comAd}/${arr.length} anúncio · ${comCamp}/${arr.length} campanha · ${comSet}/${arr.length} conjunto`:'—';
   const vazio='<div style="color:var(--sub);font-size:13px;padding:12px;line-height:1.7;">Ainda sem dados de origem.<br><span style="font-size:11px;color:var(--dim)">Configure as UTMs no Typebot e nos anúncios para popular esta seção.</span></div>';
   // metric: 'qual' ou 'desq' — ranking e cor variam conforme a métrica exibida
   const linhas=(obj,metric)=>{
@@ -3479,6 +3519,8 @@ function renderAtribuicao(leads){
   const ad2=$('mn-atr-ads-d');if(ad2)ad2.innerHTML=linhas(porAd,'desq');
   const cq=$('mn-atr-camp-q');if(cq)cq.innerHTML=linhas(porCamp,'qual');
   const cd=$('mn-atr-camp-d');if(cd)cd.innerHTML=linhas(porCamp,'desq');
+  const sq=$('mn-atr-set-q');if(sq)sq.innerHTML=linhas(porSet,'qual');
+  const sd=$('mn-atr-set-d');if(sd)sd.innerHTML=linhas(porSet,'desq');
 }
 
 async function renderMentoria(force){
