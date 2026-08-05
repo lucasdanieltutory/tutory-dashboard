@@ -1495,6 +1495,35 @@ async function supaInsert(table, body){
       <div class="ch"><div><div class="ct">✅ Qualificados por Plataforma</div><div class="cs">Qual plataforma traz mais leads qualificados</div></div></div>
       <div class="cb" id="vg-qual-plat"><div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Aguardando leads...</div></div>
     </div>
+    <!-- Atribuição: Anúncio e Campanha -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="ch">
+        <div><div class="ct">🎯 Atribuição — Anúncio e Campanha</div><div class="cs">De qual anúncio/campanha vieram os leads Qualificados e Desqualificados (via UTM)</div></div>
+        <div style="font-size:11px;color:var(--sub);white-space:nowrap;" id="mn-atr-cob">—</div>
+      </div>
+      <div class="cb">
+        <div class="crow c2" style="gap:18px;margin-bottom:18px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🏆 Anúncios — Qualificados</div>
+            <div id="mn-atr-ads-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">🚫 Anúncios — Desqualificados</div>
+            <div id="mn-atr-ads-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+        </div>
+        <div class="crow c2" style="gap:18px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">📢 Campanhas — Qualificados</div>
+            <div id="mn-atr-camp-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">📢 Campanhas — Desqualificados</div>
+            <div id="mn-atr-camp-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Aeroporto de Leads -->
     <div class="card">
       <div class="ch">
@@ -1547,24 +1576,6 @@ async function supaInsert(table, body){
         <div>
           <div style="font-size:12px;font-weight:700;color:#6AAAFF;margin-bottom:10px;">👥 Top 10 — Volume Total</div>
           <div id="mn-uf-tot"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando leads...</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="ch">
-      <div><div class="ct">🎯 Atribuição — De onde vieram os leads</div><div class="cs">Plataforma real e anúncio que originou cada lead qualificado</div></div>
-      <div style="font-size:11px;color:var(--sub);white-space:nowrap;" id="mn-atr-cob">—</div>
-    </div>
-    <div class="cb">
-      <div class="crow c2" style="gap:18px;">
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#A78BFA;margin-bottom:10px;">📡 Por plataforma</div>
-          <div id="mn-atr-plat"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🏆 Top anúncios — por qualificados</div>
-          <div id="mn-atr-ads"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
         </div>
       </div>
     </div>
@@ -3431,24 +3442,28 @@ function renderUFSection(leads){
 function _escAtr(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderAtribuicao(leads){
   const arr=leads||[];
-  const porPlat={},porAd={};let comOrigem=0;
+  const porAd={},porCamp={};let comAd=0,comCamp=0;
   arr.forEach(r=>{
     const isQ=r.classificacao_manual==='Qualificado';
-    const p=(r.plataforma_ad||'').trim();
-    if(p){comOrigem++;if(!porPlat[p])porPlat[p]={tot:0,qual:0};porPlat[p].tot++;if(isQ)porPlat[p].qual++;}
+    const isD=r.classificacao_manual==='Desqualificado';
     const ad=(r.utm_content||'').trim();
-    if(ad){if(!porAd[ad])porAd[ad]={tot:0,qual:0};porAd[ad].tot++;if(isQ)porAd[ad].qual++;}
+    if(ad){comAd++;if(!porAd[ad])porAd[ad]={tot:0,qual:0,desq:0};porAd[ad].tot++;if(isQ)porAd[ad].qual++;if(isD)porAd[ad].desq++;}
+    const camp=(r.utm_campaign||'').trim();
+    if(camp){comCamp++;if(!porCamp[camp])porCamp[camp]={tot:0,qual:0,desq:0};porCamp[camp].tot++;if(isQ)porCamp[camp].qual++;if(isD)porCamp[camp].desq++;}
   });
   const cob=$('mn-atr-cob');
-  if(cob)cob.textContent=arr.length?`${comOrigem}/${arr.length} com origem identificada`:'—';
+  if(cob)cob.textContent=arr.length?`${comAd}/${arr.length} com anúncio · ${comCamp}/${arr.length} com campanha`:'—';
   const vazio='<div style="color:var(--sub);font-size:13px;padding:12px;line-height:1.7;">Ainda sem dados de origem.<br><span style="font-size:11px;color:var(--dim)">Configure as UTMs no Typebot e nos anúncios para popular esta seção.</span></div>';
-  const linhas=(obj,color,porQual)=>{
-    const e=Object.entries(obj).sort((a,b)=>porQual?(b[1].qual-a[1].qual||b[1].tot-a[1].tot):(b[1].tot-a[1].tot)).slice(0,10);
+  // metric: 'qual' ou 'desq' — ranking e cor variam conforme a métrica exibida
+  const linhas=(obj,metric)=>{
+    const color=metric==='qual'?'#22C55E':'#EF4444';
+    const label=metric==='qual'?'qual':'desq';
+    const e=Object.entries(obj).filter(x=>x[1][metric]>0).sort((a,b)=>b[1][metric]-a[1][metric]||b[1].tot-a[1].tot).slice(0,8);
     if(!e.length)return vazio;
-    const max=Math.max.apply(null,e.map(x=>porQual?x[1].qual:x[1].tot))||1;
+    const max=Math.max.apply(null,e.map(x=>x[1][metric]))||1;
     return e.map(([nome,v],i)=>{
-      const val=porQual?v.qual:v.tot;
-      const conv=v.tot>0?Math.round(v.qual/v.tot*100):0;
+      const val=v[metric];
+      const conv=v.tot>0?Math.round(val/v.tot*100):0;
       const n=_escAtr(nome);
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
         <span style="width:16px;font-size:11px;color:var(--sub)">${i+1}</span>
@@ -3456,12 +3471,14 @@ function renderAtribuicao(leads){
         <div style="flex:1;height:16px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;">
           <div style="height:100%;width:${Math.round(val/max*100)}%;background:${color};border-radius:5px;"></div>
         </div>
-        <span style="width:96px;text-align:right;font-size:11px;color:var(--sub)">${v.qual} qual · ${conv}%</span>
+        <span style="width:96px;text-align:right;font-size:11px;color:var(--sub)">${val} ${label} · ${conv}%</span>
       </div>`;
     }).join('');
   };
-  const pe=$('mn-atr-plat');if(pe)pe.innerHTML=linhas(porPlat,'#A78BFA',false);
-  const ae=$('mn-atr-ads');if(ae)ae.innerHTML=linhas(porAd,'#22C55E',true);
+  const aq=$('mn-atr-ads-q');if(aq)aq.innerHTML=linhas(porAd,'qual');
+  const ad2=$('mn-atr-ads-d');if(ad2)ad2.innerHTML=linhas(porAd,'desq');
+  const cq=$('mn-atr-camp-q');if(cq)cq.innerHTML=linhas(porCamp,'qual');
+  const cd=$('mn-atr-camp-d');if(cd)cd.innerHTML=linhas(porCamp,'desq');
 }
 
 async function renderMentoria(force){
@@ -3586,7 +3603,7 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     // leads table
     const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="font-size:11px;white-space:nowrap;min-width:140px;width:140px;">${fmtDate(r.created_at)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
         <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span></td>
+        <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<br><span title="Anúncio: ${_escAtr(r.utm_content)}${r.utm_campaign?' · Campanha: '+_escAtr(r.utm_campaign):''}" style="display:inline-block;margin-top:2px;font-size:9px;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📢 ${_escAtr(r.utm_content)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
