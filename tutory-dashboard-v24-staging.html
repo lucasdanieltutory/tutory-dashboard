@@ -1495,42 +1495,25 @@ async function supaInsert(table, body){
       <div class="ch"><div><div class="ct">✅ Qualificados por Plataforma</div><div class="cs">Qual plataforma traz mais leads qualificados</div></div></div>
       <div class="cb" id="vg-qual-plat"><div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Aguardando leads...</div></div>
     </div>
-    <!-- Atribuição: Anúncio e Campanha -->
+    <!-- Atribuição: Anúncio, Campanha e Conjunto -->
     <div class="card" style="margin-bottom:14px;">
       <div class="ch">
-        <div><div class="ct">🎯 Atribuição — Anúncio e Campanha</div><div class="cs">De qual anúncio/campanha vieram os leads Qualificados e Desqualificados (via UTM)</div></div>
+        <div><div class="ct">🎯 Atribuição Completa — Anúncio, Campanha e Conjunto</div><div class="cs">Todo anúncio com lead qualificado ou desqualificado, ordenado pelos mais qualificados</div></div>
         <div style="font-size:11px;color:var(--sub);white-space:nowrap;" id="mn-atr-cob">—</div>
       </div>
-      <div class="cb">
-        <div class="crow c2" style="gap:18px;margin-bottom:18px;">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🏆 Anúncios — Qualificados</div>
-            <div id="mn-atr-ads-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">🚫 Anúncios — Desqualificados</div>
-            <div id="mn-atr-ads-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
-        </div>
-        <div class="crow c2" style="gap:18px;">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">📢 Campanhas — Qualificados</div>
-            <div id="mn-atr-camp-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">📢 Campanhas — Desqualificados</div>
-            <div id="mn-atr-camp-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
-        </div>
-        <div class="crow c2" style="gap:18px;margin-top:18px;">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#22C55E;margin-bottom:10px;">🧩 Conjunto de Anúncios — Qualificados</div>
-            <div id="mn-atr-set-q"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#EF4444;margin-bottom:10px;">🧩 Conjunto de Anúncios — Desqualificados</div>
-            <div id="mn-atr-set-d"><div style="color:var(--sub);font-size:13px;padding:12px;">Aguardando dados de origem...</div></div>
-          </div>
+      <div class="cb np">
+        <div style="overflow-y:auto;max-height:460px;overflow-x:auto;">
+          <table class="dt" style="width:100%;">
+            <colgroup><col style="width:26%"><col style="width:24%"><col style="width:20%"><col style="width:10%"><col style="width:10%"><col style="width:5%"><col style="width:5%"></colgroup>
+            <thead style="position:sticky;top:0;z-index:5;background:var(--s1);"><tr>
+              <th>📢 Anúncio</th><th>🏷️ Campanha</th><th>🧩 Conjunto</th>
+              <th style="text-align:center;color:#22C55E;">✅ Qualif.</th>
+              <th style="text-align:center;color:#EF4444;">🚫 Desqualif.</th>
+              <th style="text-align:center;">Total</th>
+              <th style="text-align:center;">Taxa</th>
+            </tr></thead>
+            <tbody id="mn-atr-table"><tr><td colspan="7" style="color:var(--sub);font-size:13px;padding:20px;text-align:center;">Aguardando dados de origem...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1542,7 +1525,7 @@ async function supaInsert(table, body){
       </div>
       <div class="cb np" style="overflow-x:hidden;">
         <table class="dt dt-fx">
-          <colgroup><col style="width:8%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:14%"><col style="width:10%"><col style="width:13%"><col style="width:4%"></colgroup>
+          <colgroup><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:9%"><col style="width:12%"><col style="width:4%"></colgroup>
           <thead><tr><th>Data/Hora</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Cargo</th><th>Faturamento</th><th>E-mail</th><th>WhatsApp</th><th>Classificação Manual</th><th></th></tr></thead>
           <tbody id="mn-all-leads"><tr class="er"><td colspan="10">Carregando leads...</td></tr></tbody>
         </table>
@@ -3480,47 +3463,46 @@ function renderUFSection(leads){
 function _escAtr(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderAtribuicao(leads){
   const arr=leads||[];
-  const porAd={},porCamp={},porSet={};let comAd=0,comCamp=0,comSet=0;
+  const porAd={};let comAd=0,comCamp=0,comSet=0;
   arr.forEach(r=>{
     const isQ=r.classificacao_manual==='Qualificado';
     const isD=r.classificacao_manual==='Desqualificado';
     const ad=(r.utm_content||'').trim();
-    if(ad){comAd++;if(!porAd[ad])porAd[ad]={tot:0,qual:0,desq:0};porAd[ad].tot++;if(isQ)porAd[ad].qual++;if(isD)porAd[ad].desq++;}
     const camp=(r.utm_campaign||'').trim();
-    if(camp){comCamp++;if(!porCamp[camp])porCamp[camp]={tot:0,qual:0,desq:0};porCamp[camp].tot++;if(isQ)porCamp[camp].qual++;if(isD)porCamp[camp].desq++;}
     const set=(r.utm_term||'').trim(); // utm_term = conjunto de anúncios (ad set)
-    if(set){comSet++;if(!porSet[set])porSet[set]={tot:0,qual:0,desq:0};porSet[set].tot++;if(isQ)porSet[set].qual++;if(isD)porSet[set].desq++;}
+    if(camp)comCamp++;
+    if(set)comSet++;
+    if(!ad)return; // agrupamento é por anúncio; sem anúncio não entra na tabela
+    comAd++;
+    if(!porAd[ad])porAd[ad]={campanha:camp,conjunto:set,tot:0,qual:0,desq:0};
+    if(!porAd[ad].campanha&&camp)porAd[ad].campanha=camp;
+    if(!porAd[ad].conjunto&&set)porAd[ad].conjunto=set;
+    porAd[ad].tot++;
+    if(isQ)porAd[ad].qual++;
+    if(isD)porAd[ad].desq++;
   });
   const cob=$('mn-atr-cob');
   if(cob)cob.textContent=arr.length?`${comAd}/${arr.length} anúncio · ${comCamp}/${arr.length} campanha · ${comSet}/${arr.length} conjunto`:'—';
-  const vazio='<div style="color:var(--sub);font-size:13px;padding:12px;line-height:1.7;">Ainda sem dados de origem.<br><span style="font-size:11px;color:var(--dim)">Configure as UTMs no Typebot e nos anúncios para popular esta seção.</span></div>';
-  // metric: 'qual' ou 'desq' — ranking e cor variam conforme a métrica exibida
-  const linhas=(obj,metric)=>{
-    const color=metric==='qual'?'#22C55E':'#EF4444';
-    const label=metric==='qual'?'qual':'desq';
-    const e=Object.entries(obj).filter(x=>x[1][metric]>0).sort((a,b)=>b[1][metric]-a[1][metric]||b[1].tot-a[1].tot).slice(0,8);
-    if(!e.length)return vazio;
-    const max=Math.max.apply(null,e.map(x=>x[1][metric]))||1;
-    return e.map(([nome,v],i)=>{
-      const val=v[metric];
-      const conv=v.tot>0?Math.round(val/v.tot*100):0;
-      const n=_escAtr(nome);
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
-        <span style="width:16px;font-size:11px;color:var(--sub)">${i+1}</span>
-        <span style="flex:0 0 auto;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;" title="${n}">${n}</span>
-        <div style="flex:1;height:16px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round(val/max*100)}%;background:${color};border-radius:5px;"></div>
-        </div>
-        <span style="width:96px;text-align:right;font-size:11px;color:var(--sub)">${val} ${label} · ${conv}%</span>
-      </div>`;
-    }).join('');
-  };
-  const aq=$('mn-atr-ads-q');if(aq)aq.innerHTML=linhas(porAd,'qual');
-  const ad2=$('mn-atr-ads-d');if(ad2)ad2.innerHTML=linhas(porAd,'desq');
-  const cq=$('mn-atr-camp-q');if(cq)cq.innerHTML=linhas(porCamp,'qual');
-  const cd=$('mn-atr-camp-d');if(cd)cd.innerHTML=linhas(porCamp,'desq');
-  const sq=$('mn-atr-set-q');if(sq)sq.innerHTML=linhas(porSet,'qual');
-  const sd=$('mn-atr-set-d');if(sd)sd.innerHTML=linhas(porSet,'desq');
+  const tbody=$('mn-atr-table');
+  if(!tbody)return;
+  const linhas=Object.entries(porAd).sort((a,b)=>b[1].qual-a[1].qual||b[1].desq-a[1].desq||b[1].tot-a[1].tot);
+  if(!linhas.length){
+    tbody.innerHTML='<tr><td colspan="7" style="color:var(--sub);font-size:13px;padding:20px;text-align:center;line-height:1.7;">Ainda sem dados de origem.<br><span style="font-size:11px;color:var(--dim)">Configure as UTMs no Typebot e nos anúncios para popular esta seção.</span></td></tr>';
+    return;
+  }
+  tbody.innerHTML=linhas.map(([ad,v])=>{
+    const taxa=v.tot>0?Math.round(v.qual/v.tot*100):0;
+    const taxaCor=taxa>=30?'#22C55E':taxa>=10?'#EAB308':'var(--sub)';
+    return `<tr>
+      <td style="font-size:12px;font-weight:600;white-space:normal;word-break:break-word;max-width:280px;">${_escAtr(ad)}</td>
+      <td style="font-size:12px;color:var(--sub);white-space:normal;word-break:break-word;">${v.campanha?_escAtr(v.campanha):'—'}</td>
+      <td style="font-size:12px;color:var(--sub);white-space:normal;word-break:break-word;">${v.conjunto?_escAtr(v.conjunto):'—'}</td>
+      <td style="text-align:center;font-size:13px;font-weight:700;color:#22C55E;">${v.qual}</td>
+      <td style="text-align:center;font-size:13px;font-weight:700;color:#EF4444;">${v.desq}</td>
+      <td style="text-align:center;font-size:12px;color:var(--sub);">${v.tot}</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;color:${taxaCor};">${taxa}%</td>
+    </tr>`;
+  }).join('');
 }
 
 async function renderMentoria(force){
@@ -3643,9 +3625,9 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
       if($('mn-dtxt'))$('mn-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
     // leads table
-    const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="font-size:11px;white-space:nowrap;min-width:140px;width:140px;">${fmtDate(r.created_at)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
+    const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;min-width:150px;width:150px;">${fmtDate(r.created_at)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
         <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<br><span title="Anúncio: ${_escAtr(r.utm_content)}${r.utm_campaign?' · Campanha: '+_escAtr(r.utm_campaign):''}" style="display:inline-block;margin-top:2px;font-size:9px;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📢 ${_escAtr(r.utm_content)}</span>`:''}</td>
+        <td style="min-width:190px;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:600;color:#A78BFA;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;color:var(--dim);white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;color:var(--dim);white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
