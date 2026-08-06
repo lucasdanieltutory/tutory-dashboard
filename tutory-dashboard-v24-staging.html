@@ -1540,7 +1540,7 @@ async function supaInsert(table, body){
   <div class="card" style="border-left:3px solid #1877F2;margin-bottom:14px;">
     <div class="ch">
       <div><div class="ct">🔗 Configuração de UTMs — Meta Ads</div><div class="cs">Adicione este parâmetro dinâmico no anúncio para rastrear campanha, conjunto e anúncio automaticamente</div></div>
-      <span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">⚡ Ação necessária</span>
+      <span id="meta-utm-status" style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;">⚡ Ação necessária</span>
     </div>
     <div class="cb">
       <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#1877F2;margin-bottom:14px;word-break:break-all;">utm_source=meta&amp;utm_medium=paid&amp;utm_campaign={{campaign.name}}&amp;utm_term={{adset.name}}&amp;utm_content={{ad.name}}</div>
@@ -1704,7 +1704,7 @@ async function supaInsert(table, body){
     <div class="card" style="border-left:3px solid #4285F4;margin-bottom:14px;">
       <div class="ch">
         <div><div class="ct">🔗 Configuração de UTMs — Google Ads</div><div class="cs">Adicione estes parâmetros nos links de destino dos anúncios para rastrear leads automaticamente</div></div>
-        <span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">⚡ Ação necessária</span>
+        <span id="google-utm-status" style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;">⚡ Ação necessária</span>
       </div>
       <div class="cb">
         <div style="background:var(--s3);border:1px solid var(--brd2);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#4285F4;margin-bottom:14px;word-break:break-all;">utm_source=google&amp;utm_medium=cpc&amp;utm_campaign={{nome_campanha}}&amp;utm_term={{nome_grupo_de_anuncios}}&amp;utm_content={{nome_anuncio}}</div>
@@ -3587,6 +3587,23 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     renderHotCanal(leads);
     renderUFSection(leads);
     renderAtribuicao(leads);
+    // Status dinâmico dos cards de setup de UTM: se já tem lead com utm_content
+    // preenchido pra aquela plataforma, o setup já foi feito — troca o badge.
+    (function(){
+      const _utmBadge=(elId,plat)=>{
+        const el=$(elId);if(!el)return;
+        const ok=leads.some(r=>r.plataforma_ad===plat&&r.utm_content);
+        if(ok){
+          el.textContent='✅ Configurado';
+          el.style.background='rgba(34,197,94,.12)';el.style.borderColor='rgba(34,197,94,.3)';el.style.color='#22C55E';
+        } else {
+          el.textContent='⚡ Ação necessária';
+          el.style.background='rgba(234,67,53,.12)';el.style.borderColor='rgba(234,67,53,.3)';el.style.color='#EA4335';
+        }
+      };
+      _utmBadge('meta-utm-status','meta');
+      _utmBadge('google-utm-status','google');
+    })();
     // Agrupa anúncios por nome (evita duplicatas de múltiplos dias)
     const anunciosMap={};
     anuncios.forEach(a=>{
