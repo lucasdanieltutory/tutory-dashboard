@@ -18,13 +18,19 @@ module.exports = async function handler(req, res) {
   // 1º pela utm_source; 2º pelos click ids que as redes anexam sozinhas
   // (gclid=Google, fbclid=Meta, ttclid=TikTok) — rede de segurança caso
   // algum anúncio fique sem UTM.
-  function detectPlataforma(src) {
-    const u = src.toLowerCase();
+  function detectPlataforma(src, medium) {
+    const u = (src || '').toLowerCase();
+    const m = (medium || '').toLowerCase();
+    // utm_medium é o sinal mais confiável quando utm_source vira algo dinâmico
+    // (ex.: {{placement}} do Meta pode ser "Audience_Network"/"Messenger", sem
+    // "facebook"/"instagram" no texto — mas o medium configurado é sempre fixo).
+    if (m.includes('metaads') || m.includes('meta')) return 'meta';
+    if (m.includes('google') || m.includes('gads')) return 'google';
     if (u.includes('google') || u.includes('gads')) return 'google';
     if (u.includes('youtube') || u === 'yt') return 'youtube';
     if (u.includes('tiktok')) return 'tiktok';
     if (u.includes('linkedin')) return 'linkedin';
-    if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u === 'fb' || u === 'ig') return 'meta';
+    if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u.includes('audience_network') || u.includes('messenger') || u.includes('threads') || u === 'fb' || u === 'ig') return 'meta';
     if (s(b.gclid) || s(b.wbraid) || s(b.gbraid)) return 'google';
     if (s(b.fbclid)) return 'meta';
     if (s(b.ttclid)) return 'tiktok';
@@ -36,8 +42,8 @@ module.exports = async function handler(req, res) {
   const utm_medium   = s(b.utm_medium   || b.utmMedium);
   const utm_campaign = s(b.utm_campaign || b.utmCampaign);
   const utm_content  = s(b.utm_content  || b.utmContent);   // = nome do anúncio
-  const utm_term     = s(b.utm_term     || b.utmTerm);
-  const plataforma   = s(b.plataforma_ad) || detectPlataforma(utm_source);
+  const utm_term     = s(b.utm_term     || b.utmTerm);      // = conjunto de anúncios / grupo
+  const plataforma   = s(b.plataforma_ad) || detectPlataforma(utm_source, utm_medium);
 
   // Colunas base (já existiam na tabela)
   const base = {
