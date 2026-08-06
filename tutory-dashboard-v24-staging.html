@@ -3494,9 +3494,9 @@ function renderAtribuicao(leads){
     const taxa=v.tot>0?Math.round(v.qual/v.tot*100):0;
     const taxaCor=taxa>=30?'#22C55E':taxa>=10?'#EAB308':'var(--sub)';
     return `<tr>
-      <td style="font-size:12px;font-weight:600;white-space:normal;word-break:break-word;max-width:280px;">${_escAtr(ad)}</td>
-      <td style="font-size:12px;color:var(--sub);white-space:normal;word-break:break-word;">${v.campanha?_escAtr(v.campanha):'—'}</td>
-      <td style="font-size:12px;color:var(--sub);white-space:normal;word-break:break-word;">${v.conjunto?_escAtr(v.conjunto):'—'}</td>
+      <td style="font-size:12px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;max-width:280px;">${_escAtr(ad)}</td>
+      <td style="font-size:12px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;">${v.campanha?_escAtr(v.campanha):'—'}</td>
+      <td style="font-size:12px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;">${v.conjunto?_escAtr(v.conjunto):'—'}</td>
       <td style="text-align:center;font-size:13px;font-weight:700;color:#22C55E;">${v.qual}</td>
       <td style="text-align:center;font-size:13px;font-weight:700;color:#EF4444;">${v.desq}</td>
       <td style="text-align:center;font-size:12px;color:var(--sub);">${v.tot}</td>
@@ -3625,9 +3625,9 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
       if($('mn-dtxt'))$('mn-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
     // leads table
-    const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="font-size:12.5px;font-weight:700;color:var(--txt);white-space:nowrap;min-width:150px;width:150px;">${fmtDate(r.created_at)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
+    const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="font-size:12.5px;font-weight:800;color:#F1F5F9;white-space:nowrap;min-width:150px;width:150px;">${fmtDate(r.created_at)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
         <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td style="min-width:190px;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:600;color:#A78BFA;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;color:var(--dim);white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;color:var(--dim);white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
+        <td style="min-width:190px;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
