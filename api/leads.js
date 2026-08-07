@@ -31,6 +31,10 @@ module.exports = async function handler(req, res) {
     if (u.includes('tiktok')) return 'tiktok';
     if (u.includes('linkedin')) return 'linkedin';
     if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u.includes('audience_network') || u.includes('messenger') || u.includes('threads') || u === 'fb' || u === 'ig') return 'meta';
+    // Fallback: anúncios do Google sem UTM customizada no anúncio (ainda não
+    // migrados do template genérico que o HubSpot injeta na conta) chegam com
+    // utm_source=adwords&utm_medium=ppc — sem isso, ficariam sem plataforma.
+    if (m === 'ppc' || u === 'adwords' || u === 'googleads') return 'google';
     if (s(b.gclid) || s(b.wbraid) || s(b.gbraid)) return 'google';
     if (s(b.fbclid)) return 'meta';
     if (s(b.ttclid)) return 'tiktok';
