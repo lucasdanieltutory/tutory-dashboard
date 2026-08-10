@@ -1,7 +1,7 @@
 // tab-mentoria-hub.js — Tutory Mentoria e TutoryHub
 const _leadDateCell = r => { const dt=r.created_at?new Date(r.created_at):null; if(!dt)return'—'; const dS=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); const tS=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<span style="display:block;font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;">${dS}</span><span style="display:block;font-size:12.5px;font-weight:800;color:#7DD3FC;white-space:nowrap;margin-top:1px;">${tS}</span>`; };
 const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="overflow:visible;text-overflow:clip;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
-        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
+        <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
         <td style="min-width:190px;">${platChip(r.plataforma_ad)}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
@@ -191,17 +191,17 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     if($('vg-leads-total'))$('vg-leads-total').textContent=fmt.num(totL);
     if($('vg-hot-total'))$('vg-hot-total').textContent=hotL;
     if($('vg-cpl-total'))$('vg-cpl-total').textContent=cpl>0?'R$'+cpl.toFixed(2).replace('.',','):'—';
-    if($('vg-meta-leads'))$('vg-meta-leads').textContent=leads.filter(r=>!r.plataforma_ad||r.plataforma_ad==='meta').length;
+    if($('vg-meta-leads'))$('vg-meta-leads').textContent=leads.filter(r=>r.plataforma_ad==='meta').length;
     if($('vg-google-leads'))$('vg-google-leads').textContent=leads.filter(r=>r.plataforma_ad==='google').length;
     if($('vg-linkedin-leads'))$('vg-linkedin-leads').textContent=leads.filter(r=>r.plataforma_ad==='linkedin').length;
     if($('vg-tiktok-leads'))$('vg-tiktok-leads').textContent=leads.filter(r=>r.plataforma_ad==='tiktok').length;
-    if($('vg-org-leads'))$('vg-org-leads').textContent=leads.filter(r=>r.plataforma_ad==='organico'||r.canal==='Orgânico').length;
+    if($('vg-org-leads'))$('vg-org-leads').textContent=leads.filter(r=>!r.plataforma_ad||r.plataforma_ad==='organico'||r.plataforma_ad==='orgânico'||r.canal==='Orgânico').length;
     // Qualificados por Plataforma
     const vgQualEl=$('vg-qual-plat');
     if(vgQualEl){
       const plats=[{key:'meta',label:'📘 Meta',color:'#6AAAFF'},{key:'google',label:'🔍 Google',color:'#EA4335'},{key:'linkedin',label:'💼 LinkedIn',color:'#0077B5'},{key:'tiktok',label:'🎵 TikTok',color:'#FF0050'},{key:'org',label:'🌱 Orgânico',color:'#34D399'}];
       const platData=plats.map(p=>{
-        const pLeads=p.key==='org'?leads.filter(r=>r.plataforma_ad==='organico'||r.canal==='Orgânico'):leads.filter(r=>(r.plataforma_ad||'meta')===p.key);
+        const pLeads=p.key==='org'?leads.filter(r=>!r.plataforma_ad||r.plataforma_ad==='organico'||r.plataforma_ad==='orgânico'||r.canal==='Orgânico'):leads.filter(r=>r.plataforma_ad===p.key);
         const pTot=pLeads.length;
         const pHot=pLeads.filter(r=>r.classificacao_manual==='Qualificado').length;
         const pct=pTot>0?Math.round(pHot/pTot*100):0;

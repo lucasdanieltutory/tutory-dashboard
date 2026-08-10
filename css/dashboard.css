@@ -288,6 +288,7 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 #page-mentoria .wrap{max-width:1800px;}
 .dt-full td,.dt-full th{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:break-word;}
 .dt-full td{vertical-align:top;padding:10px 12px!important;line-height:1.4;}
+.dt-full td.cel-nowrap{white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;}
 .pbar{display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--brd);border-radius:var(--rb);padding:11px 16px;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
 .pbar-l{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
 .pb{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--brd2);background:transparent;color:var(--sub);transition:all .15s;}
