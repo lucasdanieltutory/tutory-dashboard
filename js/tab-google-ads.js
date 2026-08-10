@@ -165,6 +165,12 @@ async function disconnectGoogleAds(){
   updateGadsAuthUI(false);
 }
 
+// Auto-refresh enquanto a sub-aba Google Ads estiver visível — sem isso os
+// dados só atualizavam ao trocar de aba manualmente, parecendo "travado".
+setInterval(()=>{
+  if(cur==='mentoria'&&window._mnActiveSubtab==='google'&&getGadsToken())renderGoogleAdsMetrics();
+},45000);
+
 function updateGadsAuthUI(connected){
   const status=document.getElementById('gads-auth-status');
   const connectBtn=document.getElementById('gads-connect-btn');
@@ -222,10 +228,14 @@ async function fetchGAdsCampaigns(startDate,endDate){
       headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
       body:JSON.stringify({query})
     });
+    // clone ANTES de ler o body — depois de r.json() falhar o stream já fica
+    // "disturbed" e um clone() tardio dá "Response body is already used",
+    // mascarando o erro real (era isso que aparecia como falha sem explicação)
+    const rClone=r.clone();
     let d;
     try{d=await r.json();}catch(je){
       // Resposta não era JSON — captura texto para diagnóstico
-      const txt=await r.clone().text().catch(()=>'(sem resposta)');
+      const txt=await rClone.text().catch(()=>'(sem resposta)');
       _gadsLastError='HTTP '+r.status+' — resposta não-JSON: '+txt.substring(0,300);
       console.warn('Google Ads resposta não-JSON:',txt);
       return null;
@@ -237,7 +247,7 @@ async function fetchGAdsCampaigns(startDate,endDate){
       return null;
     }
     _gadsCache[cacheKey]=d;
-    setTimeout(()=>{delete _gadsCache[cacheKey];},300000);
+    setTimeout(()=>{delete _gadsCache[cacheKey];},60000); // 1min — evita dado "parado" na tela em tempo real
     return d;
   }catch(e){
     console.warn('Google Ads fetch erro:',e);

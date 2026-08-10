@@ -242,7 +242,7 @@ async function renderProspeccoes(force=false){
     if(s1tb) s1tb.innerHTML = mnQuals.length ? mnQuals.map(r=>`<tr>
       <td style="${_tc}"><strong style="font-size:11px;">${r.contact_name||'—'}</strong></td>
       <td style="${_tc}">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
-      <td style="text-align:center;">${platChip(r.plataforma_ad||'meta')}</td>
+      <td style="text-align:center;">${platChip(r.plataforma_ad)}</td>
       <td style="text-align:center;">${canalChip(r.canal)}</td>
       <td style="${_tc}color:var(--sub);font-size:11px;">${r.cargo||r.cargo_lp||'—'}</td>
       <td style="${_tc}color:var(--sub);font-size:10px;">${r.faturamento||'—'}</td>

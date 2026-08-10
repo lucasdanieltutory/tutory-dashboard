@@ -96,7 +96,7 @@ function renderMnSecoes(leads){
   const _row = r => `<tr>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
-    <td class="cel-wrap">${platChip(r.plataforma_ad||'meta')}</td>
+    <td class="cel-wrap">${platChip(r.plataforma_ad)}</td>
     <td class="cel-wrap">${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
@@ -199,11 +199,11 @@ function exportarMnSecao(classificacao){
 }
 function canalChip(c){var cl=(c||'').toLowerCase();if(c==='Landing Page'||cl==='landing page'||cl==='lp')return'<span class="chip clp">🌐 LP</span>';if(cl==='typebot'||cl.startsWith('typebot'))return'<span class="chip ctb">🤖 Typebot</span>';if(c==='Respondi'||cl==='respondi')return'<span class="chip crp">💬 Respondi</span>';if(cl==='site'||cl==='site oficial')return'<span class="chip cst">🌐 Site</span>';if(cl==='orgânico'||cl==='organico')return'<span class="chip corg">🌿 Orgânico</span>';return'<span class="chip corg">🌿 Org</span>';}
 function platChip(p){
-  if(!p||p==='meta')return'<span style="background:rgba(26,63,203,.12);border:1px solid rgba(26,63,203,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
+  if(!p||p==='organico'||p==='orgânico')return'<span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34D399;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌱 Orgânico</span>';
+  if(p==='meta')return'<span style="background:rgba(26,63,203,.12);border:1px solid rgba(26,63,203,.3);color:#6AAAFF;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">📘 Meta</span>';
   if(p==='google')return'<span style="background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.3);color:#EA4335;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🔍 Google</span>';
   if(p==='linkedin')return'<span style="background:rgba(0,119,181,.12);border:1px solid rgba(0,119,181,.3);color:#0077B5;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">💼 LinkedIn</span>';
   if(p==='tiktok')return'<span style="background:rgba(255,0,80,.12);border:1px solid rgba(255,0,80,.3);color:#FF0050;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🎵 TikTok</span>';
-  if(p==='organico'||p==='orgânico')return'<span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34D399;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌱 Orgânico</span>';
   return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">'+p+'</span>';
 }
 function switchMnTab(tab,el){
@@ -212,6 +212,7 @@ function switchMnTab(tab,el){
   const t=document.getElementById('mn-sub-'+tab);
   if(t)t.style.display='';
   if(el)el.classList.add('on');
+  window._mnActiveSubtab=tab;
   if(tab==='google'){initGoogleAdsAuth();renderGoogleAdsMetrics();}
 }
 function stBand(el,ok,okT,wT){if(!el)return;const sdot=`<span style="width:6px;height:6px;border-radius:50%;background:${ok?'var(--gn)':'#FF8C55'};display:inline-block;"></span>`;el.className='pb-st '+(ok?'ok':'warn');el.innerHTML=sdot+' '+(ok?okT:wT);}

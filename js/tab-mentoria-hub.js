@@ -1,4 +1,50 @@
 // tab-mentoria-hub.js — Tutory Mentoria e TutoryHub
+const _leadDateCell = r => { const dt=r.created_at?new Date(r.created_at):null; if(!dt)return'—'; const dS=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); const tS=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<span style="display:block;font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;">${dS}</span><span style="display:block;font-size:12.5px;font-weight:800;color:#7DD3FC;white-space:nowrap;margin-top:1px;">${tS}</span>`; };
+const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="overflow:visible;text-overflow:clip;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
+        <td style="min-width:190px;">${platChip(r.plataforma_ad)}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
+        <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
+        <td class="cel-classif">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${classifBadge(r.classificacao_manual)}
+            <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
+              <option value="">— Classificar</option>
+              <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
+              <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
+              <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
+              <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
+            </select>
+          </div>
+        </td>
+        <td style="text-align:center;"><button onclick="deleteMnLead('${r.id}',this)" title="Excluir lead" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;" onmouseover="this.style.opacity='1';this.style.color='#EF4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--sub)';">🗑</button></td>
+      </tr>`;
+const _rFull=(tbId,data)=>{
+  const tb=$(tbId);if(!tb)return;
+  if(!data.length){tb.innerHTML='<tr class="er"><td colspan="10">Nenhum lead registrado ainda.</td></tr>';return;}
+  tb.innerHTML=data.map(_leadRow).join('');
+};
+// ── Filtro de origem do Aeroporto de Leads (Visão Geral) ──────────────
+const _origemPlatLabel={meta:'Meta',google:'Google',linkedin:'LinkedIn',tiktok:'TikTok',organico:'Orgânico'};
+function _origemKey(r){ return (r.plataforma_ad||'organico')+'|'+((r.canal||'—').toLowerCase()); }
+function _origemLabel(r){ const p=_origemPlatLabel[r.plataforma_ad||'organico']||(r.plataforma_ad||'Orgânico'); return p+' + '+(r.canal||'—'); }
+function _popularFiltroOrigem(leads){
+  const sel=$('mn-all-origem-filter'); if(!sel) return;
+  const prev=sel.value;
+  const seen={};
+  leads.forEach(r=>{ const k=_origemKey(r); if(!seen[k]) seen[k]={key:k,label:_origemLabel(r),count:0}; seen[k].count++; });
+  const opts=Object.values(seen).sort((a,b)=>b.count-a.count);
+  sel.innerHTML='<option value="">🔎 Todas as origens ('+leads.length+')</option>'+opts.map(o=>`<option value="${o.key}">${o.label} — ${o.count}</option>`).join('');
+  if(opts.some(o=>o.key===prev)) sel.value=prev;
+}
+function filtrarAeroportoOrigem(val){
+  const leads=window._mnAeroportoLeads||[];
+  const filtered=val?leads.filter(r=>_origemKey(r)===val):leads;
+  _rFull('mn-all-leads',filtered);
+  if($('mn-all-lcount')) $('mn-all-lcount').textContent=filtered.length+(filtered.length===1?' lead':' leads')+(val?' (filtrado)':'');
+}
 async function renderMentoria(force){
   try{
     const {ini,fim}=getDates('mentoria');
@@ -136,35 +182,10 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
       if($('mn-dtxt'))$('mn-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
     // leads table
-    const _leadDateCell = r => { const dt=r.created_at?new Date(r.created_at):null; if(!dt)return'—'; const dS=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); const tS=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<span style="display:block;font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;">${dS}</span><span style="display:block;font-size:12.5px;font-weight:800;color:#7DD3FC;white-space:nowrap;margin-top:1px;">${tS}</span>`; };
-    const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="overflow:visible;text-overflow:clip;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
-        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
-        <td style="min-width:190px;">${platChip(r.plataforma_ad||'meta')}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
-        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
-        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
-        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
-        <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
-        <td class="cel-classif">
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            ${classifBadge(r.classificacao_manual)}
-            <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
-              <option value="">— Classificar</option>
-              <option value="Qualificado" ${'Qualificado'===r.classificacao_manual?'selected':''}>✅ Qualificado</option>
-              <option value="Pré-qualificado" ${'Pré-qualificado'===r.classificacao_manual?'selected':''}>⚡ Pré-qualificado</option>
-              <option value="Desqualificação prévia" ${'Desqualificação prévia'===r.classificacao_manual?'selected':''}>⚠ Desq. prévia</option>
-              <option value="Desqualificado" ${'Desqualificado'===r.classificacao_manual?'selected':''}>✕ Desqualificado</option>
-            </select>
-          </div>
-        </td>
-        <td style="text-align:center;"><button onclick="deleteMnLead('${r.id}',this)" title="Excluir lead" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;" onmouseover="this.style.opacity='1';this.style.color='#EF4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--sub)';">🗑</button></td>
-      </tr>`;
-    const _rFull=(tbId,data)=>{
-      const tb=$(tbId);if(!tb)return;
-      if(!data.length){tb.innerHTML='<tr class="er"><td colspan="10">Nenhum lead registrado ainda.</td></tr>';return;}
-      tb.innerHTML=data.map(_leadRow).join('');
-    };
     _rFull('mn-leads',leads.filter(r=>r.classificacao_manual==='Qualificado'||r.classificacao_manual==='Pré-qualificado'));
-    _rFull('mn-all-leads',leads);    if($('mn-all-lcount'))$('mn-all-lcount').textContent=totL+' leads';
+    window._mnAeroportoLeads=leads;
+    _popularFiltroOrigem(leads);
+    filtrarAeroportoOrigem($('mn-all-origem-filter')?$('mn-all-origem-filter').value:'');
     // Visão Geral KPIs
     if($('vg-inv-total'))$('vg-inv-total').textContent=fmt.brlK(invest);
     if($('vg-leads-total'))$('vg-leads-total').textContent=fmt.num(totL);
