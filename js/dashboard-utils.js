@@ -95,7 +95,7 @@ function renderMnSecoes(leads){
   const _wa = p => { if(!p) return '—'; const n=p.replace(/\D/g,''); const num=n.startsWith('55')?n:'55'+n; return `<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`; };
   const _row = r => `<tr>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
-    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${igLink(r.contact_instagram)}</td>
     <td class="cel-wrap">${platChip(r.plataforma_ad)}</td>
     <td class="cel-wrap">${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
@@ -128,7 +128,7 @@ function renderPlatLeads(pfx, leads){
   const _row=r=>`<tr>
     <td class="mo" style="font-size:11px;white-space:nowrap;min-width:135px;width:135px;">${fmtDate(r.created_at)}</td>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
-    <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${igLink(r.contact_instagram)}</td>
     <td class="cel-wrap">${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
@@ -146,7 +146,7 @@ function renderPlatLeads(pfx, leads){
   </tr>`;
   const _srow=r=>`<tr>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
-    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${igLink(r.contact_instagram)}</td>
     <td class="cel-wrap">${canalChip(r.canal)}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>

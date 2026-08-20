@@ -170,7 +170,7 @@ function bjFormatDate(iso){
 }
 function bjInstaLink(ig){
   if(!ig)return '<span style="color:var(--dim);">—</span>';
-  return '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="https://instagram.com/'+encodeURIComponent(ig)+'" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-weight:600;font-size:12px;" title="@'+escHtml(ig)+'">@'+escHtml(ig)+'</a></div>';
+  return '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+igLink(ig)+'</div>';
 }
 function bjPlatBadge(plat){
   var c={Hotmart:'#FF6B35',Kiwify:'#8B5CF6',Eduzz:'#3B82F6',Herospark:'#F59E0B',Hubla:'#10B981',Monetizze:'#EF4444',Braip:'#6366F1',Outro:'#6B7280'};

@@ -924,7 +924,7 @@ window.fbAsyncInit=function(){
 </div>
 
 <!-- AEROPORTO HUB -->
-<div style="max-width:1360px;margin:0 auto;padding:0 26px 28px;display:flex;flex-direction:column;gap:14px;">
+<div style="max-width:1800px;margin:0 auto;padding:0 26px 28px;display:flex;flex-direction:column;gap:14px;">
 
   <!-- TODOS OS LEADS -->
   <div class="card">
@@ -932,16 +932,19 @@ window.fbAsyncInit=function(){
       <div><div class="ct">✈️ Aeroporto de Leads — Hub</div><div class="cs">Todos os cadastros · em tempo real</div></div>
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:11px;color:var(--sub)" id="hb-air-count">—</span>
+        <select id="hb-all-origem-filter" onchange="filtrarAeroportoHubOrigem(this.value)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:7px;padding:4px 10px;color:var(--txt);font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;">
+          <option value="">🔎 Todas as origens</option>
+        </select>
         <button onclick="exportarHbSecaoAll()" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
       </div>
     </div>
-    <div style="overflow-y:auto;max-height:360px;overflow-x:hidden;">
-      <table class="dt dt-fx">
-        <colgroup><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:11%"><col style="width:12%"><col style="width:10%"><col style="width:13%"><col style="width:13%"></colgroup>
+    <div style="overflow-y:auto;max-height:420px;overflow-x:auto;">
+      <table class="dt dt-fx dt-full">
+        <colgroup><col style="width:9%"><col style="width:12%"><col style="width:11%"><col style="width:20%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:12%"><col style="width:4%"></colgroup>
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
-          <tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificação</th><th>Classificar</th></tr>
+          <tr><th>Data</th><th>Nome</th><th>Instagram</th><th>Origem</th><th>Perfil</th><th>E-mail</th><th>WhatsApp</th><th>Classificação</th><th></th></tr>
         </thead>
-        <tbody id="hb-air-all"><tr class="er"><td colspan="8">Carregando...</td></tr></tbody>
+        <tbody id="hb-air-all"><tr class="er"><td colspan="9">Carregando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -953,12 +956,12 @@ window.fbAsyncInit=function(){
       <button onclick="exportarHbSecao('Qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
     </div>
     <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
-      <table class="dt dt-fx">
-        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+      <table class="dt dt-fx dt-full">
+        <colgroup><col style="width:16%"><col style="width:18%"><col style="width:12%"><col style="width:12%"><col style="width:16%"><col style="width:20%"><col style="width:6%"></colgroup>
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
-          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Origem</th><th>Classificar</th><th></th></tr>
         </thead>
-        <tbody id="hb-s1-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
+        <tbody id="hb-s1-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead qualificado ainda</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -970,12 +973,12 @@ window.fbAsyncInit=function(){
       <button onclick="exportarHbSecao('Pré-qualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
     </div>
     <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
-      <table class="dt dt-fx">
-        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+      <table class="dt dt-fx dt-full">
+        <colgroup><col style="width:16%"><col style="width:18%"><col style="width:12%"><col style="width:12%"><col style="width:16%"><col style="width:20%"><col style="width:6%"></colgroup>
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
-          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Origem</th><th>Classificar</th><th></th></tr>
         </thead>
-        <tbody id="hb-s2-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
+        <tbody id="hb-s2-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead pré-qualificado ainda</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -987,12 +990,12 @@ window.fbAsyncInit=function(){
       <button onclick="exportarHbSecao('Desqualificado')" style="background:var(--gn-bg);border:1px solid var(--gn-b);color:var(--gn);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Exportar CSV</button>
     </div>
     <div style="overflow-y:auto;max-height:320px;overflow-x:hidden;">
-      <table class="dt dt-fx">
-        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:13%"><col style="width:14%"><col style="width:12%"><col style="width:13%"></colgroup>
+      <table class="dt dt-fx dt-full">
+        <colgroup><col style="width:16%"><col style="width:18%"><col style="width:12%"><col style="width:12%"><col style="width:16%"><col style="width:20%"><col style="width:6%"></colgroup>
         <thead style="position:sticky;top:0;z-index:10;background:var(--s1);">
-          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Canal</th><th>Classificar</th></tr>
+          <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Instagram</th><th>Origem</th><th>Classificar</th><th></th></tr>
         </thead>
-        <tbody id="hb-s3-leads"><tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
+        <tbody id="hb-s3-leads"><tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">Nenhum lead desqualificado ainda</td></tr></tbody>
       </table>
     </div>
   </div>

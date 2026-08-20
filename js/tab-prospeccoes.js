@@ -150,7 +150,7 @@ async function renderProspeccoes(force=false){
       tb.innerHTML = paged.map(r=>`<tr>
       <td class="mo" style="font-size:11px;white-space:nowrap;">${r.data||fmtDate(r.created_at)}</td>
       <td><strong style="font-size:12px;">${r.nome||'—'}</strong></td>
-      <td>${r.instagram?`<a href="https://instagram.com/${r.instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.instagram}</a>`:'\u2014'}</td>
+      <td>${igLink(r.instagram)}</td>
       <td style="color:var(--sub);font-size:11px">${r.nicho||'—'}</td>
       <td>
         <div style="display:flex;gap:4px;">
@@ -195,7 +195,7 @@ async function renderProspeccoes(force=false){
     const _platBadge = r => _plat(r)==='mentoria'
       ? `<span style="background:var(--mn-bg);border:1px solid var(--mn-b);color:var(--mn);padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;">🎓 Mentoria</span>`
       : `<span style="background:var(--hb-bg);border:1px solid var(--hb-b);color:var(--hb);padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;">🏪 Hub</span>`;
-    const _insta = r => r.instagram ? `<a href="https://instagram.com/${r.instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:12px;">${r.instagram}</a>` : '—';
+    const _insta = r => igLink(r.instagram);
     const _dt = r => r.data||fmtDate(r.created_at);
     const _empty = n => `<tr class="er"><td colspan="${n}" style="color:var(--dim);font-style:italic;text-align:center;padding:18px;">Nenhum lead nesta seção ainda</td></tr>`;
 
@@ -241,7 +241,7 @@ async function renderProspeccoes(force=false){
     const _tc='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;';
     if(s1tb) s1tb.innerHTML = mnQuals.length ? mnQuals.map(r=>`<tr>
       <td style="${_tc}"><strong style="font-size:11px;">${r.contact_name||'—'}</strong></td>
-      <td style="${_tc}">${r.contact_instagram?`<a href="https://instagram.com/${r.contact_instagram.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${r.contact_instagram}</a>`:'—'}</td>
+      <td style="${_tc}">${igLink(r.contact_instagram)}</td>
       <td style="text-align:center;">${platChip(r.plataforma_ad)}</td>
       <td style="text-align:center;">${canalChip(r.canal)}</td>
       <td style="${_tc}color:var(--sub);font-size:11px;">${r.cargo||r.cargo_lp||'—'}</td>

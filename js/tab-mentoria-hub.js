@@ -1,7 +1,7 @@
 // tab-mentoria-hub.js — Tutory Mentoria e TutoryHub
 const _leadDateCell = r => { const dt=r.created_at?new Date(r.created_at):null; if(!dt)return'—'; const dS=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); const tS=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<span style="display:block;font-size:12px;font-weight:700;color:#F1F5F9;white-space:nowrap;">${dS}</span><span style="display:block;font-size:12.5px;font-weight:800;color:#7DD3FC;white-space:nowrap;margin-top:1px;">${tS}</span>`; };
 const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="overflow:visible;text-overflow:clip;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
-        <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_instagram?`<a href='https://instagram.com/${r.contact_instagram.replace('@','')}' target='_blank' style='color:#A78BFA;text-decoration:none;font-size:11px;'>${r.contact_instagram}</a>`:'—'}</td>
+        <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${igLink(r.contact_instagram)}</td>
         <td style="min-width:190px;">${platChip(r.plataforma_ad)}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
@@ -324,6 +324,29 @@ function hbCanalChip(c){
   if(cl.includes('org')||cl.includes('indic'))return'<span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34D399;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">🌱 Orgânico</span>';
   return`<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;">${c}</span>`;
 }
+// Bloco de origem do lead Hub — igual ao da Mentoria: prioriza SEMPRE a UTM
+// real (plataforma_ad/utm_*) assim que ela existir. "origem"/"canal" cru
+// (ex.: "marketing", "orgânico" fixo) só é usado como fallback enquanto
+// o lead ainda não chegou com UTM (todo lead É marketing, então não faz
+// sentido tratar "origem" como uma classificação própria).
+function _hbOrigemBloco(r){
+  if(r.plataforma_ad){
+    let out=platChip(r.plataforma_ad)+(r.canal?`<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>`:'');
+    if(r.utm_content)out+=`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`;
+    if(r.utm_campaign)out+=`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`;
+    if(r.utm_term)out+=`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`;
+    return out;
+  }
+  // sem UTM ainda: mostra Orgânico se realmente não veio de anúncio, senão o valor cru
+  const raw=(r.origem||r.canal||'').toLowerCase();
+  if(!raw||raw==='orgânico'||raw==='organico')return hbCanalChip('orgânico');
+  return hbCanalChip(r.origem||r.canal);
+}
+function _hbPerfil(r){
+  if(!r.observacao)return'—';
+  const m=String(r.observacao).match(/perfil:\s*([^|]+)/i);
+  return m?m[1].trim():r.observacao;
+}
 function hbClassifBadge(cl){
   if(cl==='Qualificado')return'<span style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22C55E;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">✅ Qualificado</span>';
   if(cl==='Pré-qualificado')return'<span style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.3);color:#CA8A04;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">⚡ Pré-qualif.</span>';
@@ -340,41 +363,88 @@ function _hbSelect(id,cl){
     <option value="Desqualificado" ${'Desqualificado'===cl?'selected':''}>✕ Desqualificado</option>
   </select>`;
 }
+function _hbDelBtn(id){
+  return`<button onclick="deleteHbLead('${id}',this)" title="Excluir lead" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;" onmouseover="this.style.opacity='1';this.style.color='#EF4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--sub)';">🗑</button>`;
+}
 function renderHbAeroporto(leads){
   const _wa=p=>{if(!p)return'—';const n=p.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`;};
-  const _ig=ig=>ig?`<a href="https://instagram.com/${ig.replace('@','')}" target="_blank" style="color:#A78BFA;text-decoration:none;font-size:11px;">${ig}</a>`:'—';
-  const _canal=r=>r.origem||r.canal||'—';
   const _rowAll=r=>`<tr>
-    <td class="mo" style="font-size:11px;">${fmtDate(r.created_at)}</td>
+    <td class="mo" style="overflow:visible;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
+    <td class="cel-nowrap" style="font-size:11px;">${igLink(r.contact_instagram)}</td>
+    <td style="min-width:150px;">${_hbOrigemBloco(r)}</td>
+    <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_hbPerfil(r)}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
     <td style="font-size:11px;">${_wa(r.contact_phone)}</td>
-    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_ig(r.contact_instagram)}</td>
-    <td class="cel-wrap">${hbCanalChip(_canal(r))}</td>
-    <td class="cel-wrap">${hbClassifBadge(r.classificacao_manual)}</td>
-    <td class="cel-classif">${_hbSelect(r.id,r.classificacao_manual)}</td>
+    <td class="cel-classif">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${hbClassifBadge(r.classificacao_manual)}
+        ${_hbSelect(r.id,r.classificacao_manual)}
+      </div>
+    </td>
+    <td style="text-align:center;">${_hbDelBtn(r.id)}</td>
   </tr>`;
   const _rowSec=r=>`<tr>
     <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong></td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
     <td style="font-size:11px;">${_wa(r.contact_phone)}</td>
-    <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_ig(r.contact_instagram)}</td>
-    <td class="cel-wrap">${hbCanalChip(_canal(r))}</td>
+    <td class="cel-nowrap" style="font-size:11px;">${igLink(r.contact_instagram)}</td>
+    <td style="min-width:130px;">${_hbOrigemBloco(r)}</td>
     <td class="cel-classif">${_hbSelect(r.id,r.classificacao_manual)}</td>
+    <td style="text-align:center;">${_hbDelBtn(r.id)}</td>
   </tr>`;
-  const _eA=m=>`<tr class="er"><td colspan="8" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
-  const _eS=m=>`<tr class="er"><td colspan="6" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
+  const _eA=m=>`<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
+  const _eS=m=>`<tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
   const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
   const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');
-  const airAll=$('hb-air-all');if(airAll)airAll.innerHTML=leads.length?leads.map(_rowAll).join(''):_eA('Nenhum lead registrado no período');
-  const airCnt=$('hb-air-count');if(airCnt)airCnt.textContent=leads.length+' leads';
+  _popularFiltroOrigemHub(leads);
+  const filtroVal=$('hb-all-origem-filter')?$('hb-all-origem-filter').value:'';
+  const filtered=filtroVal?leads.filter(r=>_hbOrigemKey(r)===filtroVal):leads;
+  const airAll=$('hb-air-all');if(airAll)airAll.innerHTML=filtered.length?filtered.map(_rowAll).join(''):_eA('Nenhum lead registrado no período');
+  const airCnt=$('hb-air-count');if(airCnt)airCnt.textContent=filtered.length+' leads'+(filtroVal?' (filtrado)':'');
   const s1tb=$('hb-s1-leads');if(s1tb)s1tb.innerHTML=s1.length?s1.map(_rowSec).join(''):_eS('Nenhum lead qualificado ainda');
   const s2tb=$('hb-s2-leads');if(s2tb)s2tb.innerHTML=s2.length?s2.map(_rowSec).join(''):_eS('Nenhum lead pré-qualificado ainda');
   const s3tb=$('hb-s3-leads');if(s3tb)s3tb.innerHTML=s3.length?s3.map(_rowSec).join(''):_eS('Nenhum lead desqualificado ainda');
   const s1c=$('hb-s1-count');if(s1c)s1c.textContent=s1.length+(s1.length===1?' lead':' leads');
   const s2c=$('hb-s2-count');if(s2c)s2c.textContent=s2.length+(s2.length===1?' lead':' leads');
   const s3c=$('hb-s3-count');if(s3c)s3c.textContent=s3.length+(s3.length===1?' lead':' leads');
+}
+// Filtro de origem do Aeroporto Hub (mesmo padrão do Aeroporto Geral da Mentoria)
+function _hbOrigemKey(r){ return r.plataforma_ad?(r.plataforma_ad+'|'+(r.canal||'—').toLowerCase()):'organico|'+((r.origem||'—').toLowerCase()); }
+function _hbOrigemLabel(r){
+  if(r.plataforma_ad){const p=_origemPlatLabel[r.plataforma_ad]||r.plataforma_ad;return p+' + '+(r.canal||'—');}
+  return 'Orgânico + '+(r.origem||'—');
+}
+function _popularFiltroOrigemHub(leads){
+  const sel=$('hb-all-origem-filter'); if(!sel) return;
+  const prev=sel.value;
+  const seen={};
+  leads.forEach(r=>{ const k=_hbOrigemKey(r); if(!seen[k]) seen[k]={key:k,label:_hbOrigemLabel(r),count:0}; seen[k].count++; });
+  const opts=Object.values(seen).sort((a,b)=>b.count-a.count);
+  sel.innerHTML='<option value="">🔎 Todas as origens ('+leads.length+')</option>'+opts.map(o=>`<option value="${o.key}">${o.label} — ${o.count}</option>`).join('');
+  if(opts.some(o=>o.key===prev)) sel.value=prev;
+}
+function filtrarAeroportoHubOrigem(val){
+  renderHbAeroporto(window._hbLeads||[]);
+}
+async function deleteHbLead(id,btn){
+  if(!confirm('Excluir este lead permanentemente?'))return;
+  btn.disabled=true;btn.textContent='…';
+  const SUPA_URL='https://stgzgtpcuhtayglignik.supabase.co';
+  const SUPA_KEY='sb_publishable_qvOphao3X92qN_yQMVI5wA_9L6FpLgb';
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/leads_hub?id=eq.${id}`,{
+      method:'DELETE',
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Prefer':'return=minimal'}
+    });
+    if(r.ok){
+      if(window._hbLeads)window._hbLeads=window._hbLeads.filter(l=>String(l.id)!==String(id));
+      renderHbAeroporto(window._hbLeads||[]);
+    } else {
+      alert('Erro ao excluir lead.');btn.disabled=false;btn.textContent='🗑';
+    }
+  }catch(e){console.error('Erro ao excluir lead hub:',e);alert('Erro ao excluir: '+e.message);btn.disabled=false;btn.textContent='🗑';}
 }
 async function salvarClassifLeadHub(id,classificacao,selectEl){
   try{
@@ -384,14 +454,14 @@ async function salvarClassifLeadHub(id,classificacao,selectEl){
 }
 async function exportarHbSecaoAll(){
   if(!window._hbLeads||!window._hbLeads.length){alert('Nenhum lead para exportar.');return;}
-  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','classificacao_manual','created_at'];
+  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','plataforma_ad','utm_source','utm_medium','utm_campaign','utm_content','utm_term','classificacao_manual','created_at'];
   const csv='﻿'+cols.join(',')+'\n'+window._hbLeads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='hub-leads-todos.csv';a.click();
 }
 async function exportarHbSecao(classificacao){
   const leads=(window._hbLeads||[]).filter(r=>r.classificacao_manual===classificacao);
   if(!leads.length){alert('Nenhum lead nesta seção para exportar.');return;}
-  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','classificacao_manual','created_at'];
+  const cols=['contact_name','contact_email','contact_phone','contact_instagram','origem','canal','plataforma_ad','utm_source','utm_medium','utm_campaign','utm_content','utm_term','classificacao_manual','created_at'];
   const csv='﻿'+cols.join(',')+'\n'+leads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const slug=classificacao.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`hub-${slug}.csv`;a.click();

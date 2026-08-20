@@ -403,6 +403,27 @@ async function connectMetaFacebook(){
 function getClaudeKey(){return(localStorage.getItem('tutory_claude_key')||'').trim();}
 const CLAUDE_KEY=null;
 
+// Link de Instagram robusto: aceita tanto handle solto ("@fulano"/"fulano")
+// quanto URL completa já salva no banco (ex.: leads_hub manda a URL inteira).
+// Sem isso, prefixar "https://instagram.com/" numa URL que já é URL gera
+// link quebrado tipo "instagram.com/https://instagram.com/fulano".
+function igLink(raw){
+  if(!raw)return'—';
+  const v=String(raw).trim();
+  if(!v)return'—';
+  let handle,url;
+  if(/^https?:\/\//i.test(v)){
+    url=v.replace(/\/+$/,'');
+    const m=url.match(/instagram\.com\/([^/?#]+)/i);
+    handle=m?m[1]:url;
+  } else {
+    handle=v.replace(/^@/,'').trim();
+    url='https://instagram.com/'+encodeURIComponent(handle);
+  }
+  const safe=String(handle).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return `<a href="${url}" target="_blank" rel="noopener" style="color:#A78BFA;text-decoration:none;font-size:11px;">@${safe}</a>`;
+}
+
 async function supaFetch(table, params=''){
   const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
     headers:{
