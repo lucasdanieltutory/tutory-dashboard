@@ -111,12 +111,19 @@ async function exportarRelatorio(){
 
     // Comparativo histórico
     const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
-    // Dados fixos Nov-Fev (valores auditados Meta Ads)
+    // Dados fixos Nov/2025-Jul/2026 (meses já fechados, mantidos como estavam
+    // antes de mudarmos o critério de "Leads Hub" — Ago/2026 em diante fica de
+    // fora deste objeto de propósito, pra usar a contagem real de leads_hub).
     const staticHistData={
       '2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},
       '2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},
       '2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},
       '2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19},
+      '2026-03':{iMn:26394.82,iHb:8532.08,iEx:0,lMn:145,lHb:62,hot:17},
+      '2026-04':{iMn:22896.85,iHb:6708.03,iEx:0,lMn:312,lHb:67,hot:46},
+      '2026-05':{iMn:18815.66,iHb:8619.64,iEx:0,lMn:177,lHb:131,hot:52},
+      '2026-06':{iMn:14284.24,iHb:10203.81,iEx:0,lMn:99,lHb:162,hot:26},
+      '2026-07':{iMn:20409.05,iHb:9094.47,iEx:0,lMn:133,lHb:103,hot:48},
     };
     // Gera meses dinamicamente: Nov/2025 → mês atual. Evita manutenção manual
     // e o zeramento do relatório quando o período cai num mês fora da lista.

@@ -143,7 +143,9 @@ async function renderGeral(){
     if($('g-inv-ex'))$('g-inv-ex').textContent=fmt.brlK(totInvEx);
     if($('g-roi'))$('g-roi').textContent=totInv>0?fmt.pct(totRoi):'—';
     // ── Sincroniza KPIs com histData: mesma fonte do relatório ──
-    const _sHD={'2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},'2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},'2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},'2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19}};
+    // Meses já fechados mantidos como estavam antes da mudança de critério de
+    // "Leads Hub" — Ago/2026 em diante fica de fora, usa contagem real de leads_hub.
+    const _sHD={'2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},'2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},'2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},'2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19},'2026-03':{iMn:26394.82,iHb:8532.08,iEx:0,lMn:145,lHb:62,hot:17},'2026-04':{iMn:22896.85,iHb:6708.03,iEx:0,lMn:312,lHb:67,hot:46},'2026-05':{iMn:18815.66,iHb:8619.64,iEx:0,lMn:177,lHb:131,hot:52},'2026-06':{iMn:14284.24,iHb:10203.81,iEx:0,lMn:99,lHb:162,hot:26},'2026-07':{iMn:20409.05,iHb:9094.47,iEx:0,lMn:133,lHb:103,hot:48}};
     const _allHM=[{y:2025,m:11},{y:2025,m:12},{y:2026,m:1},{y:2026,m:2},{y:2026,m:3},{y:2026,m:4},{y:2026,m:5},{y:2026,m:6}];
     const _kI=gIni.slice(0,7),_kF=gFim.slice(0,7);
     const _mhPer=_allHM.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return k>=_kI&&k<=_kF;});
