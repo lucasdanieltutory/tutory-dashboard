@@ -220,7 +220,13 @@ document.addEventListener('DOMContentLoaded',function(){
 function reload(m=false){
   const b=document.querySelector('.ref-btn');if(b)b.classList.add('spin');
   if(cur==='aeroporto')renderAeroporto();else if(cur==='geral')renderGeral();
-  else if(cur==='mentoria')renderMentoria(true);
+  else if(cur==='mentoria'){
+    renderMentoria(true);
+    // Google Ads busca dado ao vivo por um caminho separado (não vem do
+    // Supabase como o resto da Mentoria) — sem isso, trocar o período não
+    // atualizava a aba Google Ads.
+    if(window._mnActiveSubtab==='google'&&typeof getGadsToken==='function'&&getGadsToken())renderGoogleAdsMetrics();
+  }
   else if(cur==='hub')renderHub();
   else if(cur==='experience')renderExperience();
   else if(cur==='criativos')renderCriativos();
