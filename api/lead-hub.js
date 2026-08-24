@@ -25,8 +25,38 @@ module.exports = async function handler(req, res) {
     return s.trim();
   }
 
+  // Detecta a plataforma de origem a partir da UTM (mesma lógica do api/leads.js,
+  // pra Mentoria e Hub classificarem igual). 1º pelo utm_source/medium; 2º pelos
+  // click ids que as redes anexam sozinhas (fbclid=Meta, gclid=Google, ttclid=TikTok)
+  // como rede de segurança caso algum anúncio fique sem UTM customizada.
+  function detectPlataforma(src, medium, fbclid, gclid, ttclid) {
+    const u = (src || '').toLowerCase();
+    const m = (medium || '').toLowerCase();
+    if (m.includes('metaads') || m.includes('meta')) return 'meta';
+    if (m.includes('google') || m.includes('gads')) return 'google';
+    if (u.includes('google') || u.includes('gads')) return 'google';
+    if (u.includes('youtube') || u === 'yt') return 'youtube';
+    if (u.includes('tiktok')) return 'tiktok';
+    if (u.includes('linkedin')) return 'linkedin';
+    if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u.includes('audience_network') || u.includes('messenger') || u.includes('threads') || u === 'fb' || u === 'ig') return 'meta';
+    if (m === 'ppc' || u === 'adwords' || u === 'googleads') return 'google';
+    if (gclid) return 'google';
+    if (fbclid) return 'meta';
+    if (ttclid) return 'tiktok';
+    return u ? u : '';
+  }
+
   // Aceita vários nomes de campo p/ o módulo do Make ficar simples.
   const perfil = clean(b.perfil || b.Perfil || '');
+  const utm_source   = clean(b.utm_source   || b.utmSource   || '');
+  const utm_medium   = clean(b.utm_medium   || b.utmMedium   || '');
+  const utm_campaign = clean(b.utm_campaign || b.utmCampaign || '');
+  const utm_content  = clean(b.utm_content  || b.utmContent  || ''); // = nome do anúncio
+  const utm_term     = clean(b.utm_term     || b.utmTerm     || ''); // = conjunto de anúncios
+  const fbclid       = clean(b.fbclid || '');
+  const gclid        = clean(b.gclid  || '');
+  const ttclid       = clean(b.ttclid || '');
+  const plataforma_ad = clean(b.plataforma_ad || '') || detectPlataforma(utm_source, utm_medium, fbclid, gclid, ttclid);
   const payload = {
     contact_name:      clean(b.contact_name      || b.nome      || b.Nome      || ''),
     contact_email:     clean(b.contact_email     || b.email     || b.Email     || ''),
@@ -34,6 +64,7 @@ module.exports = async function handler(req, res) {
     contact_instagram: clean(b.contact_instagram || b.instagram || b.Instagram || ''),
     origem:            clean(b.origem            || b.Origem    || ''),
     observacao:        clean(b.observacao        || b.obs       || '') || (perfil ? ('Perfil: ' + perfil) : ''),
+    plataforma_ad, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
   };
 
   // Remove campos vazios (não sobrescreve defaults do Supabase)
