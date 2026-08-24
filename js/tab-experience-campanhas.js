@@ -145,7 +145,7 @@ const fabMap={
   aeroporto:[],
   geral:[],
   mentoria:[],
-  hub:[{label:'+ Lead Hub',cls:'fab-mn',action:"openModal('modal-lead-hb')"}],
+  hub:[],
   experience:[],
   chat:[]
 };

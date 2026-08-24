@@ -18,22 +18,24 @@ async function exportarRelatorio(){
     const dataGeracao=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
     // ── Fetch dados período atual ──
-    const [leads,campMn,campHb,campEx,anMn,anHb]=await Promise.all([
+    const [leads,campMn,campHb,campEx,anMn,anHb,leadsHubTable]=await Promise.all([
       supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
       supaFetch('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('campanhas_experience',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      supaFetch('leads_hub',`select=id&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
     ]);
 
     // ── Fetch histórico Nov/2025 → HOJE (sempre, independente do período) ──
     const histIni='2025-11-01';
     const histFim=new Date().toISOString().slice(0,10);
-    const [hLeadsMn,hCampsMn,hCampsHb]=await Promise.all([
+    const [hLeadsMn,hCampsMn,hCampsHb,hLeadsHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
       supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
-      supaFetch('campanhas_hub',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
+      supaFetch('campanhas_hub',`select=gasto,data&data=gte.${histIni}&data=lte.${histFim}`),
+      supaFetch('leads_hub',`select=created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
     ]);
 
     // ── KPIs ──
@@ -47,8 +49,11 @@ async function exportarRelatorio(){
     const invEx=_msRel.total>0?_msRel.experience:campEx.reduce((a,r)=>a+(+r.gasto||0),0);
     const invTotal=invMn+invHb+invEx;
     const leadsMn=leads.length;
-    // Usa Meta API leads_hub se disponível (igual à Visão Geral), fallback Supabase
-    const leadsHb=(_msRel.leads_hub>0)?_msRel.leads_hub:campHb.reduce((a,r)=>a+(+r.leads||0),0);
+    // Leads Hub = "Leads Cadastrados" de verdade — contagem real da tabela
+    // leads_hub (Slack/Make), igual à Mentoria usa leads_mentoria.length.
+    // Não usa mais contagem de registro reportada pela Meta nem campanhas_hub.leads
+    // (planilha manual) — essas divergiam do que realmente caiu no banco.
+    const leadsHb=leadsHubTable.length;
     const vendasEx=campEx.reduce((a,r)=>a+(+r.vendas||0),0);
     const qualMn=hLeadsMn.filter(r=>r.created_at&&r.created_at.slice(0,10)>=ini&&r.created_at.slice(0,10)<=fim&&r.classificacao_manual==='Qualificado').length;
     const cplMn=leadsMn>0?invMn/leadsMn:0;
@@ -141,8 +146,10 @@ async function exportarRelatorio(){
       const lMn=lMnArr.length;
       const hot=lMnArr.filter(r=>r.classificacao_manual==='Qualificado').length;
       const _ms=_dynMeta[sqKey]||{mentoria:0,hub:0,experience:0,total:0,leads_hub:0};
-      // Usa Meta API leads_hub se disponível, fallback campanhas_hub.leads
-      const lHb=(_ms.leads_hub>0)?_ms.leads_hub:cHb.reduce((s,r)=>s+(+r.leads||0),0);
+      // Leads Hub = "Leads Cadastrados" de verdade — contagem real de leads_hub
+      // (mesmo critério da Mentoria com leads_mentoria), não mais o número
+      // reportado pela Meta nem a planilha manual de campanhas_hub.
+      const lHb=hLeadsHb.filter(r=>_inMonth(r.created_at,hm.y,hm.m)).length;
       const cMn=hCampsMn.filter(r=>_inMonth(r.data,hm.y,hm.m));
       const iMn=_ms.total>0?_ms.mentoria:cMn.reduce((s,r)=>s+(+r.gasto||0),0);
       const iHb=_ms.total>0?_ms.hub:cHb.reduce((s,r)=>s+(+r.gasto||0),0);

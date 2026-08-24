@@ -106,7 +106,7 @@ function todayOfMonth(){return new Date().toISOString().slice(0,7)+'-01';}
 async function renderGeral(){
   try{
     const {ini:gIni,fim:gFim}=getDates('geral');
-    const [leads,recMn,recHb,recEx,diagMn,campMn,campHb,campEx,leadsHub]=await Promise.all([
+    const [leads,recMn,recHb,recEx,diagMn,campMn,campHb,campEx,leadsHubReal]=await Promise.all([
       supaFetch('leads_mentoria',`select=score,classificacao,classificacao_manual&created_at=gte.${gIni}T00:00:00&created_at=lte.${gFim}T23:59:59&order=created_at.desc`),
       supaFetch('receita_mentoria',`select=valor&data=gte.${gIni}&data=lte.${gFim}`),
       supaFetch('receita_hub',`select=valor&data=gte.${gIni}&data=lte.${gFim}`),
@@ -115,7 +115,10 @@ async function renderGeral(){
       supaFetch('campanhas_mentoria',`select=gasto&data=gte.${gIni}&data=lte.${gFim}`),
       supaFetch('campanhas_hub',`select=gasto&data=gte.${gIni}&data=lte.${gFim}`),
       supaFetch('campanhas_experience',`select=gasto&data=gte.${gIni}&data=lte.${gFim}`),
-      supaFetch('campanhas_hub',`select=leads&data=gte.${gIni}&data=lte.${gFim}`)
+      // "Leads Hub" oficial = contagem real de cadastros em leads_hub (Slack/Make),
+      // igual à Mentoria usa leads_mentoria — não mais o registro reportado pela
+      // Meta nem a planilha manual de campanhas_hub.leads.
+      supaFetch('leads_hub',`select=id&created_at=gte.${gIni}T00:00:00&created_at=lte.${gFim}T23:59:59`)
     ]);
     const totMn=recMn.reduce((a,r)=>a+(+r.valor||0),0);
     const totHb=recHb.reduce((a,r)=>a+(+r.valor||0),0);
@@ -151,9 +154,9 @@ async function renderGeral(){
       _dynMhG[k]=metaSumByPlatform(_ins);
     }));
     const _hIni='2025-11-01',_hFim=new Date().toISOString().slice(0,10);
-    const [_hLeads,_hCampsHb]=await Promise.all([
+    const [_hLeads,_hLeadsHb]=await Promise.all([
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${_hIni}T00:00:00&created_at=lte.${_hFim}T23:59:59`),
-      supaFetch('campanhas_hub',`select=leads,data&data=gte.${_hIni}&data=lte.${_hFim}`)
+      supaFetch('leads_hub',`select=created_at&created_at=gte.${_hIni}T00:00:00&created_at=lte.${_hFim}T23:59:59`)
     ]);
     const _inMo=(d,y,m)=>{if(!d)return false;const dt=new Date(d.slice(0,10));return dt.getFullYear()===y&&dt.getMonth()+1===m;};
     let _hdLMn=0,_hdLHb=0,_hdHot=0,_hdIMn=0,_hdIHb=0,_hdIEx=0;
@@ -165,15 +168,15 @@ async function renderGeral(){
       _hdLMn+=arr.length;
       _hdHot+=arr.filter(r=>r.classificacao_manual==='Qualificado').length;
       const _ms=_dynMhG[k]||{mentoria:0,hub:0,experience:0,total:0,leads_hub:0};
-      _hdLHb+=(_ms.leads_hub>0)?_ms.leads_hub:_hCampsHb.filter(r=>_inMo(r.data,hm.y,hm.m)).reduce((s,r)=>s+(+r.leads||0),0);
+      _hdLHb+=_hLeadsHb.filter(r=>_inMo(r.created_at,hm.y,hm.m)).length;
       _hdIMn+=_ms.mentoria;_hdIHb+=_ms.hub;_hdIEx+=_ms.experience;
     }
     const _hdIT=_hdIMn+_hdIHb+_hdIEx;
     if($('g-leads'))$('g-leads').textContent=fmt.num(_hdLMn||leads.length);
     if($('g-hot'))$('g-hot').textContent=_hdHot||hot;
     // Fallback ao vivo (igual aos demais KPIs): se o histórico por mês der 0
-    // (ex.: mês atual fora de _allHM), usa registros da Meta do período ou campanhas_hub.leads
-    const _lhbVal=_hdLHb||_msG.leads_hub||leadsHub.reduce((a,r)=>a+(+r.leads||0),0);
+    // (ex.: mês atual fora de _allHM), usa a contagem real de leads_hub do período.
+    const _lhbVal=_hdLHb||leadsHubReal.length;
     if($('g-leads-hb'))$('g-leads-hb').textContent=_lhbVal?fmt.num(_lhbVal):'—';
     if($('g-inv'))$('g-inv').textContent=fmt.brlK(_hdIT||totInv);
     if($('g-inv-mn'))$('g-inv-mn').textContent=fmt.brlK(_hdIMn||totInvMn);
