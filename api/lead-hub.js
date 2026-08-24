@@ -57,12 +57,23 @@ module.exports = async function handler(req, res) {
   const gclid        = clean(b.gclid  || '');
   const ttclid       = clean(b.ttclid || '');
   const plataforma_ad = clean(b.plataforma_ad || '') || detectPlataforma(utm_source, utm_medium, fbclid, gclid, ttclid);
+
+  // "Origem" não deve mais vir do texto fixo que o formulário sempre manda
+  // (ex.: "marketing", igual em todo cadastro, inútil pra distinguir nada) —
+  // agora é 100% baseada na UTM real. Só usa o texto cru do formulário como
+  // último recurso, quando não há UTM nenhuma pra classificar (raro).
+  const _origemLabels = { meta:'Meta', google:'Google', linkedin:'LinkedIn', tiktok:'TikTok', youtube:'YouTube' };
+  const origemRaw = clean(b.origem || b.Origem || '');
+  const origem = plataforma_ad
+    ? (_origemLabels[plataforma_ad] || plataforma_ad)
+    : (origemRaw || 'Orgânico');
+
   const payload = {
     contact_name:      clean(b.contact_name      || b.nome      || b.Nome      || ''),
     contact_email:     clean(b.contact_email     || b.email     || b.Email     || ''),
     contact_phone:     clean(b.contact_phone     || b.telefone  || b.celular   || b.Celular || ''),
     contact_instagram: clean(b.contact_instagram || b.instagram || b.Instagram || ''),
-    origem:            clean(b.origem            || b.Origem    || ''),
+    origem,
     observacao:        clean(b.observacao        || b.obs       || '') || (perfil ? ('Perfil: ' + perfil) : ''),
     plataforma_ad, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
   };
