@@ -35,7 +35,7 @@ async function exportarRelatorio(){
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
       supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
       supaFetch('campanhas_hub',`select=gasto,data&data=gte.${histIni}&data=lte.${histFim}`),
-      supaFetch('leads_hub',`select=created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
+      supaFetch('leads_hub',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
     ]);
 
     // ── KPIs ──
@@ -142,10 +142,15 @@ async function exportarRelatorio(){
     const histData=histMonths.map(hm=>{
       const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
       const sd=staticHistData[sqKey];
+      // Qual. Hub = contagem real de classificacao_manual='Qualificado' em
+      // leads_hub no mês — dado genuíno, calculado sempre ao vivo (mesmo nos
+      // meses com Invest./Leads congelados), já que "qualificar um lead" é
+      // uma ação manual recente que não estava na planilha antiga.
+      const hotHb=hLeadsHb.filter(r=>_inMonth(r.created_at,hm.y,hm.m)&&r.classificacao_manual==='Qualificado').length;
       if(sd){
         const cpMn=sd.lMn>0?sd.iMn/sd.lMn:0;
         const cpHb=sd.lHb>0?sd.iHb/sd.lHb:0;
-        return{...hm,...sd,iT:sd.iMn+sd.iHb+sd.iEx,cpMn,cpHb,hasData:true};
+        return{...hm,...sd,iT:sd.iMn+sd.iHb+sd.iEx,cpMn,cpHb,hotHb,hasData:true};
       }
       // Dados dinâmicos: investimento da Meta API + leads do Supabase
       const lMnArr=hLeadsMn.filter(r=>_inMonth(r.created_at,hm.y,hm.m));
@@ -163,7 +168,7 @@ async function exportarRelatorio(){
       const iEx=_ms.total>0?_ms.experience:0;
       const cpMn=lMn>0?iMn/lMn:0;
       const cpHb=lHb>0?iHb/lHb:0;
-      return{...hm,lMn,lHb,hot,iMn,iHb,iEx,iT:iMn+iHb+iEx,cpMn,cpHb,hasData:lMn>0||iMn>0};
+      return{...hm,lMn,lHb,hot,hotHb,iMn,iHb,iEx,iT:iMn+iHb+iEx,cpMn,cpHb,hasData:lMn>0||iMn>0};
     });
     // ── Totais do período via histData (fonte única de verdade) ──
     const _periodoHist=histData.filter(h=>{const k=`${h.y}-${String(h.m).padStart(2,'0')}`;return k>=ini.slice(0,7)&&k<=fim.slice(0,7)&&h.hasData;});
@@ -185,7 +190,7 @@ async function exportarRelatorio(){
       const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
       const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
       if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td><td style="text-align:right;color:#CBD5E1;">—</td></tr>`;
-      return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+      return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hotHb||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
     }).join('');
     // Linha de total
     const _hd=histData.filter(h=>h.hasData);
@@ -195,9 +200,10 @@ async function exportarRelatorio(){
     const _totLMn=_hd.reduce((s,h)=>s+h.lMn,0);
     const _totLHb=_hd.reduce((s,h)=>s+h.lHb,0);
     const _totHot=_hd.reduce((s,h)=>s+(h.hot||0),0);
+    const _totHotHb=_hd.reduce((s,h)=>s+(h.hotHb||0),0);
     const _totCpMn=_totLMn>0?_totIMn/_totLMn:0;
     const _totCpHb=_totLHb>0?_totIHb/_totLHb:0;
-    const totalRow=`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_totIMn)}</td><td style="text-align:right;">${brl(_totIHb)}</td><td style="text-align:right;">${brl(_totIT)}</td><td style="text-align:right;">${_totLMn}</td><td style="text-align:right;">${_totLHb}</td><td style="text-align:right;color:#4ADE80;">${_totHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_totCpMn>0?brl(_totCpMn):'—'}</td><td style="text-align:right;">${_totCpHb>0?brl(_totCpHb):'—'}</td></tr>`;
+    const totalRow=`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_totIMn)}</td><td style="text-align:right;">${brl(_totIHb)}</td><td style="text-align:right;">${brl(_totIT)}</td><td style="text-align:right;">${_totLMn}</td><td style="text-align:right;">${_totLHb}</td><td style="text-align:right;color:#4ADE80;">${_totHot}</td><td style="text-align:right;color:#4ADE80;">${_totHotHb}</td><td style="text-align:right;">${_totCpMn>0?brl(_totCpMn):'—'}</td><td style="text-align:right;">${_totCpHb>0?brl(_totCpHb):'—'}</td></tr>`;
 
     // Insight de crescimento (Por que os Leads Subiram)
     const mesesComDados=histData.filter(h=>h.hasData);
@@ -520,7 +526,7 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
               const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
               const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
               if(!hm.hasData)return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td colspan="9" style="text-align:center;color:#CBD5E1;">—</td></tr>`;
-              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hotHb||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
             });
             const _d=_2026.filter(h=>h.hasData);
             const _tIT=_d.reduce((s,h)=>s+h.iT,0);
@@ -529,9 +535,10 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
             const _tLMn=_d.reduce((s,h)=>s+h.lMn,0);
             const _tLHb=_d.reduce((s,h)=>s+h.lHb,0);
             const _tHot=_d.reduce((s,h)=>s+(h.hot||0),0);
+            const _tHotHb=_d.reduce((s,h)=>s+(h.hotHb||0),0);
             const _tCpMn=_tLMn>0?_tIMn/_tLMn:0;
             const _tCpHb=_tLHb>0?_tIHb/_tLHb:0;
-            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL 2026</td><td style="text-align:right;">${brl(_tIMn)}</td><td style="text-align:right;">${brl(_tIHb)}</td><td style="text-align:right;">${brl(_tIT)}</td><td style="text-align:right;">${_tLMn}</td><td style="text-align:right;">${_tLHb}</td><td style="text-align:right;color:#4ADE80;">${_tHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_tCpMn>0?brl(_tCpMn):'—'}</td><td style="text-align:right;">${_tCpHb>0?brl(_tCpHb):'—'}</td></tr>`);
+            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL 2026</td><td style="text-align:right;">${brl(_tIMn)}</td><td style="text-align:right;">${brl(_tIHb)}</td><td style="text-align:right;">${brl(_tIT)}</td><td style="text-align:right;">${_tLMn}</td><td style="text-align:right;">${_tLHb}</td><td style="text-align:right;color:#4ADE80;">${_tHot}</td><td style="text-align:right;color:#4ADE80;">${_tHotHb}</td><td style="text-align:right;">${_tCpMn>0?brl(_tCpMn):'—'}</td><td style="text-align:right;">${_tCpHb>0?brl(_tCpHb):'—'}</td></tr>`);
             return rows.join('');
           })()}</tbody>
         </table>
@@ -565,7 +572,7 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
             const rows=_per.map(hm=>{
               const isCur=hm.y===curDate.getFullYear()&&hm.m===curDate.getMonth()+1;
               const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
-              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;">—</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
+              return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hotHb||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
             });
             const _d=_per;
             const _pIT=_d.reduce((s,h)=>s+h.iT,0);
@@ -574,9 +581,10 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
             const _pLMn=_d.reduce((s,h)=>s+h.lMn,0);
             const _pLHb=_d.reduce((s,h)=>s+h.lHb,0);
             const _pHot=_d.reduce((s,h)=>s+(h.hot||0),0);
+            const _pHotHb=_d.reduce((s,h)=>s+(h.hotHb||0),0);
             const _pCpMn=_pLMn>0?_pIMn/_pLMn:0;
             const _pCpHb=_pLHb>0?_pIHb/_pLHb:0;
-            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_pIMn)}</td><td style="text-align:right;">${brl(_pIHb)}</td><td style="text-align:right;">${brl(_pIT)}</td><td style="text-align:right;">${_pLMn}</td><td style="text-align:right;">${_pLHb}</td><td style="text-align:right;color:#4ADE80;">${_pHot}</td><td style="text-align:right;">—</td><td style="text-align:right;">${_pCpMn>0?brl(_pCpMn):'—'}</td><td style="text-align:right;">${_pCpHb>0?brl(_pCpHb):'—'}</td></tr>`);
+            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_pIMn)}</td><td style="text-align:right;">${brl(_pIHb)}</td><td style="text-align:right;">${brl(_pIT)}</td><td style="text-align:right;">${_pLMn}</td><td style="text-align:right;">${_pLHb}</td><td style="text-align:right;color:#4ADE80;">${_pHot}</td><td style="text-align:right;color:#4ADE80;">${_pHotHb}</td><td style="text-align:right;">${_pCpMn>0?brl(_pCpMn):'—'}</td><td style="text-align:right;">${_pCpHb>0?brl(_pCpHb):'—'}</td></tr>`);
             return rows.join('');
           })()}</tbody>
         </table>
