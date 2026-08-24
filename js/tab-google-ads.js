@@ -221,7 +221,13 @@ async function fetchGAdsCampaigns(startDate,endDate){
   if(_gadsCache[cacheKey])return _gadsCache[cacheKey];
   _gadsLastError='';
   try{
-    const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions,metrics.video_views FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
+    // metrics.video_views foi removido/não é mais reconhecido no recurso
+    // "campaign" pela API atual (confirmado direto com a Google: erro
+    // UNRECOGNIZED_FIELD mesmo isolado, sem conflito com outro campo) —
+    // esse único campo travava a consulta inteira e derrubava TODOS os
+    // dados (Search, Display e YouTube juntos). Views do YouTube ficam
+    // "—" até acharmos o campo/recurso certo pra isso nessa versão.
+    const query=`SELECT campaign.name,campaign.advertising_channel_type,campaign.status,metrics.cost_micros,metrics.impressions,metrics.clicks,metrics.conversions,metrics.interactions FROM campaign WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED' ORDER BY metrics.cost_micros DESC`;
     // Usa proxy serverless (/api/gads) — Google Ads API não suporta chamadas CORS do navegador
     const r=await fetch('/api/gads?v=19',{
       method:'POST',
