@@ -263,7 +263,8 @@ function renderUFSection(leads){
 
 // ── Atribuição: plataforma real e anúncio de origem ────────────
 function _escAtr(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function renderAtribuicao(leads){
+function renderAtribuicao(leads,cobId,tableId){
+  cobId=cobId||'mn-atr-cob';tableId=tableId||'mn-atr-table';
   const arr=leads||[];
   const porAd={};let comAd=0,comCamp=0,comSet=0;
   arr.forEach(r=>{
@@ -283,9 +284,9 @@ function renderAtribuicao(leads){
     if(isQ)porAd[ad].qual++;
     if(isD)porAd[ad].desq++;
   });
-  const cob=$('mn-atr-cob');
+  const cob=$(cobId);
   if(cob)cob.textContent=arr.length?`${comAd}/${arr.length} anúncio · ${comCamp}/${arr.length} campanha · ${comSet}/${arr.length} conjunto`:'—';
-  const tbody=$('mn-atr-table');
+  const tbody=$(tableId);
   if(!tbody)return;
   const linhas=Object.entries(porAd).sort((a,b)=>b[1].qual-a[1].qual||b[1].desq-a[1].desq||b[1].tot-a[1].tot);
   if(!linhas.length){

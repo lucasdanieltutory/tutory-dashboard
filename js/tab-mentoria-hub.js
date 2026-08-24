@@ -296,6 +296,7 @@ async function renderHub(){
     }
     // aeroporto hub
     window._hbLeads=leads;
+    renderAtribuicao(leads,'hb-atr-cob','hb-atr-table');
     renderHbAeroporto(leads);
     // diag
     if(diags.length){
