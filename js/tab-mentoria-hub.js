@@ -259,6 +259,7 @@ async function renderHub(){
     if($('hb-tot-leads'))$('hb-tot-leads').textContent=totLeadsHb||'—';
     // Métrica SEPARADA: cadastros reais na leads_hub (Slack/Make/form) — não mistura com Meta
     if($('hb-leads-cad'))$('hb-leads-cad').textContent=fmt.num(leads.length);
+    if($('hb-leads-qual'))$('hb-leads-qual').textContent=fmt.num(leads.filter(r=>r.classificacao_manual==='Qualificado').length);
     if($('hb-cpl'))$('hb-cpl').textContent=cplHb>0?'R$'+cplHb.toFixed(2).replace('.',','):'—';
     supaFetch('prospeccoes','select=id&plataforma=eq.hub').then(pr=>{
       if($('hb-pr-total'))$('hb-pr-total').textContent=pr?pr.length:'—';
@@ -448,10 +449,25 @@ async function deleteHbLead(id,btn){
   }catch(e){console.error('Erro ao excluir lead hub:',e);alert('Erro ao excluir: '+e.message);btn.disabled=false;btn.textContent='🗑';}
 }
 async function salvarClassifLeadHub(id,classificacao,selectEl){
+  // Otimista: atualiza a tela IMEDIATAMENTE (sem esperar a rede) e só depois
+  // salva no banco por trás — antes o select ficava "travado" esperando o
+  // Supabase responder pra só então re-renderizar, o que parecia lento.
+  let prev;
+  if(window._hbLeads){
+    const _r=window._hbLeads.find(r=>String(r.id)===String(id));
+    if(_r){prev=_r.classificacao_manual;_r.classificacao_manual=classificacao;}
+    renderAtribuicao(window._hbLeads,'hb-atr-cob','hb-atr-table');
+    renderHbAeroporto(window._hbLeads);
+    if($('hb-leads-qual'))$('hb-leads-qual').textContent=fmt.num(window._hbLeads.filter(r=>r.classificacao_manual==='Qualificado').length);
+  }
   try{
     await supaUpdate('leads_hub',id,{classificacao_manual:classificacao});
-    if(window._hbLeads){const _r=window._hbLeads.find(r=>r.id===id);if(_r)_r.classificacao_manual=classificacao;renderHbAeroporto(window._hbLeads);}
-  }catch(e){console.error('Erro classif hub:',e);alert('Erro ao salvar: '+e.message);}
+  }catch(e){
+    console.error('Erro classif hub:',e);
+    // Falhou de verdade: reverte a tela pro estado anterior
+    if(window._hbLeads){const _r=window._hbLeads.find(r=>String(r.id)===String(id));if(_r)_r.classificacao_manual=prev;renderHbAeroporto(window._hbLeads);if($('hb-leads-qual'))$('hb-leads-qual').textContent=fmt.num(window._hbLeads.filter(r=>r.classificacao_manual==='Qualificado').length);}
+    alert('Erro ao salvar (revertido): '+e.message);
+  }
 }
 async function exportarHbSecaoAll(){
   if(!window._hbLeads||!window._hbLeads.length){alert('Nenhum lead para exportar.');return;}

@@ -61,35 +61,42 @@ function classifSelect(leadId, atual){
   </select>`;
 }
 async function salvarClassifLead(id, classificacao, selectEl){
+  // Otimista: atualiza a tela na hora (badge, seções, contadores locais),
+  // sem esperar o Supabase responder — o banco salva por trás. Se falhar de
+  // verdade, reverte e avisa.
+  let prev;
+  if(selectEl){
+    const td = selectEl.closest('td');
+    if(td){
+      const badge = td.querySelector('div > div');
+      if(badge) badge.outerHTML = classifBadge(classificacao);
+    }
+  }
+  if(window._mnLeads){
+    const _r=window._mnLeads.find(r=>r.id===id);
+    if(_r){prev=_r.classificacao_manual;_r.classificacao_manual=classificacao;}
+    renderMnSecoes(window._mnLeads);
+    const hot=window._mnLeads.filter(r=>r.classificacao_manual==='Qualificado').length;
+    const warm=window._mnLeads.filter(r=>r.classificacao_manual==='Pré-qualificado').length;
+    const dqp=window._mnLeads.filter(r=>r.classificacao_manual==='Desqualificação prévia').length;
+    const cold=window._mnLeads.filter(r=>r.classificacao_manual==='Desqualificado').length;
+    if($('mn-hot'))$('mn-hot').textContent=hot;
+    if($('mn-dh'))$('mn-dh').textContent=hot;
+    if($('mn-dw'))$('mn-dw').textContent=warm;
+    if($('mn-dq'))$('mn-dq').textContent=dqp;
+    if($('mn-dc'))$('mn-dc').textContent=cold;
+    if($('g-hot'))$('g-hot').textContent=hot;
+    mkD('c-mn-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hot,warm,dqp,cold],['#22C55E','#EAB308','#F97316','#EF4444']);
+    mkD('c-g-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hot,warm,dqp,cold],['#22C55E','#EAB308','#F97316','#EF4444']);
+  }
   try{
     await supaUpdate('leads_mentoria', id, {classificacao_manual: classificacao});
-    // Atualiza só o badge sem recarregar tudo
-    if(selectEl){
-      const td = selectEl.closest('td');
-      if(td){
-        const badge = td.querySelector('div > div');
-        if(badge) badge.outerHTML = classifBadge(classificacao);
-      }
-    }
-    // Atualiza seções de qualificação
-    if(window._mnLeads){ const _r=window._mnLeads.find(r=>r.id===id); if(_r) _r.classificacao_manual=classificacao; renderMnSecoes(window._mnLeads); }
-    // Atualiza contadores e gráfico
-    const {ini,fim}=getDates('mentoria');
-    supaFetch('leads_mentoria',`select=classificacao_manual&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`).then(leads=>{
-      const hot=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
-      const warm=leads.filter(r=>r.classificacao_manual==='Pré-qualificado').length;
-      const dqp=leads.filter(r=>r.classificacao_manual==='Desqualificação prévia').length;
-      const cold=leads.filter(r=>r.classificacao_manual==='Desqualificado').length;
-      if($('mn-hot'))$('mn-hot').textContent=hot;
-      if($('mn-dh'))$('mn-dh').textContent=hot;
-      if($('mn-dw'))$('mn-dw').textContent=warm;
-      if($('mn-dq'))$('mn-dq').textContent=dqp;
-      if($('mn-dc'))$('mn-dc').textContent=cold;
-      if($('g-hot'))$('g-hot').textContent=hot;
-      mkD('c-mn-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hot,warm,dqp,cold],['#22C55E','#EAB308','#F97316','#EF4444']);
-      mkD('c-g-pie',['Qualificado','Pré-qualificado','Desq. prévia','Desqualificado'],[hot,warm,dqp,cold],['#22C55E','#EAB308','#F97316','#EF4444']);
-    });
-  }catch(e){console.error('Erro ao salvar classificação:',e); alert('Erro ao salvar: '+e.message);}
+  }catch(e){
+    console.error('Erro ao salvar classificação:',e);
+    if(window._mnLeads){const _r=window._mnLeads.find(r=>r.id===id);if(_r)_r.classificacao_manual=prev;renderMnSecoes(window._mnLeads);}
+    if(selectEl){const td=selectEl.closest('td');if(td){const badge=td.querySelector('div > div');if(badge)badge.outerHTML=classifBadge(prev);}}
+    alert('Erro ao salvar (revertido): '+e.message);
+  }
 }
 function renderMnSecoes(leads){
   const _wa = p => { if(!p) return '—'; const n=p.replace(/\D/g,''); const num=n.startsWith('55')?n:'55'+n; return `<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`; };
