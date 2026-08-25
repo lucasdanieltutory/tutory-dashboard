@@ -39,6 +39,34 @@ function _popularFiltroOrigem(leads){
   sel.innerHTML='<option value="">🔎 Todas as origens ('+leads.length+')</option>'+opts.map(o=>`<option value="${o.key}">${o.label} — ${o.count}</option>`).join('');
   if(opts.some(o=>o.key===prev)) sel.value=prev;
 }
+// ── Canais de Captação: quantos leads vieram de cada fonte+canal (Meta,
+// Google, chatgpt.com, Orgânico, Site, Typebot...) — mesma chave/label já
+// usada no filtro de origem, só que sempre visível como métrica em barras.
+function renderCanaisCaptacao(leads,elId,keyFn,labelFn){
+  const el=$(elId); if(!el) return;
+  const arr=leads||[];
+  const seen={};
+  arr.forEach(r=>{
+    const k=keyFn(r);
+    if(!seen[k])seen[k]={label:labelFn(r),count:0,qual:0};
+    seen[k].count++;
+    if(r.classificacao_manual==='Qualificado')seen[k].qual++;
+  });
+  const rows=Object.values(seen).sort((a,b)=>b.count-a.count);
+  if(!rows.length){ el.innerHTML='<div style="color:var(--sub);font-size:13px;text-align:center;padding:20px;">Sem dados no período</div>'; return; }
+  const total=arr.length||1, max=rows[0].count||1;
+  el.innerHTML=rows.map(r=>{
+    const pct=Math.round(r.count/total*100);
+    const barW=Math.round(r.count/max*100);
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+      <span style="flex:0 0 190px;font-size:12px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${_escAtr(r.label)}">${_escAtr(r.label)}</span>
+      <div style="flex:1;height:16px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;">
+        <div style="height:100%;width:${barW}%;background:linear-gradient(90deg,#6AAAFF,#818CF8);border-radius:5px;"></div>
+      </div>
+      <span style="flex:0 0 120px;text-align:right;font-size:11px;color:var(--sub);">${r.count} · ${pct}%${r.qual?` · <span style="color:#22C55E;font-weight:700;">${r.qual}✅</span>`:''}</span>
+    </div>`;
+  }).join('');
+}
 function filtrarAeroportoOrigem(val){
   const leads=window._mnAeroportoLeads||[];
   const filtered=val?leads.filter(r=>_origemKey(r)===val):leads;
@@ -186,6 +214,7 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     window._mnAeroportoLeads=leads;
     _popularFiltroOrigem(leads);
     filtrarAeroportoOrigem($('mn-all-origem-filter')?$('mn-all-origem-filter').value:'');
+    renderCanaisCaptacao(leads,'mn-canais-captacao',_origemKey,_origemLabel);
     // Visão Geral KPIs
     if($('vg-inv-total'))$('vg-inv-total').textContent=fmt.brlK(invest);
     if($('vg-leads-total'))$('vg-leads-total').textContent=fmt.num(totL);
@@ -299,6 +328,7 @@ async function renderHub(){
     window._hbLeads=leads;
     renderAtribuicao(leads,'hb-atr-cob','hb-atr-table');
     renderHbAeroporto(leads);
+    renderCanaisCaptacao(leads,'hb-canais-captacao',_hbOrigemKey,_hbOrigemLabel);
     // diag
     if(diags.length){
       const d=diags[0];
