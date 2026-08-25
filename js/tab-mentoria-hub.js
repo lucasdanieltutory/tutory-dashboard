@@ -224,6 +224,7 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     if($('vg-google-leads'))$('vg-google-leads').textContent=leads.filter(r=>r.plataforma_ad==='google').length;
     if($('vg-linkedin-leads'))$('vg-linkedin-leads').textContent=leads.filter(r=>r.plataforma_ad==='linkedin').length;
     if($('vg-tiktok-leads'))$('vg-tiktok-leads').textContent=leads.filter(r=>r.plataforma_ad==='tiktok').length;
+    if($('vg-chatgpt-leads'))$('vg-chatgpt-leads').textContent=leads.filter(r=>(r.plataforma_ad||'').toLowerCase().includes('chatgpt')).length;
     if($('vg-org-leads'))$('vg-org-leads').textContent=leads.filter(r=>!r.plataforma_ad||r.plataforma_ad==='organico'||r.plataforma_ad==='orgânico'||r.canal==='Orgânico').length;
     // Qualificados por Plataforma
     const vgQualEl=$('vg-qual-plat');
