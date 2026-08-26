@@ -399,6 +399,49 @@ function _hbSelect(id,cl){
 function _hbDelBtn(id){
   return`<button onclick="deleteHbLead('${id}',this)" title="Excluir lead" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;" onmouseover="this.style.opacity='1';this.style.color='#EF4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--sub)';">🗑</button>`;
 }
+// Botão "→ Mentoria": copia (não move) o lead do Hub pro Aeroporto da
+// Mentoria, com dados de contato + UTM. O lead nunca sai do Hub — só marca
+// enviado_mentoria_em pra não deixar reenviar duas vezes o mesmo lead.
+function _hbMoveBtn(r){
+  if(r.enviado_mentoria_em){
+    return'<span style="display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22C55E;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;">✅ Na Mentoria</span>';
+  }
+  return`<button onclick="moverLeadParaMentoria('${r.id}',this)" title="Copiar este lead (dados + UTM) pro Aeroporto de Leads da Mentoria" style="background:var(--s2);border:1px solid var(--brd2);color:#7DD3FC;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;">→ Mentoria</button>`;
+}
+async function moverLeadParaMentoria(id,btn){
+  const r=(window._hbLeads||[]).find(l=>String(l.id)===String(id));
+  if(!r||r.enviado_mentoria_em)return;
+  const original=btn.textContent;
+  btn.disabled=true;btn.textContent='Enviando…';
+  try{
+    const payload={};
+    const _set=(k,v)=>{if(v!==undefined&&v!==null&&v!=='')payload[k]=v;};
+    _set('contact_name',r.contact_name);
+    _set('contact_email',r.contact_email);
+    _set('contact_phone',r.contact_phone);
+    _set('contact_instagram',r.contact_instagram);
+    _set('utm_source',r.utm_source);
+    _set('utm_medium',r.utm_medium);
+    _set('utm_campaign',r.utm_campaign);
+    _set('utm_content',r.utm_content);
+    _set('utm_term',r.utm_term);
+    _set('plataforma_ad',r.plataforma_ad);
+    _set('canal',r.canal);
+    if(!payload.contact_name&&!payload.contact_email&&!payload.contact_phone){
+      alert('Esse lead não tem nome, e-mail nem telefone — não dá pra mover.');
+      btn.disabled=false;btn.textContent=original;return;
+    }
+    await supaInsert('leads_mentoria',payload);
+    const now=new Date().toISOString();
+    await supaUpdate('leads_hub',id,{enviado_mentoria_em:now});
+    r.enviado_mentoria_em=now; // continua em window._hbLeads — permanece no Hub
+    renderHbAeroporto(window._hbLeads||[]);
+  }catch(e){
+    console.error('Erro ao mover lead pra Mentoria:',e);
+    alert('Erro ao mover lead pra Mentoria: '+e.message);
+    btn.disabled=false;btn.textContent=original;
+  }
+}
 function renderHbAeroporto(leads){
   const _wa=p=>{if(!p)return'—';const n=p.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href="https://wa.me/${num}" target="_blank" style="color:#25D366;text-decoration:none;font-size:11px;">📱 ${p}</a>`;};
   const _rowAll=r=>`<tr>
@@ -415,6 +458,7 @@ function renderHbAeroporto(leads){
         ${_hbSelect(r.id,r.classificacao_manual)}
       </div>
     </td>
+    <td style="text-align:center;">${_hbMoveBtn(r)}</td>
     <td style="text-align:center;">${_hbDelBtn(r.id)}</td>
   </tr>`;
   const _rowSec=r=>`<tr>
@@ -426,7 +470,7 @@ function renderHbAeroporto(leads){
     <td class="cel-classif">${_hbSelect(r.id,r.classificacao_manual)}</td>
     <td style="text-align:center;">${_hbDelBtn(r.id)}</td>
   </tr>`;
-  const _eA=m=>`<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
+  const _eA=m=>`<tr class="er"><td colspan="10" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
   const _eS=m=>`<tr class="er"><td colspan="7" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${m}</td></tr>`;
   const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
