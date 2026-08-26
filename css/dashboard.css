@@ -125,6 +125,20 @@ button:active,.btn:active{transform:scale(.97);}
 .light-mode .cc-val{color:var(--txt)!important;font-weight:800!important;}
 .light-mode .cc-label{color:var(--sub)!important;font-weight:700!important;}
 
+/* ── VISÃO GERAL (.vg2-*) ── */
+/* Bloco inteiro veio de um <style> inline extraído pro CSS (ver comentário
+   mais abaixo) e nunca teve modo claro pensado: fundo era um "tingimento"
+   branco translúcido pra clarear um fundo ESCURO (rgba(255,255,255,.02-.09))
+   e texto era #fff/#c9d3e2 fixo — em cima do branco do modo claro isso vira
+   card sem contorno nenhum com texto invisível dentro. */
+.light-mode .vg2-h,.light-mode .vg2-m,.light-mode .vg2-p{background:#FFFFFF!important;border:1px solid var(--brd)!important;box-shadow:0 2px 12px rgba(23,65,198,.06)!important;}
+.light-mode .vg2-h:hover,.light-mode .vg2-m:hover,.light-mode .vg2-p:hover{box-shadow:0 10px 26px rgba(23,65,198,.12)!important;}
+.light-mode .vg2-hico,.light-mode .vg2-mi,.light-mode .vg2-pi{background:var(--s2)!important;}
+.light-mode .vg2-hv,.light-mode .vg2-mv,.light-mode .vg2-pv{color:var(--txt)!important;}
+.light-mode .vg2-pn{color:var(--sub)!important;}
+.light-mode .vg2-hl,.light-mode .vg2-hs,.light-mode .vg2-ml,.light-mode .vg2-pt,.light-mode .vg2-ps{color:var(--sub)!important;}
+.light-mode .vg2-p.total{background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(34,197,94,.02))!important;border-color:var(--gn-b)!important;}
+
 /* ── SEÇÕES E CHARTS ── */
 .light-mode .chart-box,.light-mode .section-box,.light-mode .tbl-wrap,.light-mode .card{background:#FFFFFF!important;border:1px solid var(--brd)!important;box-shadow:0 2px 12px rgba(23,65,198,.06)!important;}
 .light-mode .section-title,.light-mode .chart-title{color:var(--txt)!important;font-weight:700!important;}
@@ -142,6 +156,12 @@ button:active,.btn:active{transform:scale(.97);}
 .light-mode .flt-btn{color:var(--sub)!important;background:#FFFFFF!important;border:1px solid var(--brd)!important;font-weight:600!important;}
 .light-mode .flt-btn:hover{background:var(--s2)!important;color:var(--txt)!important;}
 .light-mode .flt-btn.on{background:var(--mn)!important;color:#FFFFFF!important;border-color:var(--mn)!important;box-shadow:0 2px 8px rgba(23,65,198,.3)!important;}
+/* .pb (botões de período Hoje/7 dias/30 dias...) tinha só a versão escura
+   (color:rgba(255,255,255,.7) fixo, sem guarda de tema) — texto quase
+   invisível em cima do branco do modo claro. Mesmo tratamento do .flt-btn. */
+.light-mode .pb{color:var(--sub)!important;background:#FFFFFF!important;border-color:var(--brd)!important;}
+.light-mode .pb.on{background:var(--mn)!important;color:#FFFFFF!important;border-color:var(--mn)!important;}
+.light-mode .pb:not(.on):hover{background:var(--s2)!important;color:var(--txt)!important;}
 .light-mode .date-range,.light-mode .dt-from,.light-mode .dt-to{background:#FFFFFF!important;border:1px solid var(--brd)!important;color:var(--txt)!important;}
 .light-mode .dt-apply{background:var(--mn)!important;color:#FFFFFF!important;font-weight:700!important;}
 
@@ -496,6 +516,25 @@ body{background:linear-gradient(135deg,#07090F 0%,#0A0F1E 50%,#07090F 100%);min-
 #page-aeroporto.active{display:flex!important;flex-direction:column;padding-top:0;padding-left:242px;height:100vh;overflow:hidden;}
 #page-aeroporto.active.sb-hidden{padding-left:0;}
 .ap-page{display:flex;flex-direction:column;height:100%;background:#0a0e1a;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;}
+/* Aeroporto de Leads é de propósito sempre escuro (visual "sala de
+   controle"), mas texto interno usa var(--sub)/var(--dim) — que trocam pro
+   valor CLARO (escuro/navy) quando o modo claro liga, virando texto escuro
+   em cima do fundo escuro fixo. Trava essas variáveis no valor de modo
+   escuro só dentro desta página, pra sobreviver ao toggle de tema. */
+.light-mode .ap-page{--sub:#7A8BAA!important;--dim:#354560!important;--txt:#EDF2FF!important;}
+/* As mesmas regras genéricas de tabela do modo claro (fundo branco/listrado,
+   texto #08142E fixo) também vazam pra dentro da tabela do Aeroporto —
+   essas não usam variável, então o truque acima não alcança. Neutraliza
+   só aqui dentro, mantendo o visual escuro original da tabela. */
+.light-mode .ap-page table thead tr{background:transparent!important;}
+.light-mode .ap-page table thead th{color:var(--dim)!important;}
+.light-mode .ap-page table tbody tr,
+.light-mode .ap-page table tbody tr:nth-child(even),
+.light-mode .ap-page table tbody tr:nth-child(odd){background:transparent!important;border-bottom:1px solid rgba(255,255,255,.07)!important;}
+.light-mode .ap-page table tbody tr:hover{background:rgba(255,255,255,.04)!important;}
+.light-mode .ap-page table tbody td,
+.light-mode .ap-page table tbody td strong,
+.light-mode .ap-page table tbody td b{color:#fff!important;font-weight:500!important;}
 .ap-header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:54px;border-bottom:1px solid rgba(255,255,255,.07);background:#111827;flex-shrink:0;}
 .ap-header-left{display:flex;align-items:center;gap:16px;}
 .ap-logo-text{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;color:#fff;}

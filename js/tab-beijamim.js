@@ -305,12 +305,9 @@ async function renderBeijamim(){
   /* Diagnóstico: mostrar loading visível */
   var _diagEl=document.getElementById('bj-diag');
   if(_diagEl)_diagEl.textContent='⏳ Carregando dados...';
-  console.log('[BJ] renderBeijamim iniciado');
 
   try{
-    console.log('[BJ] iniciando fetch de prospeccoes_beijamim...');
     var allLeads=await bjFetch();
-    console.log('[BJ] fetch OK, total de leads:', allLeads&&allLeads.length);
     var leads=bjFilterByDate(allLeads);
     var hub=leads.filter(function(l){return l.tipo==='hub';});
     var mn=leads.filter(function(l){return l.tipo==='mentoria';});
@@ -389,27 +386,6 @@ async function renderBeijamim(){
       }
     }
     if(_diagEl)_diagEl.style.display='none';
-    console.log('[BJ] render concluído com sucesso');
-    /* DEBUG: inspecionar visibilidade da página */
-    var _pg=document.getElementById('page-beijamim');
-    if(_pg){
-      var _cs=window.getComputedStyle(_pg);
-      console.log('[BJ] page-beijamim computed: display='+_cs.display+' visibility='+_cs.visibility+' opacity='+_cs.opacity+' zIndex='+_cs.zIndex);
-      console.log('[BJ] page-beijamim offsetHeight='+_pg.offsetHeight+' scrollHeight='+_pg.scrollHeight+' clientWidth='+_pg.clientWidth);
-      /* Log do pai e avós para identificar container escondido */
-      var _par=_pg.parentElement;
-      var _path='';
-      for(var _d=0;_d<6&&_par;_d++){
-        var _parCs=window.getComputedStyle(_par);
-        _path+=(_par.tagName+(_par.id?'#'+_par.id:'.'+((_par.className&&_par.className.trim?_par.className.trim().split(' ')[0]:'')||''))+' [display='+_parCs.display+' offsetH='+_par.offsetHeight+']');
-        if(_parCs.display==='none'||_par.offsetHeight===0){_path+=' ← PROBLEMA!';break;}
-        _path+=' > ';
-        _par=_par.parentElement;
-      }
-      console.log('[BJ] ancestors: '+_path);
-      var _firstChild=_pg.firstElementChild;
-      if(_firstChild){var _fcs=window.getComputedStyle(_firstChild);console.log('[BJ] primeiro filho (wrap) computed: display='+_fcs.display+' visibility='+_fcs.visibility+' opacity='+_fcs.opacity);}
-    }
   }catch(e){
     console.error('[BJ] ERRO em renderBeijamim:',e);
     if(_diagEl){_diagEl.style.background='rgba(239,68,68,.18)';_diagEl.style.color='#EF4444';_diagEl.textContent='❌ Erro: '+e.message;}
