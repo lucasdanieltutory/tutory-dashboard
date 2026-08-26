@@ -18,7 +18,7 @@ async function exportarRelatorio(){
     const dataGeracao=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
     // ── Fetch dados período atual ──
-    const [leads,campMn,campHb,campEx,anMn,anHb,leadsHubTable]=await Promise.all([
+    const [leads,campMn,campHb,campEx,anMn,anHb,leadsHubTable,_histMensalRows]=await Promise.all([
       supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
       supaFetch('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
@@ -26,6 +26,9 @@ async function exportarRelatorio(){
       supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
       supaFetch('leads_hub',`select=id&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      // Histórico de meses fechados — era hardcoded aqui (staticHistData) e
+      // duplicado de novo em tab-aeroporto-geral.js. Agora 1 fonte só.
+      supaFetch('historico_mensal','select=*').catch(()=>[]),
     ]);
 
     // ── Fetch histórico Nov/2025 → HOJE (sempre, independente do período) ──
@@ -111,20 +114,9 @@ async function exportarRelatorio(){
 
     // Comparativo histórico
     const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
-    // Dados fixos Nov/2025-Jul/2026 (meses já fechados, mantidos como estavam
-    // antes de mudarmos o critério de "Leads Hub" — Ago/2026 em diante fica de
-    // fora deste objeto de propósito, pra usar a contagem real de leads_hub).
-    const staticHistData={
-      '2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},
-      '2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},
-      '2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},
-      '2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19},
-      '2026-03':{iMn:26394.82,iHb:8532.08,iEx:0,lMn:145,lHb:62,hot:17},
-      '2026-04':{iMn:22896.85,iHb:6708.03,iEx:0,lMn:312,lHb:67,hot:46},
-      '2026-05':{iMn:18815.66,iHb:8619.64,iEx:0,lMn:177,lHb:131,hot:52},
-      '2026-06':{iMn:14284.24,iHb:10203.81,iEx:0,lMn:99,lHb:162,hot:26},
-      '2026-07':{iMn:20409.05,iHb:9094.47,iEx:0,lMn:133,lHb:103,hot:48},
-    };
+    // Vem da tabela historico_mensal (era hardcoded aqui — ver sql/004-historico-mensal.sql)
+    const staticHistData={};
+    (_histMensalRows||[]).forEach(r=>{staticHistData[r.mes]={iMn:+r.invest_mentoria||0,iHb:+r.invest_hub||0,iEx:+r.invest_experience||0,lMn:r.leads_mentoria||0,lHb:r.leads_hub||0,hot:r.qualificados_mentoria};});
     // Gera meses dinamicamente: Nov/2025 → mês atual. Evita manutenção manual
     // e o zeramento do relatório quando o período cai num mês fora da lista.
     const _histAbbr=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];

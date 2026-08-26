@@ -106,7 +106,7 @@ function todayOfMonth(){return new Date().toISOString().slice(0,7)+'-01';}
 async function renderGeral(){
   try{
     const {ini:gIni,fim:gFim}=getDates('geral');
-    const [leads,recMn,recHb,recEx,diagMn,campMn,campHb,campEx,leadsHubReal]=await Promise.all([
+    const [leads,recMn,recHb,recEx,diagMn,campMn,campHb,campEx,leadsHubReal,_histMensalRows]=await Promise.all([
       supaFetch('leads_mentoria',`select=score,classificacao,classificacao_manual&created_at=gte.${gIni}T00:00:00&created_at=lte.${gFim}T23:59:59&order=created_at.desc`),
       supaFetch('receita_mentoria',`select=valor&data=gte.${gIni}&data=lte.${gFim}`),
       supaFetch('receita_hub',`select=valor&data=gte.${gIni}&data=lte.${gFim}`),
@@ -118,7 +118,11 @@ async function renderGeral(){
       // "Leads Hub" oficial = contagem real de cadastros em leads_hub (Slack/Make),
       // igual à Mentoria usa leads_mentoria — não mais o registro reportado pela
       // Meta nem a planilha manual de campanhas_hub.leads.
-      supaFetch('leads_hub',`select=id&created_at=gte.${gIni}T00:00:00&created_at=lte.${gFim}T23:59:59`)
+      supaFetch('leads_hub',`select=id&created_at=gte.${gIni}T00:00:00&created_at=lte.${gFim}T23:59:59`),
+      // Histórico de meses fechados — era hardcoded aqui (_sHD) e duplicado
+      // de novo em relatorio-export.js. Agora vem da tabela historico_mensal,
+      // 1 fonte só, edita/atualiza em 1 lugar.
+      supaFetch('historico_mensal','select=*').catch(()=>[])
     ]);
     const totMn=recMn.reduce((a,r)=>a+(+r.valor||0),0);
     const totHb=recHb.reduce((a,r)=>a+(+r.valor||0),0);
@@ -145,8 +149,12 @@ async function renderGeral(){
     // ── Sincroniza KPIs com histData: mesma fonte do relatório ──
     // Meses já fechados mantidos como estavam antes da mudança de critério de
     // "Leads Hub" — Ago/2026 em diante fica de fora, usa contagem real de leads_hub.
-    const _sHD={'2025-11':{iMn:8907.13,iHb:3019.70,iEx:0,lMn:80,lHb:66,hot:null},'2025-12':{iMn:10711.03,iHb:3120.99,iEx:0,lMn:70,lHb:59,hot:null},'2026-01':{iMn:12060.48,iHb:4390.54,iEx:0,lMn:112,lHb:71,hot:39},'2026-02':{iMn:16935.56,iHb:5674.59,iEx:0,lMn:169,lHb:67,hot:19},'2026-03':{iMn:26394.82,iHb:8532.08,iEx:0,lMn:145,lHb:62,hot:17},'2026-04':{iMn:22896.85,iHb:6708.03,iEx:0,lMn:312,lHb:67,hot:46},'2026-05':{iMn:18815.66,iHb:8619.64,iEx:0,lMn:177,lHb:131,hot:52},'2026-06':{iMn:14284.24,iHb:10203.81,iEx:0,lMn:99,lHb:162,hot:26},'2026-07':{iMn:20409.05,iHb:9094.47,iEx:0,lMn:133,lHb:103,hot:48}};
-    const _allHM=[{y:2025,m:11},{y:2025,m:12},{y:2026,m:1},{y:2026,m:2},{y:2026,m:3},{y:2026,m:4},{y:2026,m:5},{y:2026,m:6}];
+    // Vem da tabela historico_mensal (era hardcoded aqui — ver sql/004-historico-mensal.sql)
+    const _sHD={};
+    (_histMensalRows||[]).forEach(r=>{_sHD[r.mes]={iMn:+r.invest_mentoria||0,iHb:+r.invest_hub||0,iEx:+r.invest_experience||0,lMn:r.leads_mentoria||0,lHb:r.leads_hub||0,hot:r.qualificados_mentoria};});
+    // Deriva do que existe em _sHD (antes era lista fixa, ficava sempre 1 mês
+    // atrasada — agora acompanha a tabela historico_mensal sozinha).
+    const _allHM=Object.keys(_sHD).sort().map(k=>{const[y,m]=k.split('-');return{y:+y,m:+m};});
     const _kI=gIni.slice(0,7),_kF=gFim.slice(0,7);
     const _mhPer=_allHM.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return k>=_kI&&k<=_kF;});
     const _dynMhG={};
