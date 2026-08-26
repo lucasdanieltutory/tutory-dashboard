@@ -39,11 +39,17 @@ module.exports = async function handler(req, res) {
     if (u.includes('tiktok')) return 'tiktok';
     if (u.includes('linkedin')) return 'linkedin';
     if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u.includes('audience_network') || u.includes('messenger') || u.includes('threads') || u === 'fb' || u === 'ig') return 'meta';
+    if (u.includes('linktree')) return 'organico'; // bio-link, não é mídia paga
     if (m === 'ppc' || u === 'adwords' || u === 'googleads') return 'google';
+    // UTM explícita que não bateu em nenhuma plataforma conhecida (ex.: "organico")
+    // já é a resposta definitiva daquele lead — não deixa o click id (fbclid/gclid,
+    // que pode ser sobra de sessão/cookie antigo) sobrescrever o que a própria UTM
+    // já disse. Click id só decide quando NÃO existe utm_source nenhuma.
+    if (u) return u;
     if (gclid) return 'google';
     if (fbclid) return 'meta';
     if (ttclid) return 'tiktok';
-    return u ? u : '';
+    return '';
   }
 
   // Aceita vários nomes de campo p/ o módulo do Make ficar simples.

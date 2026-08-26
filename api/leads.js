@@ -31,15 +31,33 @@ module.exports = async function handler(req, res) {
     if (u.includes('tiktok')) return 'tiktok';
     if (u.includes('linkedin')) return 'linkedin';
     if (u.includes('meta') || u.includes('facebook') || u.includes('instagram') || u.includes('audience_network') || u.includes('messenger') || u.includes('threads') || u === 'fb' || u === 'ig') return 'meta';
+    if (u.includes('linktree')) return 'organico'; // bio-link, não é mídia paga
     // Fallback: anúncios do Google sem UTM customizada no anúncio (ainda não
     // migrados do template genérico que o HubSpot injeta na conta) chegam com
     // utm_source=adwords&utm_medium=ppc — sem isso, ficariam sem plataforma.
     if (m === 'ppc' || u === 'adwords' || u === 'googleads') return 'google';
+    // UTM explícita que não bateu em nenhuma plataforma conhecida (ex.: "organico")
+    // já é a resposta definitiva — não deixa click id de sessão/cookie antigo
+    // (gclid/fbclid/ttclid/li_fat_id) sobrescrever o que a própria UTM já disse.
+    // Click id só decide quando NÃO existe utm_source nenhuma.
+    if (u) return u;
     if (s(b.gclid) || s(b.wbraid) || s(b.gbraid)) return 'google';
     if (s(b.fbclid)) return 'meta';
     if (s(b.ttclid)) return 'tiktok';
     if (s(b.li_fat_id)) return 'linkedin';
-    return u ? u : '';
+    return '';
+  }
+  // Canal normalizado: junta variantes de maiúscula/minúscula e mapeia valores
+  // que na prática significam a mesma coisa (ex.: "instagram" = entrou pelo
+  // Typebot via um link postado no Instagram, continua sendo Typebot).
+  function normalizeCanal(raw) {
+    const c = (raw || '').trim().toLowerCase();
+    if (!c) return 'Typebot';
+    if (c === 'typebot' || c === 'instagram') return 'Typebot';
+    if (c === 'site' || c === 'site oficial' || c === 'landing page' || c === 'lp') return 'Site';
+    if (c === 'organico' || c === 'orgânico') return 'Orgânico';
+    if (c === 'respondi') return 'Respondi';
+    return raw.trim();
   }
 
   const utm_source   = s(b.utm_source   || b.utmSource);
@@ -59,7 +77,7 @@ module.exports = async function handler(req, res) {
     cargo_lp:          s(b.area_de_atuacao   || b.cargo),
     faturamento:       s(b.faturamento),
     momento:           s(b.situacao_atual    || b.situacao || b.momento),
-    canal:             s(b.canal) || 'Typebot',
+    canal:             normalizeCanal(s(b.canal)),
   };
 
   // Colunas de atribuição (podem ainda não existir na tabela)
