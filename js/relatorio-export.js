@@ -18,27 +18,34 @@ async function exportarRelatorio(){
     const dataGeracao=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
     // ── Fetch dados período atual ──
+    // Cada consulta tem .catch(()=>[]) própria — antes, se QUALQUER uma das
+    // 7 falhasse (rede instável, hiccup do Supabase), o Promise.all inteiro
+    // rejeitava e o relatório não gerava nada, sem aviso nenhum de qual
+    // tabela falhou. Agora uma falha isolada degrada só aquele pedaço
+    // (mostra 0/vazio ali) em vez de derrubar o relatório inteiro.
+    const _failedFetches=[];
+    const _sf=(table,params)=>supaFetch(table,params).catch(e=>{_failedFetches.push(table);console.error('[relatorio] falha ao buscar '+table+':',e);return[];});
     const [leads,campMn,campHb,campEx,anMn,anHb,leadsHubTable,_histMensalRows]=await Promise.all([
-      supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('campanhas_experience',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
-      supaFetch('leads_hub',`select=id&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      _sf('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
+      _sf('campanhas_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      _sf('campanhas_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      _sf('campanhas_experience',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      _sf('anuncios_mentoria',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      _sf('anuncios_hub',`select=*&data=gte.${ini}&data=lte.${fim}`),
+      _sf('leads_hub',`select=id&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59`),
       // Histórico de meses fechados — era hardcoded aqui (staticHistData) e
       // duplicado de novo em tab-aeroporto-geral.js. Agora 1 fonte só.
-      supaFetch('historico_mensal','select=*').catch(()=>[]),
+      _sf('historico_mensal','select=*'),
     ]);
 
     // ── Fetch histórico Nov/2025 → HOJE (sempre, independente do período) ──
     const histIni='2025-11-01';
     const histFim=new Date().toISOString().slice(0,10);
     const [hLeadsMn,hCampsMn,hCampsHb,hLeadsHb]=await Promise.all([
-      supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
-      supaFetch('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
-      supaFetch('campanhas_hub',`select=gasto,data&data=gte.${histIni}&data=lte.${histFim}`),
-      supaFetch('leads_hub',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
+      _sf('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
+      _sf('campanhas_mentoria',`select=gasto,leads,data&data=gte.${histIni}&data=lte.${histFim}`),
+      _sf('campanhas_hub',`select=gasto,data&data=gte.${histIni}&data=lte.${histFim}`),
+      _sf('leads_hub',`select=classificacao_manual,created_at&created_at=gte.${histIni}T00:00:00&created_at=lte.${histFim}T23:59:59`),
     ]);
 
     // ── KPIs ──
@@ -59,17 +66,10 @@ async function exportarRelatorio(){
     const leadsHb=leadsHubTable.length;
     const vendasEx=campEx.reduce((a,r)=>a+(+r.vendas||0),0);
     const qualMn=hLeadsMn.filter(r=>r.created_at&&r.created_at.slice(0,10)>=ini&&r.created_at.slice(0,10)<=fim&&r.classificacao_manual==='Qualificado').length;
+    const qualHb=hLeadsHb.filter(r=>r.created_at&&r.created_at.slice(0,10)>=ini&&r.created_at.slice(0,10)<=fim&&r.classificacao_manual==='Qualificado').length;
     const cplMn=leadsMn>0?invMn/leadsMn:0;
     const cplHb=leadsHb>0?invHb/leadsHb:0;
     const custoEx=vendasEx>0?invEx/vendasEx:0;
-
-    // Google Ads (via plataforma_ad + dados manuais por período)
-    const gglLeads=leads.filter(r=>r.plataforma_ad==='google').length;
-    const gglHot=leads.filter(r=>r.plataforma_ad==='google'&&r.classificacao_manual==='Qualificado').length;
-    const gglManual={
-      '2026-04':{inv:1663.38,impressoes:178725,cliques:1810,searchLeads:10,searchCpl:99.37,demandInscritos:1385,demandCusto:0.48},
-    };
-    const gglData=gglManual[fim.slice(0,7)]||null;
 
     // Leads por canal (normaliza case para evitar duplicatas site/Site)
     const _normC=s=>{if(!s)return'Desconhecido';const t=s.trim().toLowerCase();if(t==='instagram'||t==='orgânico'||t==='organico'||t==='organi'||t==='orgânica'||t==='organica')return'Orgânico';return s.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');};
@@ -224,7 +224,6 @@ async function exportarRelatorio(){
         const _topResumo=topCamps.slice(0,6).map(c=>`- ${c.nome}: ${c.leads} leads | CPL R$${(c.gasto/c.leads).toFixed(2)} | Gasto R$${c.gasto.toFixed(0)}`).join('\n');
         const _canaisResumo=Object.entries(canais).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`${c}: ${n}`).join(' | ');
         const _taxaQual=leadsMn>0?((qualMn/leadsMn)*100).toFixed(1):0;
-        const _gglCtx='';
 
         const _prompt=`PERÍODO ANALISADO: ${periodo}
 
@@ -393,6 +392,8 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
           <div class="cover-meta-item"><label>Emitido por</label><span>Marketing Tutory</span></div>
         </div>
       </div>
+
+      ${_failedFetches.length?`<div class="info-box yellow" style="margin-bottom:24px;"><div class="info-box-title">⚠️ Atenção — dado parcial</div><p>Falha ao buscar de <strong>${[...new Set(_failedFetches)].join(', ')}</strong> — os números que dependem dessa tabela podem estar zerados ou incompletos neste relatório. Tente exportar de novo em alguns minutos.</p></div>`:''}
 
       <!-- KPIs CONSOLIDADOS -->
       <div class="section">
@@ -570,21 +571,16 @@ Retorne APENAS este HTML exato, sem markdown, sem blocos de código:
               const rowStyle=isCur?' style="background:#EFF6FF;font-weight:700;"':'';
               return`<tr${rowStyle}><td>${hm.label}${isCur?' ◀':''}</td><td style="text-align:right;">${(hm.iMn||0)>0?brl(hm.iMn||0):'—'}</td><td style="text-align:right;">${(hm.iHb||0)>0?brl(hm.iHb||0):'—'}</td><td style="text-align:right;font-weight:700;">${hm.iT>0?brl(hm.iT):'—'}</td><td style="text-align:right;">${hm.lMn||'—'}</td><td style="text-align:right;">${hm.lHb||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hot||'—'}</td><td style="text-align:right;color:#16A34A;font-weight:700;">${hm.hotHb||'—'}</td><td style="text-align:right;">${hm.cpMn>0?brl(hm.cpMn):'—'}</td><td style="text-align:right;">${hm.cpHb>0?brl(hm.cpHb):'—'}</td></tr>`;
             });
-            const _d=_per;
-            const _pIT=_d.reduce((s,h)=>s+h.iT,0);
-            const _pIMn=_d.reduce((s,h)=>s+(h.iMn||0),0);
-            const _pIHb=_d.reduce((s,h)=>s+(h.iHb||0),0);
-            const _pLMn=_d.reduce((s,h)=>s+h.lMn,0);
-            const _pLHb=_d.reduce((s,h)=>s+h.lHb,0);
-            const _pHot=_d.reduce((s,h)=>s+(h.hot||0),0);
-            const _pHotHb=_d.reduce((s,h)=>s+(h.hotHb||0),0);
-            const _pCpMn=_pLMn>0?_pIMn/_pLMn:0;
-            const _pCpHb=_pLHb>0?_pIHb/_pLHb:0;
-            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL</td><td style="text-align:right;">${brl(_pIMn)}</td><td style="text-align:right;">${brl(_pIHb)}</td><td style="text-align:right;">${brl(_pIT)}</td><td style="text-align:right;">${_pLMn}</td><td style="text-align:right;">${_pLHb}</td><td style="text-align:right;color:#4ADE80;">${_pHot}</td><td style="text-align:right;color:#4ADE80;">${_pHotHb}</td><td style="text-align:right;">${_pCpMn>0?brl(_pCpMn):'—'}</td><td style="text-align:right;">${_pCpHb>0?brl(_pCpHb):'—'}</td></tr>`);
+            // TOTAL desta tabela usa os valores EXATOS do período (mesmos da
+            // "Visão Consolidada" no topo) — antes somava o(s) mês(es) inteiro(s)
+            // que o período tocava (histData é por mês), o que pra período tipo
+            // "29/07 a 27/08" contava julho E agosto inteiros, batendo diferente
+            // do topo do relatório e confundindo quem lê os dois.
+            rows.push(`<tr style="background:#1E293B;color:#F1F5F9;font-weight:700;border-top:2px solid #334155;"><td>TOTAL (exato do período)</td><td style="text-align:right;">${brl(invMn)}</td><td style="text-align:right;">${brl(invHb)}</td><td style="text-align:right;">${brl(invTotal)}</td><td style="text-align:right;">${leadsMn}</td><td style="text-align:right;">${leadsHb}</td><td style="text-align:right;color:#4ADE80;">${qualMn}</td><td style="text-align:right;color:#4ADE80;">${qualHb}</td><td style="text-align:right;">${cplMn>0?brl(cplMn):'—'}</td><td style="text-align:right;">${cplHb>0?brl(cplHb):'—'}</td></tr>`);
             return rows.join('');
           })()}</tbody>
         </table>
-        <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Período atual &nbsp;·&nbsp; Dados filtrados pelo período selecionado no dashboard</p>
+        <p style="font-size:11px;color:#94A3B8;margin-top:-16px;">◀ Mês atual &nbsp;·&nbsp; Linhas por mês inteiro (contexto) — a linha TOTAL é o valor exato do período selecionado</p>
       </div>
 
       <!-- RODAPÉ -->
