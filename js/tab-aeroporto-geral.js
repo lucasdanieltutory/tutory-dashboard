@@ -152,9 +152,14 @@ async function renderGeral(){
     // Vem da tabela historico_mensal (era hardcoded aqui — ver sql/004-historico-mensal.sql)
     const _sHD={};
     (_histMensalRows||[]).forEach(r=>{_sHD[r.mes]={iMn:+r.invest_mentoria||0,iHb:+r.invest_hub||0,iEx:+r.invest_experience||0,lMn:r.leads_mentoria||0,lHb:r.leads_hub||0,hot:r.qualificados_mentoria};});
-    // Deriva do que existe em _sHD (antes era lista fixa, ficava sempre 1 mês
-    // atrasada — agora acompanha a tabela historico_mensal sozinha).
-    const _allHM=Object.keys(_sHD).sort().map(k=>{const[y,m]=k.split('-');return{y:+y,m:+m};});
+    // Deriva do que existe em _sHD, mas deixa o mês mais recente de fora de
+    // propósito (mesma folga que a lista fixa antiga já tinha, só que agora
+    // se ajusta sozinha) — sem isso, um período "30 dias" que cai dentro do
+    // mês mais novo do histórico usa o número congelado do mês inteiro em vez
+    // de contar ao vivo os leads reais da janela, subcontando o período atual.
+    const _allHMKeys=Object.keys(_sHD).sort();
+    _allHMKeys.pop();
+    const _allHM=_allHMKeys.map(k=>{const[y,m]=k.split('-');return{y:+y,m:+m};});
     const _kI=gIni.slice(0,7),_kF=gFim.slice(0,7);
     const _mhPer=_allHM.filter(hm=>{const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;return k>=_kI&&k<=_kF;});
     const _dynMhG={};

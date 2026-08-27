@@ -162,18 +162,22 @@ async function exportarRelatorio(){
       const cpHb=lHb>0?iHb/lHb:0;
       return{...hm,lMn,lHb,hot,hotHb,iMn,iHb,iEx,iT:iMn+iHb+iEx,cpMn,cpHb,hasData:lMn>0||iMn>0};
     });
-    // ── Totais do período via histData (fonte única de verdade) ──
-    const _periodoHist=histData.filter(h=>{const k=`${h.y}-${String(h.m).padStart(2,'0')}`;return k>=ini.slice(0,7)&&k<=fim.slice(0,7)&&h.hasData;});
-    // Se _periodoHist vier vazio (período fora dos meses agregados), usa os
-    // valores ao vivo do período já calculados acima como fallback.
-    const _hasHist=_periodoHist.length>0;
-    const _relIT=_hasHist?_periodoHist.reduce((s,h)=>s+h.iT,0):invTotal;
-    const _relIMn=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iMn||0),0):invMn;
-    const _relIHb=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iHb||0),0):invHb;
-    const _relIEx=_hasHist?_periodoHist.reduce((s,h)=>s+(h.iEx||0),0):invEx;
-    const _relLMn=_hasHist?_periodoHist.reduce((s,h)=>s+h.lMn,0):leadsMn;
-    const _relLHb=_hasHist?_periodoHist.reduce((s,h)=>s+h.lHb,0):leadsHb;
-    const _relHot=_hasHist?_periodoHist.reduce((s,h)=>s+(h.hot||0),0):qualMn;
+    // ── Totais do período: SEMPRE os valores exatos já calculados por
+    // consulta direta ao banco pro recorte de dias pedido (linhas ~50-61).
+    // Antes isso tentava "economizar" usando histData (agregado por MÊS
+    // inteiro) quando o período caía dentro de algum mês do histórico — só
+    // que comparava ano-mês, não o dia exato, então um período tipo "29/07 a
+    // 27/08" somava julho INTEIRO + agosto INTEIRO em vez do recorte real,
+    // inflando bastante o número. histData continua existindo só pra tabela
+    // de comparativo histórico (mês a mês) mais abaixo, nunca pros cartões
+    // de resumo do topo.
+    const _relIT=invTotal;
+    const _relIMn=invMn;
+    const _relIHb=invHb;
+    const _relIEx=invEx;
+    const _relLMn=leadsMn;
+    const _relLHb=leadsHb;
+    const _relHot=qualMn;
     const _relCplMn=_relLMn>0?_relIMn/_relLMn:0;
     const _relCplHb=_relLHb>0?_relIHb/_relLHb:0;
     const _perHot=_relHot;
