@@ -53,8 +53,12 @@ const _META_FALLBACK='EAAKuiShZA6qcBRSwOPpOjaxns9CnCtDmXbsLPVMYrY00naDV5Ag2KVWLV
 function getMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
-  if(stored&&expiry&&Date.now()<expiry-86400000)return stored.trim();
-  if(stored&&!expiry)return stored.trim(); // token sem prazo (curto)
+  // Validade REAL, sem a margem de 1 dia de antecedência — ver comentário em
+  // loadTokenFromSupabase(). Um token guardado que ainda não expirou de
+  // verdade é sempre melhor que o _META_FALLBACK fixo abaixo, que também
+  // expira e nunca se renova solo.
+  if(stored&&expiry&&Date.now()<expiry)return stored.trim();
+  if(stored&&!expiry)return stored.trim(); // token sem prazo (permanente)
   return _META_FALLBACK;
 }
 
@@ -146,7 +150,12 @@ async function loadTokenFromSupabase(){
     if(!d||!d[0]||!d[0].valor)return false;
     const token=d[0].valor;
     const expiry=d[0].expiry||0;
-    if(expiry&&Date.now()>expiry-86400000)return false; // expirado
+    // Usa a validade REAL (sem margem de 1 dia de antecedência) — a margem
+    // fazia sentido pra decidir "hora de trocar", mas aqui é "posso usar
+    // agora?": um token que ainda tem 6h de vida é bem melhor que cair no
+    // _META_FALLBACK fixo do código, que também expira e nunca se atualiza
+    // solo. Se realmente já passou da validade, aí sim é inútil mesmo.
+    if(expiry&&Date.now()>expiry)return false; // de fato expirado
     // Salva localmente
     localStorage.setItem('tutory_meta_token',token);
     if(expiry)localStorage.setItem('tutory_meta_token_expiry',String(expiry));
@@ -191,7 +200,10 @@ async function exchangeLongLivedToken(shortToken){
 async function initMetaToken(){
   const stored=localStorage.getItem('tutory_meta_token');
   const expiry=parseInt(localStorage.getItem('tutory_meta_token_expiry')||'0');
-  const isValid=stored&&expiry&&Date.now()<expiry-86400000;
+  // Mesma validade real usada em getMetaToken()/loadTokenFromSupabase() —
+  // as 3 tinham que bater, senão uma aceita o token e a outra rejeita o
+  // mesmo token no mesmo instante.
+  const isValid=stored&&expiry&&Date.now()<expiry;
   if(isValid){
     // Token local válido — sincroniza pro Supabase para todos os outros navegadores
     saveTokenToSupabase(stored,expiry);
@@ -213,8 +225,21 @@ async function initMetaToken(){
   }
 }
 
+// initMetaToken() faz round-trip no Supabase (pra pegar o token mais novo,
+// salvo por outro navegador/dispositivo) — sem isso, getMetaToken() só olha
+// o localStorage DESTE navegador e cai no _META_FALLBACK fixo do código
+// (que expira e nunca é atualizado sozinho) quando não acha nada aqui.
+// Cacheado numa promise pra rodar só 1x por carregamento de página, igual
+// o mesmo padrão já usado em os-core.js/tab-youtube.js.
+let _tokenMetaPronto=null;
+function garantirTokenMeta(){
+  if(!_tokenMetaPronto)_tokenMetaPronto=initMetaToken().catch(()=>{});
+  return _tokenMetaPronto;
+}
+
 const _metaCache={};
 async function fetchMetaInsights(since,until){
+  await garantirTokenMeta();
   const token=getMetaToken();
   const _ck=since+'|'+until;
   if(_metaCache[_ck])return _metaCache[_ck];
@@ -225,6 +250,13 @@ async function fetchMetaInsights(since,until){
     const url='https://graph.facebook.com/v19.0/'+META_ACCOUNT+'/insights?fields='+encodeURIComponent(fields)+'&time_range='+encodeURIComponent(tr)+'&level=campaign&limit=500&access_token='+token;
     const res=await fetch(url);
     const data=await res.json();
+    if(!data.error){
+      // Sucesso — se o banner de token expirado ainda estava na tela (de uma
+      // falha anterior, antes do token ser renovado), some sozinho. Antes só
+      // desaparecia clicando em "Renovar Token"; agora se autocorrige.
+      const _okBanner=document.getElementById('meta-token-banner');
+      if(_okBanner)_okBanner.remove();
+    }
     if(data.error){
       console.warn('Meta API:',data.error.message);
       // Mostra banner de aviso se token inválido/expirado
