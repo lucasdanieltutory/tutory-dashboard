@@ -156,9 +156,13 @@ async function loadTokenFromSupabase(){
     // _META_FALLBACK fixo do código, que também expira e nunca se atualiza
     // solo. Se realmente já passou da validade, aí sim é inútil mesmo.
     if(expiry&&Date.now()>expiry)return false; // de fato expirado
-    // Salva localmente
+    // Salva localmente — remove a validade antiga explicitamente quando o
+    // token novo é permanente (expiry=0): sem isso, uma validade velha (de
+    // um token anterior) ficava presa no localStorage e getMetaToken()
+    // rejeitava o token novo por causa da validade errada que sobrou.
     localStorage.setItem('tutory_meta_token',token);
     if(expiry)localStorage.setItem('tutory_meta_token_expiry',String(expiry));
+    else localStorage.removeItem('tutory_meta_token_expiry');
     console.log('✅ Token Meta carregado do Supabase');
     return true;
   }catch(e){return false;}
