@@ -10,6 +10,7 @@ async function renderAeroporto(){
       supaFetch('leads_mentoria','select=id,created_at,classificacao_manual&created_at=gte.'+todayOfMonth()+'T00:00:00&created_at=lte.'+rng.fim+'T23:59:59')
     ]);
     var totLeads=leads?leads.length:0;
+    var _apHsPromise=(typeof fetchHubspotStatus==='function')?fetchHubspotStatus((leads||[]).map(function(r){return r.contact_email;}).filter(Boolean)):Promise.resolve({});
     var _metaAp=[];try{_metaAp=await fetchMetaInsights(rng.fim.slice(0,7)+"-01",rng.fim);}catch(e){}var _msAp=metaSumByPlatform(_metaAp);var investMensal=_msAp&&_msAp.total>0?_msAp.mentoria:(camps?camps.reduce(function(a,r){return a+(+r.gasto||0);},0):0);
     var qualif=leads?leads.filter(function(r){return r.classificacao_manual==='Qualificado';}).length:0;
     var invest=camps?camps.reduce(function(a,r){return a+(+r.gasto||0);},0):0;
@@ -75,20 +76,24 @@ async function renderAeroporto(){
     var tb=document.getElementById('ap-tbody');
     if(tb){
       if(!leads||!leads.length){
-        tb.innerHTML='<tr><td colspan="9" class="ap-empty">Nenhum lead encontrado no período</td></tr>';
+        tb.innerHTML='<tr><td colspan="12" class="ap-empty">Nenhum lead encontrado no período</td></tr>';
       } else {
+        window._hsStatus=await _apHsPromise;
         tb.innerHTML=leads.map(function(r){
           var isNew=newIds.has(r.id);
           var dt=r.created_at?new Date(r.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
           return'<tr class="'+(isNew?'ap-row-new':'')+'">'+
             '<td>'+dt+'</td>'+
             '<td style="font-weight:600;color:#fff;">'+(r.contact_name||'—')+'</td>'+
+            '<td style="color:#fff;">'+(r.lastname||'—')+'</td>'+
             '<td style="color:#7AABFF;">'+(r.contact_instagram?r.contact_instagram:'—')+'</td>'+
             '<td><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;">'+platChip(r.plataforma_origem||r.plataforma_ad)+canalChip(r.canal)+'</div></td>'+
             '<td>'+(r.cargo||r.cargo_lp||'—')+'</td>'+
             '<td>'+(r.faturamento||'—')+'</td>'+
+            '<td>'+(r.numero_de_alunos||'—')+'</td>'+
             '<td style="color:var(--sub);font-size:11px;">'+(r.contact_email||'—')+'</td>'+
             '<td style="color:#4ADE80;font-size:11px;">'+(r.contact_phone||'—')+'</td>'+
+            '<td>'+((typeof _hsStatusCell==='function')?_hsStatusCell(r):'—')+'</td>'+
             '<td>'+_apBadge(r.classificacao_manual)+'</td>'+
             '</tr>';
         }).join('');
@@ -173,7 +178,10 @@ async function renderGeral(){
       supaFetch('leads_mentoria',`select=classificacao_manual,created_at&created_at=gte.${_hIni}T00:00:00&created_at=lte.${_hFim}T23:59:59`),
       supaFetch('leads_hub',`select=created_at&created_at=gte.${_hIni}T00:00:00&created_at=lte.${_hFim}T23:59:59`)
     ]);
-    const _inMo=(d,y,m)=>{if(!d)return false;const dt=new Date(d.slice(0,10));return dt.getFullYear()===y&&dt.getMonth()+1===m;};
+    // Comparação por texto, sem passar por new Date() — ver mesmo comentário
+    // em relatorio-export.js (_inMonth): evita o deslocamento de fuso que
+    // jogava lead do dia 1 pro mês anterior.
+    const _inMo=(d,y,m)=>{if(!d)return false;const [dy,dm]=d.slice(0,7).split('-');return +dy===y&&+dm===m;};
     let _hdLMn=0,_hdLHb=0,_hdHot=0,_hdIMn=0,_hdIHb=0,_hdIEx=0;
     for(const hm of _mhPer){
       const k=`${hm.y}-${String(hm.m).padStart(2,'0')}`;

@@ -3,13 +3,36 @@
 // o card fica branco e o texto quase branco some. var(--txt)/var(--sub) já
 // têm definição pros dois temas.
 const _leadDateCell = r => { const dt=r.created_at?new Date(r.created_at):null; if(!dt)return'—'; const dS=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); const tS=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); return `<span style="display:block;font-size:12px;font-weight:700;color:var(--txt);white-space:nowrap;">${dS}</span><span style="display:block;font-size:12.5px;font-weight:800;color:var(--sub);white-space:nowrap;margin-top:1px;">${tS}</span>`; };
+// Coluna HubSpot — existe Contact lá? Lead associado, em qual estágio? Serve
+// pra pegar na hora quando o Make não disparou (ver histórico de erros de
+// validação de propriedade que já travaram execução) — sem isso o lead
+// parece normal aqui e só se descobre que faltou cadastrar manualmente
+// quando o time comercial for procurar no HubSpot e não achar.
+const HS_PORTAL_ID = '50944731';
+function _hsStatusCell(r){
+  const em=(r.contact_email||'').trim().toLowerCase();
+  if(!em) return '<span style="color:var(--sub);font-size:10.5px;">sem e-mail</span>';
+  const st=window._hsStatus&&window._hsStatus[em];
+  if(!st) return '<span style="color:var(--sub);font-size:10.5px;">…</span>';
+  if(!st.inHubspot){
+    return '<span title="Não achado no HubSpot — o Make pode não ter disparado. Cadastre manualmente." style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">⚠ Faltando</span>';
+  }
+  const link=st.contactId?`https://app.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-1/${st.contactId}`:'#';
+  if(!st.stage){
+    return `<a href="${link}" target="_blank" title="Contato existe no HubSpot, mas sem Lead associado ainda" style="display:inline-flex;align-items:center;gap:4px;background:rgba(148,163,184,.14);color:var(--sub);border:1px solid rgba(148,163,184,.3);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">👤 Contato</a>`;
+  }
+  return `<a href="${link}" target="_blank" title="Estágio do Lead no HubSpot: ${_escAtr(st.stage)}" style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">✓ ${_escAtr(st.stage)}</a>`;
+}
 const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n        <td class="mo" style="overflow:visible;text-overflow:clip;white-space:nowrap;min-width:78px;width:78px;">${_leadDateCell(r)}</td>\r\n        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="font-size:12px;">${r.contact_name||'—'}</strong>${r._isDuplicate?'<span style="display:inline-block;margin-left:4px;background:#F97316;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;vertical-align:middle;letter-spacing:.5px;">DUP</span>':''}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.lastname||'—'}</td>
         <td class="cel-nowrap" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${igLink(r.contact_instagram)}</td>
         <td style="min-width:190px;">${platChip(r.plataforma_ad)}<br><span style="display:inline-block;margin-top:3px;">${canalChip(r.canal)}</span>${r.utm_content?`<span style="display:block;margin-top:4px;font-size:9.5px;font-weight:700;color:#C084FC;white-space:normal;word-break:break-word;line-height:1.4;">📢 ${_escAtr(r.utm_content)}</span>`:''}${r.utm_campaign?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#38BDF8;white-space:normal;word-break:break-word;line-height:1.4;">🏷️ ${_escAtr(r.utm_campaign)}</span>`:''}${r.utm_term?`<span style="display:block;margin-top:2px;font-size:9px;font-weight:600;color:#FBBF24;white-space:normal;word-break:break-word;line-height:1.4;">🧩 ${_escAtr(r.utm_term)}</span>`:''}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cargo||r.cargo_lp||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
+        <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.numero_de_alunos||'—'}</td>
         <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
         <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(()=>{if(!r.contact_phone)return'—';const n=r.contact_phone.replace(/\D/g,'');const num=n.startsWith('55')?n:'55'+n;return`<a href='https://wa.me/${num}' target='_blank' style='color:#25D366;text-decoration:none;'>📱 ${r.contact_phone}</a>`;})()}</td>
+        <td class="cel-hs" style="text-align:center;font-size:15px;">${_hsStatusCell(r)}</td>
         <td class="cel-classif">
           <div style="display:flex;flex-direction:column;gap:4px;">
             ${classifBadge(r.classificacao_manual)}
@@ -26,7 +49,7 @@ const _leadRow = r => `<tr${r._isDuplicate?' style="opacity:0.75;"':''}>\r\n    
       </tr>`;
 const _rFull=(tbId,data)=>{
   const tb=$(tbId);if(!tb)return;
-  if(!data.length){tb.innerHTML='<tr class="er"><td colspan="10">Nenhum lead registrado ainda.</td></tr>';return;}
+  if(!data.length){tb.innerHTML='<tr class="er"><td colspan="13">Nenhum lead registrado ainda.</td></tr>';return;}
   tb.innerHTML=data.map(_leadRow).join('');
 };
 // ── Filtro de origem do Aeroporto de Leads (Visão Geral) ──────────────
@@ -113,6 +136,10 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
     });
     leads=leads.map(r=>_dupIds.has(r.id||r.contact_email)?{...r,_isDuplicate:true}:r);
     window._mnLeads = leads;
+    // Dispara já (em paralelo com o resto do processamento abaixo, que não
+    // depende disso) — só é esperado logo antes de desenhar as tabelas de
+    // lead, que são as únicas que mostram a coluna HubSpot.
+    const _hsStatusPromise = fetchHubspotStatus(leads.map(r=>r.contact_email).filter(Boolean));
     const totL=leads.length;
     const hotL=leads.filter(r=>r.classificacao_manual==='Qualificado').length;
     const warmL=leads.filter(r=>r.classificacao_manual==='Pré-qualificado').length;
@@ -212,7 +239,10 @@ async function _renderMentoriaDOM(leads,camps,anuncios,diags,receita,ini,fim){
       if($('mn-dt'))$('mn-dt').textContent='Aguardando primeiro diagnóstico';
       if($('mn-dtxt'))$('mn-dtxt').textContent='O diagnóstico é gerado automaticamente todos os dias às 08h30.';
     }
-    // leads table
+    // leads table — espera o status do HubSpot (já disparado lá em cima,
+    // então normalmente já chegou) antes de desenhar, pra não piscar a
+    // coluna vazia e redesenhar de novo 1 frame depois.
+    window._hsStatus = await _hsStatusPromise;
     _rFull('mn-leads',leads.filter(r=>r.classificacao_manual==='Qualificado'||r.classificacao_manual==='Pré-qualificado'));
     window._mnAeroportoLeads=leads;
     _popularFiltroOrigem(leads);
@@ -384,11 +414,22 @@ function _hbPerfil(r){
   return m?m[1].trim():r.observacao;
 }
 function hbClassifBadge(cl){
-  if(cl==='Qualificado')return'<span style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22C55E;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">✅ Qualificado</span>';
-  if(cl==='Pré-qualificado')return'<span style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.3);color:#CA8A04;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">⚡ Pré-qualif.</span>';
-  if(cl==='Desqualificação prévia')return'<span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#EA580C;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">⚠ Desq. prévia</span>';
-  if(cl==='Desqualificado')return'<span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#DC2626;padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">✕ Desqualif.</span>';
-  return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">— Sem classif.</span>';
+  // Mesma paleta clara de classifBadge (dashboard-utils.js) — ver comentário lá.
+  const light=document.documentElement.classList.contains('light-mode');
+  const map=light?{
+    'Qualificado':{bg:'rgba(4,96,64,.14)',border:'rgba(4,96,64,.4)',color:'#046040',label:'✅ Qualificado'},
+    'Pré-qualificado':{bg:'rgba(154,82,0,.14)',border:'rgba(154,82,0,.4)',color:'#9A5200',label:'⚡ Pré-qualif.'},
+    'Desqualificação prévia':{bg:'rgba(184,50,8,.14)',border:'rgba(184,50,8,.4)',color:'#B83208',label:'⚠ Desq. prévia'},
+    'Desqualificado':{bg:'rgba(154,14,14,.12)',border:'rgba(154,14,14,.35)',color:'#9A0E0E',label:'✕ Desqualif.'},
+  }:{
+    'Qualificado':{bg:'rgba(34,197,94,.15)',border:'rgba(34,197,94,.3)',color:'#22C55E',label:'✅ Qualificado'},
+    'Pré-qualificado':{bg:'rgba(234,179,8,.15)',border:'rgba(234,179,8,.3)',color:'#CA8A04',label:'⚡ Pré-qualif.'},
+    'Desqualificação prévia':{bg:'rgba(249,115,22,.15)',border:'rgba(249,115,22,.3)',color:'#EA580C',label:'⚠ Desq. prévia'},
+    'Desqualificado':{bg:'rgba(239,68,68,.15)',border:'rgba(239,68,68,.3)',color:'#DC2626',label:'✕ Desqualif.'},
+  };
+  const s=map[cl];
+  if(!s)return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">— Sem classif.</span>';
+  return`<span style="background:${s.bg};border:1px solid ${s.border};color:${s.color};padding:2px 10px;border-radius:6px;font-size:10px;font-weight:700;">${s.label}</span>`;
 }
 function _hbSelect(id,cl){
   return`<select onchange="salvarClassifLeadHub('${id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
@@ -418,7 +459,16 @@ async function moverLeadParaMentoria(id,btn){
   btn.disabled=true;btn.textContent='Enviando…';
   try{
     const payload={};
-    const _set=(k,v)=>{if(v!==undefined&&v!==null&&v!=='')payload[k]=v;};
+    // Placeholders de "vazio" que vêm como texto (travessão, "n/a", "null"...)
+    // não podem ser copiados pra Mentoria: viravam um anúncio fantasma chamado
+    // "—" na tabela de atribuição. Vazio de verdade é vazio.
+    const _VAZIO=new Set(['—','-','--','n/a','na','null','undefined','(not set)','none']);
+    const _set=(k,v)=>{
+      if(v===undefined||v===null)return;
+      const s=String(v).trim();
+      if(!s||_VAZIO.has(s.toLowerCase()))return;
+      payload[k]=s;
+    };
     _set('contact_name',r.contact_name);
     _set('contact_email',r.contact_email);
     _set('contact_phone',r.contact_phone);

@@ -199,6 +199,38 @@ async function fetchHubspotDeals(emails){
   _hsDealsCache[key]={ts:Date.now(),promise};
   return promise;
 }
+
+// Status do lead no HubSpot pra uma lista de e-mails (via api/hubspot-status)
+// — existe Contact lá? tem Lead associado? em qual estágio (Novos/Abordagem/
+// Conectado/Qualificado/etc, das pipelines reais)? É o que permite ver no
+// Aeroporto quando o Make não disparou (lead não aparece no HubSpot) sem
+// precisar abrir o HubSpot e procurar um por um. Mesmo padrão de cache de
+// fetchHubspotDeals (5min, por lista de e-mails).
+const _hsStatusCache = {};
+async function fetchHubspotStatus(emails){
+  if(!emails||!emails.length)return{};
+  const key=[...new Set(emails)].sort().join(',');
+  const cached=_hsStatusCache[key];
+  if(cached && Date.now()-cached.ts<300000) return cached.promise;
+
+  const promise=(async()=>{
+    let token=getHubspotToken();
+    if(!token){await loadHubspotTokenFromSupabase();token=getHubspotToken();}
+    if(!token)return{};
+    try{
+      const r=await fetch('/api/hubspot-status',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({emails})
+      });
+      if(!r.ok)return{};
+      const d=await r.json();
+      return d.status||{};
+    }catch(e){return{};}
+  })();
+  _hsStatusCache[key]={ts:Date.now(),promise};
+  return promise;
+}
 // ───────────────────────────────────────────────────────────────
 
 async function saveTokenToSupabase(token, expiry){

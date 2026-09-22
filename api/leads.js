@@ -70,6 +70,7 @@ module.exports = async function handler(req, res) {
   // Colunas base (já existiam na tabela)
   const base = {
     contact_name:      s(b.contact_name),
+    lastname:          s(b.lastname || b.sobrenome || b.last_name),
     contact_email:     s(b.contact_email     || b.email),
     contact_phone:     s(b.contact_phone     || b.telefone),
     contact_instagram: s(b.contact_instagram || b.instagram),
@@ -78,6 +79,9 @@ module.exports = async function handler(req, res) {
     faturamento:       s(b.faturamento),
     momento:           s(b.situacao_atual    || b.situacao || b.momento),
     canal:             normalizeCanal(s(b.canal)),
+    // Já perguntado no Typebot e já chega no HubSpot (propriedade
+    // numero_de_alunos) — só nunca tinha sido encaminhado pra cá.
+    numero_de_alunos:  s(b.numero_de_alunos  || b.numeroDeAlunos || b.numero_alunos || b.qtd_alunos),
   };
 
   // Colunas de atribuição (podem ainda não existir na tabela)

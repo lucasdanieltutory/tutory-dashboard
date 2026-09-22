@@ -71,12 +71,11 @@ async function exportarRelatorio(){
     const cplHb=leadsHb>0?invHb/leadsHb:0;
     const custoEx=vendasEx>0?invEx/vendasEx:0;
 
-    // Leads por canal (normaliza case para evitar duplicatas site/Site)
-    const _normC=s=>{if(!s)return'Desconhecido';const t=s.trim().toLowerCase();if(t==='instagram'||t==='orgânico'||t==='organico'||t==='organi'||t==='orgânica'||t==='organica')return'Orgânico';return s.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');};
+    // Leads por canal (usa normCanal — mesma regra canônica de api/leads.js, definida mais abaixo)
     const canais={};
-    leads.forEach(r=>{const c=_normC(r.canal);canais[c]=(canais[c]||0)+1;});
+    leads.forEach(r=>{const c=normCanal(r.canal);canais[c]=(canais[c]||0)+1;});
     const canalQual={};
-    leads.filter(r=>r.classificacao_manual==='Qualificado').forEach(r=>{const c=_normC(r.canal);canalQual[c]=(canalQual[c]||0)+1;});
+    leads.filter(r=>r.classificacao_manual==='Qualificado').forEach(r=>{const c=normCanal(r.canal);canalQual[c]=(canalQual[c]||0)+1;});
     const melhorCanal=Object.entries(canalQual).sort((a,b)=>b[1]-a[1])[0];
 
     // Criativos — top campanhas por leads
@@ -113,7 +112,14 @@ async function exportarRelatorio(){
     }).join(''):`<tr><td colspan="4" style="text-align:center;color:#94A3B8;font-style:italic;padding:16px;">Sem dados de criativos Hub no período</td></tr>`;
 
     // Comparativo histórico
-    const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const d=new Date(dateStr.slice(0,10));return d.getFullYear()===y&&d.getMonth()+1===m;};
+    // Comparação por texto (sem passar por new Date()) de propósito: criar um
+    // Date a partir de "YYYY-MM-DD" interpreta como meia-noite UTC, mas
+    // .getFullYear()/.getMonth() leem de volta no fuso LOCAL do navegador —
+    // isso deslocava todo lead pro dia anterior (ex.: lead do dia 1 virava
+    // "dia 0" = mês errado), sub-contando os primeiros leads do mês. As
+    // consultas ao Supabase (linha TOTAL) filtram created_at como UTC puro,
+    // então comparar o texto direto é o que bate com a mesma fonte da verdade.
+    const _inMonth=(dateStr,y,m)=>{if(!dateStr)return false;const [dy,dm]=dateStr.slice(0,7).split('-');return +dy===y&&+dm===m;};
     // Vem da tabela historico_mensal (era hardcoded aqui — ver sql/004-historico-mensal.sql)
     const staticHistData={};
     (_histMensalRows||[]).forEach(r=>{staticHistData[r.mes]={iMn:+r.invest_mentoria||0,iHb:+r.invest_hub||0,iEx:+r.invest_experience||0,lMn:r.leads_mentoria||0,lHb:r.leads_hub||0,hot:r.qualificados_mentoria};});
@@ -131,9 +137,17 @@ async function exportarRelatorio(){
       const _ins=await fetchMetaInsights(_dIni,_dFim);
       _dynMeta[k]=metaSumByPlatform(_ins);
     }));
+    // Mês corrente nunca pode vir da tabela congelada (historico_mensal) mesmo
+    // que já exista uma linha lá pra ele — o mês ainda está recebendo lead/gasto
+    // agora, e servir do snapshot faz a linha do mês (ex.: "Ago/2026") mostrar
+    // menos leads que a linha TOTAL (calculada ao vivo) mesmo com o mesmo
+    // investimento — bug real visto no relatório exportado em 28/08/2026.
+    const _todayReal=new Date();
+    const _curY=_todayReal.getFullYear(), _curM=_todayReal.getMonth()+1;
     const histData=histMonths.map(hm=>{
       const sqKey=`${hm.y}-${String(hm.m).padStart(2,'0')}`;
-      const sd=staticHistData[sqKey];
+      const isCurrentMonth=hm.y===_curY&&hm.m===_curM;
+      const sd=isCurrentMonth?null:staticHistData[sqKey];
       // Qual. Hub = contagem real de classificacao_manual='Qualificado' em
       // leads_hub no mês — dado genuíno, calculado sempre ao vivo (mesmo nos
       // meses com Invest./Leads congelados), já que "qualificar um lead" é
@@ -628,7 +642,7 @@ async function exportarLeadsCSV(){
   const {ini,fim}=getDates('mentoria');
   const leads=await supaFetch('leads_mentoria',`select=*&created_at=gte.${ini}T00:00:00&created_at=lte.${fim}T23:59:59&order=created_at.desc`);
   if(!leads||!leads.length){alert('Nenhum lead no período.');return;}
-  const cols=['created_at','contact_name','contact_instagram','contact_phone','contact_email','score','classificacao','canal','cargo','faturamento','momento','proxima_acao'];
+  const cols=['created_at','contact_name','lastname','contact_instagram','contact_phone','contact_email','score','classificacao','canal','cargo','faturamento','numero_de_alunos','momento','proxima_acao'];
   const header=cols.join(',');
   const rows=leads.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(','));
   const csv='\uFEFF'+header+'\n'+rows.join('\n');
@@ -639,12 +653,16 @@ async function exportarLeadsCSV(){
   URL.revokeObjectURL(url);
 }
 
-function normCanal(c){
-  var cl=(c||'').toLowerCase().trim();
-  if(cl.includes('typebot'))return'Typebot';
-  if(cl==='lp'||cl==='landing page'||cl==='landingpage')return'LP';
-  if(cl==='site'||cl==='site oficial')return'Site';
-  return'Orgânico';
+// Canal normalizado — mesma regra canônica de api/leads.js (não duplicar lógica
+// diferente aqui; se a taxonomia mudar, muda nos dois lugares juntos).
+function normCanal(raw){
+  const c=(raw||'').trim().toLowerCase();
+  if(!c)return'Desconhecido';
+  if(c==='typebot'||c==='instagram'||c.includes('typebot'))return'Typebot';
+  if(c==='site'||c==='site oficial'||c==='landing page'||c==='landingpage'||c==='lp')return'Site';
+  if(c==='organico'||c==='orgânico'||c==='organi'||c==='orgânica'||c==='organica')return'Orgânico';
+  if(c==='respondi')return'Respondi';
+  return raw.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
 }
 async function deleteMnLead(id,btn){
   if(!confirm('Excluir este lead permanentemente?'))return;
