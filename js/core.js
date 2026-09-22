@@ -127,6 +127,80 @@ async function deleteYtRefreshFromSupabase(){
 }
 // ───────────────────────────────────────────────────────────────
 
+// ── HubSpot: token permanente (Private App) + busca de deals ──────────
+// Igual ao Meta "Usuário do Sistema": não expira, então não tem fluxo de
+// refresh — só salva/lê de configuracoes, mesmo padrão do resto do arquivo.
+function getHubspotToken(){
+  return (localStorage.getItem('tutory_hubspot_token')||'').trim();
+}
+
+async function saveHubspotTokenToSupabase(token){
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/configuracoes`,{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({chave:'hubspot_token',valor:token,expiry:0})
+    });
+  }catch(e){}
+}
+
+async function loadHubspotTokenFromSupabase(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/configuracoes?chave=eq.hubspot_token&limit=1`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d||!d[0]||!d[0].valor)return false;
+    localStorage.setItem('tutory_hubspot_token',d[0].valor);
+    return true;
+  }catch(e){return false;}
+}
+
+// Busca deals do HubSpot pra uma lista de e-mails (via api/hubspot-deals,
+// proxy serverless — evita CORS e não expõe o token no navegador).
+// Retorna [] em qualquer falha (sem token, API fora, endpoint ainda não
+// deployado) — nunca derruba quem chamou.
+// Retorna {results, stages} — stages é o mapa real dos estágios do HubSpot
+// (id -> {label, isClosed, pipelineLabel}). NUNCA assume que o id
+// "closedwon" significa ganho: essa conta renomeou os estágios, então
+// "closedwon" hoje é "Contrato Enviado" (não fechado). Quem consome isso
+// decide "ganho de verdade" via stages[dealstage]?.isClosed — ver comentário
+// grande em api/hubspot-deals.js.
+// Cache por lista de e-mails (5min) + dedup de chamada em voo: a Visão
+// Geral e a subaba "Vendas Reais" da Mentoria chamam isso quase ao mesmo
+// tempo com a MESMA lista (histórico completo) — sem isso cada uma dispara
+// sua própria varredura pesada no HubSpot e a 2ª/3ª chamada simultânea
+// toma 429 (rate limit) da API deles. Com o cache, a 2ª chamada só espera
+// a 1ª terminar e reaproveita o resultado.
+const _hsDealsCache = {};
+async function fetchHubspotDeals(emails){
+  if(!emails||!emails.length)return{results:[],stages:{}};
+  const key=[...emails].sort().join(',');
+  const cached=_hsDealsCache[key];
+  if(cached && Date.now()-cached.ts<300000) return cached.promise;
+
+  const promise=(async()=>{
+    let token=getHubspotToken();
+    if(!token){await loadHubspotTokenFromSupabase();token=getHubspotToken();}
+    if(!token)return{results:[],stages:{}};
+    try{
+      const r=await fetch('/api/hubspot-deals',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({emails})
+      });
+      if(!r.ok)return{results:[],stages:{}};
+      const d=await r.json();
+      return {results:d.results||[],stages:d.stages||{}};
+    }catch(e){return{results:[],stages:{}};}
+  })();
+  _hsDealsCache[key]={ts:Date.now(),promise};
+  return promise;
+}
+// ───────────────────────────────────────────────────────────────
+
 async function saveTokenToSupabase(token, expiry){
   try{
     await fetch(`${SUPA_URL}/rest/v1/configuracoes`,{
@@ -461,15 +535,40 @@ function igLink(raw){
 }
 
 async function supaFetch(table, params=''){
-  const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
-    headers:{
-      'apikey':SUPA_KEY,
-      'Authorization':'Bearer '+SUPA_KEY,
-      'Content-Type':'application/json'
-    }
-  });
-  if(!r.ok) throw new Error('Supabase error: '+r.status);
-  return r.json();
+  // Chamada já pede uma quantidade limitada de propósito (ex.: "últimos 3
+  // diagnósticos") — respeita o limit do jeito que está, não pagina.
+  if(/(^|&)limit=/.test(params)){
+    const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
+    });
+    if(!r.ok) throw new Error('Supabase error: '+r.status);
+    return r.json();
+  }
+  // Sem limit explícito = espera a tabela inteira no intervalo pedido. O
+  // PostgREST corta em 1000 linhas por padrão (db-max-rows do projeto) e
+  // devolve menos linha SEM erro nem aviso — bug real encontrado: a linha
+  // "Ago/2026" do Comparativo do Período batendo o investimento mas com 14
+  // leads a menos que a linha TOTAL, porque a busca histórica (Nov/2025 até
+  // hoje, sem limit) passou de 1000 registros e foi cortada silenciosamente.
+  // Pagina via header Range até uma página vir mais curta que o tamanho pedido.
+  const PAGE=1000;
+  let all=[], offset=0;
+  while(true){
+    const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`,{
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json',
+        'Range':`${offset}-${offset+PAGE-1}`
+      }
+    });
+    if(!r.ok) throw new Error('Supabase error: '+r.status);
+    const page=await r.json();
+    all=all.concat(page);
+    if(page.length<PAGE) break;
+    offset+=PAGE;
+  }
+  return all;
 }
 
 async function supaInsert(table, body){
