@@ -35,8 +35,21 @@ function cplChipHub(v){const n=+v;if(n===0||!n)return'<span class="chip" style="
 function cplChipEx(v){const n=+v;if(n===0||!n)return'<span class="chip" style="background:var(--s2);color:var(--dim);border:1px solid var(--brd2)">— Sem dados</span>';if(n<300)return'<span class="chip top">🚀 Escalar</span>';if(n<=500)return'<span class="chip ok">✓ OK</span>';return'<span class="chip paus">✕ Pausar</span>';}
 function ctrChip(v){return +v>=2?'<span class="chip ok">✓ OK</span>':'<span class="chip lim">⚠ Baixo</span>';}
 function leadChip(c){if(c==='Quente')return'<span class="chip hot">🔥 Quente</span>';if(c==='Morno')return'<span class="chip warm">◎ Morno</span>';return'<span class="chip cold">● Frio</span>';}
+// Cores fixas (não var()) porque cada estado usa um tom específico que não tem
+// token 1:1 no sistema (ex.: "Desq. prévia" precisa ficar visualmente diferente
+// de "Pré-qualificado", mesmo os dois sendo "amarelo/laranja"). Por isso os dois
+// mapas — escuro (padrão) e claro — em vez de reusar var(--gn)/var(--ex)/var(--red)
+// direto, que mudaria o tom de dark mode sem pedido. Os hex do mapa claro são os
+// mesmos já usados em --gn/--ex/--hb/--red dentro de .light-mode no dashboard.css
+// — mesma paleta, não cor nova inventada aqui.
 function classifBadge(c){
-  const map={
+  const light=document.documentElement.classList.contains('light-mode');
+  const map=light?{
+    'Qualificado':      {bg:'rgba(4,96,64,.14)',   border:'rgba(4,96,64,.4)',   color:'#046040', icon:'✅', label:'Qualificado'},
+    'Pré-qualificado':  {bg:'rgba(154,82,0,.14)',   border:'rgba(154,82,0,.4)',  color:'#9A5200', icon:'⚡', label:'Pré-qualificado'},
+    'Desqualificação prévia':{bg:'rgba(184,50,8,.14)',border:'rgba(184,50,8,.4)',color:'#B83208',icon:'⚠',label:'Desq. prévia'},
+    'Desqualificado':   {bg:'rgba(154,14,14,.12)',  border:'rgba(154,14,14,.35)',color:'#9A0E0E', icon:'✕', label:'Desqualificado'},
+  }:{
     'Qualificado':      {bg:'rgba(34,197,94,.2)',  border:'rgba(34,197,94,.5)',  color:'#22C55E', icon:'✅', label:'Qualificado'},
     'Pré-qualificado':  {bg:'rgba(234,179,8,.2)',  border:'rgba(234,179,8,.5)',  color:'#EAB308', icon:'⚡', label:'Pré-qualificado'},
     'Desqualificação prévia':{bg:'rgba(249,115,22,.2)',border:'rgba(249,115,22,.5)',color:'#F97316',icon:'⚠',label:'Desq. prévia'},
@@ -47,11 +60,21 @@ function classifBadge(c){
   return`<div style="background:${s.bg};border:1px solid ${s.border};border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:${s.color};text-align:center;">${s.icon} ${s.label}</div>`;
 }
 function classifChip(c){
-  if(c==='Qualificado')return'<span style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22C55E;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Qualificado</span>';
-  if(c==='Pré-qualificado')return'<span style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.4);color:#EAB308;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚡ Pré-qualificado</span>';
-  if(c==='Desqualificação prévia')return'<span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);color:#F97316;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠ Desq. prévia</span>';
-  if(c==='Desqualificado')return'<span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#EF4444;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✕ Desqualificado</span>';
-  return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:3px 10px;border-radius:20px;font-size:11px;">— Pendente</span>';
+  const light=document.documentElement.classList.contains('light-mode');
+  const map=light?{
+    'Qualificado':      {bg:'rgba(4,96,64,.14)',   border:'rgba(4,96,64,.4)',   color:'#046040', label:'✅ Qualificado'},
+    'Pré-qualificado':  {bg:'rgba(154,82,0,.14)',   border:'rgba(154,82,0,.4)',  color:'#9A5200', label:'⚡ Pré-qualificado'},
+    'Desqualificação prévia':{bg:'rgba(184,50,8,.14)',border:'rgba(184,50,8,.4)',color:'#B83208',label:'⚠ Desq. prévia'},
+    'Desqualificado':   {bg:'rgba(154,14,14,.12)',  border:'rgba(154,14,14,.35)',color:'#9A0E0E', label:'✕ Desqualificado'},
+  }:{
+    'Qualificado':      {bg:'rgba(34,197,94,.15)',  border:'rgba(34,197,94,.4)',  color:'#22C55E', label:'✅ Qualificado'},
+    'Pré-qualificado':  {bg:'rgba(234,179,8,.15)',  border:'rgba(234,179,8,.4)',  color:'#EAB308', label:'⚡ Pré-qualificado'},
+    'Desqualificação prévia':{bg:'rgba(249,115,22,.15)',border:'rgba(249,115,22,.4)',color:'#F97316',label:'⚠ Desq. prévia'},
+    'Desqualificado':   {bg:'rgba(239,68,68,.15)',   border:'rgba(239,68,68,.4)',  color:'#EF4444', label:'✕ Desqualificado'},
+  };
+  const s=map[c];
+  if(!s)return'<span style="background:var(--s2);border:1px solid var(--brd2);color:var(--sub);padding:3px 10px;border-radius:20px;font-size:11px;">— Pendente</span>';
+  return`<span style="background:${s.bg};border:1px solid ${s.border};color:${s.color};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">${s.label}</span>`;
 }
 function classifSelect(leadId, atual){
   const opts=['Qualificado','Pré-qualificado','Desqualificação prévia','Desqualificado'];
@@ -109,6 +132,7 @@ function renderMnSecoes(leads){
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.faturamento||'—'}</td>
     <td style="color:var(--sub);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.contact_email||'—'}</td>
     <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_wa(r.contact_phone)}</td>
+    <td style="overflow:visible;white-space:nowrap;">${_hsStatusCell(r)}</td>
     <td class="cel-classif">
       <select onchange="salvarClassifLead('${r.id}',this.value,this)" style="background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:3px 6px;color:var(--txt);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;outline:none;width:100%;">
         <option value="">— Classificar</option>
@@ -119,7 +143,7 @@ function renderMnSecoes(leads){
       </select>
     </td>
   </tr>`;
-  const _empty = msg => `<tr class="er"><td colspan="9" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
+  const _empty = msg => `<tr class="er"><td colspan="10" style="color:var(--dim);font-style:italic;text-align:center;padding:14px;">${msg}</td></tr>`;
   const s1=leads.filter(r=>r.classificacao_manual==='Qualificado');
   const s2=leads.filter(r=>r.classificacao_manual==='Pré-qualificado');
   const s3=leads.filter(r=>r.classificacao_manual==='Desqualificado');

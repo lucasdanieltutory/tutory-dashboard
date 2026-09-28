@@ -174,6 +174,19 @@ async function loadHubspotTokenFromSupabase(){
 // sua própria varredura pesada no HubSpot e a 2ª/3ª chamada simultânea
 // toma 429 (rate limit) da API deles. Com o cache, a 2ª chamada só espera
 // a 1ª terminar e reaproveita o resultado.
+// Tira negócio repetido antes de somar receita. Acontece quando a mesma
+// pessoa está em leads_mentoria com 2 e-mails diferentes (ex.: preencheu o
+// formulário duas vezes) e o HubSpot ligou os dois Contacts ao mesmo Lead/
+// Deal — sem isso, o valor desse negócio entrava 2x na soma (uma por
+// e-mail), inflando a receita mostrada. Mantém o 1º e-mail encontrado pra
+// cada dealId; os outros e-mails que batem no mesmo negócio não geram linha
+// duplicada nem soma duplicada.
+function dedupeDealsByDealId(results){
+  const vistos = new Set(), unicos = [];
+  (results||[]).forEach(r=>{ if(r && r.dealId && !vistos.has(r.dealId)){ vistos.add(r.dealId); unicos.push(r); } });
+  return unicos;
+}
+
 const _hsDealsCache = {};
 async function fetchHubspotDeals(emails){
   if(!emails||!emails.length)return{results:[],stages:{}};
