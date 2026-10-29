@@ -7,7 +7,7 @@
 //    tutory-os-next/src/lib/plataforma.ts). Sem UTM = orgânico. Nada de
 //    adivinhar por plataforma_ad fixo do Typebot nem por fbclid.
 //  • Valores falsos ("—", "{{placement}}", "{{campaign.name}}"…) viram vazio.
-//  • Guarda fbclid/gclid (clique do anúncio) pros eventos do Meta/Google.
+//  • Guarda fbclid/gclid (clique do anúncio) e o ID do anúncio (vk_ad_id → ad_id).
 //  • Pessoa repetida: grava; o gatilho do banco marca DUP (sql do tutory-os-next).
 //  • Senha: header x-tutory-segredo = env TUTORY_LEADS_SEGREDO. Fase 1 (agora):
 //    aceita sem senha e só registra no log; fase 2: exigir (LEADS_EXIGE_SEGREDO=1).
@@ -119,6 +119,7 @@ module.exports = async function handler(req, res) {
     utm_source, utm_medium, utm_campaign, utm_content, utm_term,
     fbclid: limpo(b.fbclid),
     gclid:  limpo(b.gclid || b.gbraid || b.wbraid),
+    ad_id:  limpo(b.vk_ad_id || b.ad_id), // ID do anúncio (vk_ad_id={{ad.id}} do link) — não muda se o anúncio for renomeado
   };
   const semVazios = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== ''));
 
