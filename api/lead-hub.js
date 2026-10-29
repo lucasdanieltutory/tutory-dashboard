@@ -74,6 +74,11 @@ module.exports = async function handler(req, res) {
     ? (_origemLabels[plataforma_ad] || plataforma_ad)
     : (origemRaw || 'Orgânico');
 
+  // Chat da página do Hub (Typebot "Site HUB 2026"): pré-cadastro (nome + telefone
+  // + respostas), não conta criada. Marcado como canal "Chat Hub" pra não se
+  // misturar com cadastro real (o evento de cadastro pro Meta ignora esse canal).
+  const ehChat = /^chat hub$/i.test(clean(b.canal || ''));
+
   const payload = {
     contact_name:      clean(b.contact_name      || b.nome      || b.Nome      || ''),
     contact_email:     clean(b.contact_email     || b.email     || b.Email     || ''),
@@ -82,6 +87,9 @@ module.exports = async function handler(req, res) {
     origem,
     observacao:        clean(b.observacao        || b.obs       || '') || (perfil ? ('Perfil: ' + perfil) : ''),
     plataforma_ad, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+    fbclid, gclid,
+    ad_id: clean(b.vk_ad_id || b.ad_id || ''), // ID do anúncio (vk_ad_id do link)
+    canal: ehChat ? 'Chat Hub' : '',           // vazio = padrão do banco (Slack/Hub)
   };
 
   // Remove campos vazios (não sobrescreve defaults do Supabase)
@@ -101,11 +109,13 @@ module.exports = async function handler(req, res) {
       if (digits.length >= 8) ors.push(`contact_phone.ilike.*${digits}*`);
     }
     if (ors.length) {
-      const chk = await fetch(`${SUPA_URL}/rest/v1/leads_hub?select=id&or=(${ors.join(',')})&limit=1`, {
+      const chk = await fetch(`${SUPA_URL}/rest/v1/leads_hub?select=id,canal&or=(${ors.join(',')})&limit=10`, {
         headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
       });
       const ex = await chk.json().catch(() => []);
-      if (Array.isArray(ex) && ex.length) {
+      // Lead do chat NÃO barra o cadastro real que vem depois (a pessoa conversa
+      // no chat e em seguida cria a conta) — o banco marca DUP e conta 1 vez.
+      if (Array.isArray(ex) && ex.some((r) => ehChat || r.canal !== 'Chat Hub')) {
         return res.status(200).json({ success: true, dedup: 'lead_ja_existe' });
       }
     }
