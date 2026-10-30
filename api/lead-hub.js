@@ -89,6 +89,7 @@ module.exports = async function handler(req, res) {
     plataforma_ad, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
     fbclid, gclid,
     ad_id: clean(b.vk_ad_id || b.ad_id || ''), // ID do anúncio (vk_ad_id do link)
+    visitante_id: /^[0-9a-f-]{36}$/i.test(clean(b.visitante || '')) ? clean(b.visitante) : undefined, // código do navegador de quem aceitou cookies: liga o cadastro ao trajeto no site
     canal: ehChat ? 'Chat Hub' : '',           // vazio = padrão do banco (Slack/Hub)
   };
 
